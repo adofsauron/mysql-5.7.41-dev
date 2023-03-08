@@ -1,5 +1,4 @@
 #!/bin/bash
 
-mysql -h127.0.0.1  -P3306
-
+/usr/local/mysql/bin/mysql -h127.0.0.1  -P3306
 
