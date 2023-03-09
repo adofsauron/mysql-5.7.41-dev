@@ -37,7 +37,10 @@ LEX_CSTRING group_replication_plugin_name_str = {C_STRING_WITH_LEN("group_replic
   Group Replication plugin handler function accessors.
 */
 #ifdef HAVE_REPLICATION
-int group_replication_init() { return initialize_channel_service_interface(); }
+int group_replication_init()
+{
+  return initialize_channel_service_interface();
+}
 #endif
 
 bool is_group_replication_plugin_loaded()
@@ -271,11 +274,20 @@ void get_server_parameters(char **hostname, uint *port, char **uuid, unsigned in
 }
 #endif
 
-ulong get_server_id() { return server_id; }
+ulong get_server_id()
+{
+  return server_id;
+}
 
-ulong get_auto_increment_increment() { return global_system_variables.auto_increment_increment; }
+ulong get_auto_increment_increment()
+{
+  return global_system_variables.auto_increment_increment;
+}
 
-ulong get_auto_increment_offset() { return global_system_variables.auto_increment_offset; }
+ulong get_auto_increment_offset()
+{
+  return global_system_variables.auto_increment_offset;
+}
 
 void set_auto_increment_increment(ulong auto_increment_increment)
 {
@@ -341,8 +353,17 @@ char *encoded_gtid_set_to_string(uchar *encoded_gtid_set, size_t length)
 }
 #endif
 
-void global_thd_manager_add_thd(THD *thd) { Global_THD_manager::get_instance()->add_thd(thd); }
+void global_thd_manager_add_thd(THD *thd)
+{
+  Global_THD_manager::get_instance()->add_thd(thd);
+}
 
-void global_thd_manager_remove_thd(THD *thd) { Global_THD_manager::get_instance()->remove_thd(thd); }
+void global_thd_manager_remove_thd(THD *thd)
+{
+  Global_THD_manager::get_instance()->remove_thd(thd);
+}
 
-unsigned long get_slave_max_allowed_packet() { return slave_max_allowed_packet; }
+unsigned long get_slave_max_allowed_packet()
+{
+  return slave_max_allowed_packet;
+}

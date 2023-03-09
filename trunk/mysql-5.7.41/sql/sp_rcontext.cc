@@ -165,7 +165,8 @@ void sp_rcontext::pop_cursors(uint count)
 {
   assert(m_ccount >= count);
 
-  while (count--) delete m_cstack[--m_ccount];
+  while (count--)
+    delete m_cstack[--m_ccount];
 }
 
 bool sp_rcontext::push_handler(sp_handler *handler, uint first_ip)

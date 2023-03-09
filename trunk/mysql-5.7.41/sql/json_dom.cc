@@ -157,7 +157,10 @@ void *Json_dom::operator new(size_t size, const std::nothrow_t &) throw()
   return my_malloc(key_memory_JSON, size, MYF(MY_WME));
 }
 
-void Json_dom::operator delete(void *ptr) throw() { my_free(ptr); }
+void Json_dom::operator delete(void *ptr) throw()
+{
+  my_free(ptr);
+}
 
 /*
   This operator is included in order to silence warnings on some
@@ -167,7 +170,10 @@ void Json_dom::operator delete(void *ptr) throw() { my_free(ptr); }
   cluttering the test coverage reports.
 */
 /* purecov: begin inspected */
-void Json_dom::operator delete(void *ptr, const std::nothrow_t &) throw() { operator delete(ptr); }
+void Json_dom::operator delete(void *ptr, const std::nothrow_t &) throw()
+{
+  operator delete(ptr);
+}
 /* purecov: end */
 
 /**
@@ -369,7 +375,10 @@ Json_object::Json_object()
 {
 }
 
-Json_object::~Json_object() { clear(); }
+Json_object::~Json_object()
+{
+  clear();
+}
 
 /**
   Check if the depth of a JSON document exceeds the maximum supported
@@ -432,7 +441,9 @@ class Rapid_json_handler : public BaseReaderHandler< UTF8<> >
     {
     }
 
-    Current_element(Json_dom *value) : m_object(false), m_value(value) {}
+    Current_element(Json_dom *value) : m_object(false), m_value(value)
+    {
+    }
 
     bool m_object;      //!< true of object, false if array
     std::string m_key;  //!< only used if object
@@ -443,8 +454,12 @@ class Rapid_json_handler : public BaseReaderHandler< UTF8<> >
 
   struct Partial_compound
   {
-    Partial_compound(bool is_object) : m_elements(key_memory_JSON), m_is_object(is_object) {}
-    ~Partial_compound() {}
+    Partial_compound(bool is_object) : m_elements(key_memory_JSON), m_is_object(is_object)
+    {
+    }
+    ~Partial_compound()
+    {
+    }
 
     Element_vector m_elements;
     bool m_is_object;
@@ -788,7 +803,10 @@ class Rapid_json_handler : public BaseReaderHandler< UTF8<> >
     return true;
   }
 
-  bool Key(const Ch *str, SizeType len, bool copy) { return String(str, len, copy); }
+  bool Key(const Ch *str, SizeType len, bool copy)
+  {
+    return String(str, len, copy);
+  }
 };
 
 Json_dom *Json_dom::parse(const char *text, size_t length, const char **syntaxerr, size_t *offset,
@@ -835,38 +853,79 @@ class Syntax_check_handler
  private:
   size_t m_depth;  ///< The current depth of the document
 
-  bool seeing_scalar() { return !check_json_depth(m_depth + 1); }
+  bool seeing_scalar()
+  {
+    return !check_json_depth(m_depth + 1);
+  }
 
  public:
-  Syntax_check_handler() : m_depth(0) {}
+  Syntax_check_handler() : m_depth(0)
+  {
+  }
 
   /*
     These functions are callbacks used by rapidjson::Reader when
     parsing a JSON document. They all follow the rapidjson convention
     of returning true on success and false on failure.
   */
-  bool StartObject() { return !check_json_depth(++m_depth); }
+  bool StartObject()
+  {
+    return !check_json_depth(++m_depth);
+  }
   bool EndObject(SizeType)
   {
     --m_depth;
     return true;
   }
-  bool StartArray() { return !check_json_depth(++m_depth); }
+  bool StartArray()
+  {
+    return !check_json_depth(++m_depth);
+  }
   bool EndArray(SizeType)
   {
     --m_depth;
     return true;
   }
-  bool Null() { return seeing_scalar(); }
-  bool Bool(bool) { return seeing_scalar(); }
-  bool Int(int) { return seeing_scalar(); }
-  bool Uint(unsigned) { return seeing_scalar(); }
-  bool Int64(int64_t) { return seeing_scalar(); }
-  bool Uint64(uint64_t) { return seeing_scalar(); }
-  bool Double(double, bool is_int = false) { return seeing_scalar(); }
-  bool String(const char *, SizeType, bool) { return seeing_scalar(); }
-  bool Key(const char *, SizeType, bool) { return seeing_scalar(); }
-  bool RawNumber(const char *, SizeType, bool) { return seeing_scalar(); }
+  bool Null()
+  {
+    return seeing_scalar();
+  }
+  bool Bool(bool)
+  {
+    return seeing_scalar();
+  }
+  bool Int(int)
+  {
+    return seeing_scalar();
+  }
+  bool Uint(unsigned)
+  {
+    return seeing_scalar();
+  }
+  bool Int64(int64_t)
+  {
+    return seeing_scalar();
+  }
+  bool Uint64(uint64_t)
+  {
+    return seeing_scalar();
+  }
+  bool Double(double, bool is_int = false)
+  {
+    return seeing_scalar();
+  }
+  bool String(const char *, SizeType, bool)
+  {
+    return seeing_scalar();
+  }
+  bool Key(const char *, SizeType, bool)
+  {
+    return seeing_scalar();
+  }
+  bool RawNumber(const char *, SizeType, bool)
+  {
+    return seeing_scalar();
+  }
 };
 
 bool is_valid_json_syntax(const char *text, size_t length)
@@ -1192,7 +1251,10 @@ bool Json_object::remove(const std::string &key)
   return true;
 }
 
-size_t Json_object::cardinality() const { return m_map.size(); }
+size_t Json_object::cardinality() const
+{
+  return m_map.size();
+}
 
 uint32 Json_object::depth() const
 {
@@ -1312,11 +1374,19 @@ bool Json_key_comparator::operator()(const std::string &key1, const std::string 
   return memcmp(key1.data(), key2.data(), key1.length()) < 0;
 }
 
-Json_array::Json_array() : Json_dom(), m_v(key_memory_JSON) {}
+Json_array::Json_array() : Json_dom(), m_v(key_memory_JSON)
+{
+}
 
-Json_array::Json_array(Json_dom *innards) : Json_dom(), m_v(key_memory_JSON) { append_alias(innards); }
+Json_array::Json_array(Json_dom *innards) : Json_dom(), m_v(key_memory_JSON)
+{
+  append_alias(innards);
+}
 
-Json_array::~Json_array() { delete_container_pointers(m_v); }
+Json_array::~Json_array()
+{
+  delete_container_pointers(m_v);
+}
 
 bool Json_array::append_clone(const Json_dom *value)
 {
@@ -1434,7 +1504,10 @@ Json_dom *Json_array::clone() const
   return vv;
 }
 
-void Json_array::clear() { delete_container_pointers(m_v); }
+void Json_array::clear()
+{
+  delete_container_pointers(m_v);
+}
 
 /**
   Reserve space in a string buffer. If reallocation is needed,
@@ -1443,7 +1516,10 @@ void Json_array::clear() { delete_container_pointers(m_v); }
   @param needed the number of bytes needed
   @return true on error, false on success
 */
-static bool reserve(String *buffer, size_t needed) { return buffer->reserve(needed, buffer->length()); }
+static bool reserve(String *buffer, size_t needed)
+{
+  return buffer->reserve(needed, buffer->length());
+}
 
 /**
   Perform quoting on a JSON string to make an external representation
@@ -1534,7 +1610,9 @@ bool double_quote(const char *cptr, size_t length, String *buf)
   return buf->append('"');
 }
 
-Json_decimal::Json_decimal(const my_decimal &value) : Json_number(), m_dec(value) {}
+Json_decimal::Json_decimal(const my_decimal &value) : Json_number(), m_dec(value)
+{
+}
 
 int Json_decimal::binary_size() const
 {
@@ -1581,7 +1659,10 @@ bool Json_decimal::convert_from_binary(const char *bin, size_t len, my_decimal *
   return error;
 }
 
-Json_dom *Json_double::clone() const { return new (std::nothrow) Json_double(m_f); }
+Json_dom *Json_double::clone() const
+{
+  return new (std::nothrow) Json_double(m_f);
+}
 
 Json_dom::enum_json_type Json_datetime::json_type() const
 {
@@ -1603,7 +1684,10 @@ Json_dom::enum_json_type Json_datetime::json_type() const
   /* purecov: end inspected */
 }
 
-Json_dom *Json_datetime::clone() const { return new (std::nothrow) Json_datetime(m_t, m_field_type); }
+Json_dom *Json_datetime::clone() const
+{
+  return new (std::nothrow) Json_datetime(m_t, m_field_type);
+}
 
 void Json_datetime::to_packed(char *dest) const
 {
@@ -1621,7 +1705,10 @@ Json_opaque::Json_opaque(enum_field_types mytype, const char *v, size_t size)
 {
 }
 
-Json_dom *Json_opaque::clone() const { return new (std::nothrow) Json_opaque(m_mytype, value(), size()); }
+Json_dom *Json_opaque::clone() const
+{
+  return new (std::nothrow) Json_opaque(m_mytype, value(), size());
+}
 
 Json_wrapper_object_iterator::Json_wrapper_object_iterator(const Json_object *obj)
     : m_is_dom(true), m_iter(obj->begin()), m_end(obj->end()), m_element_count(-1)
@@ -1796,7 +1883,10 @@ bool Json_wrapper::to_binary(String *str) const
   @param[in] json_quoted whether or not a quote should be appended
   @return false if successful, true on error
 */
-inline bool single_quote(String *buffer, bool json_quoted) { return json_quoted && buffer->append('"'); }
+inline bool single_quote(String *buffer, bool json_quoted)
+{
+  return json_quoted && buffer->append('"');
+}
 
 /**
    Pretty-print a string to an evolving buffer, double-quoting if
@@ -3267,10 +3357,15 @@ class Wrapper_sort_key
   size_t m_pos;     ///< the current position in the buffer
 
  public:
-  Wrapper_sort_key(uchar *buf, size_t len) : m_buffer(buf), m_length(len), m_pos(0) {}
+  Wrapper_sort_key(uchar *buf, size_t len) : m_buffer(buf), m_length(len), m_pos(0)
+  {
+  }
 
   /// Get the remaining space in the buffer.
-  size_t remaining() const { return m_length - m_pos; }
+  size_t remaining() const
+  {
+    return m_length - m_pos;
+  }
 
   /// Append a character to the buffer.
   void append(uchar ch)
@@ -3355,14 +3450,22 @@ class Wrapper_hash_key
   ulonglong m_crc;
 
  public:
-  Wrapper_hash_key(ulonglong *hash_val) : m_crc(*hash_val) {}
+  Wrapper_hash_key(ulonglong *hash_val) : m_crc(*hash_val)
+  {
+  }
 
   /**
     Return the computed hash value.
   */
-  ulonglong get_crc() { return m_crc; }
+  ulonglong get_crc()
+  {
+    return m_crc;
+  }
 
-  void add_character(uchar ch) { add_to_crc(ch); }
+  void add_character(uchar ch)
+  {
+    add_to_crc(ch);
+  }
 
   void add_integer(longlong ll)
   {
@@ -3407,7 +3510,10 @@ class Wrapper_hash_key
 };
 
 /// Check if a character represents a non-zero digit.
-static inline bool is_non_zero_digit(char ch) { return ch >= '1' && ch <= '9'; }
+static inline bool is_non_zero_digit(char ch)
+{
+  return ch >= '1' && ch <= '9';
+}
 
 /*
   Type identifiers used in the sort key generated by

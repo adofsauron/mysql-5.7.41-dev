@@ -257,7 +257,8 @@ static my_bool tz_load(const char *name, TIME_ZONE_INFO *sp, MEM_ROOT *storage)
 #endif
     sp->lsis = (LS_INFO *)tzinfo_buf;
 
-    for (i = 0; i < sp->timecnt; i++, p += 4) sp->ats[i] = int4net(p);
+    for (i = 0; i < sp->timecnt; i++, p += 4)
+      sp->ats[i] = int4net(p);
 
     for (i = 0; i < sp->timecnt; i++)
     {
@@ -279,7 +280,8 @@ static my_bool tz_load(const char *name, TIME_ZONE_INFO *sp, MEM_ROOT *storage)
       if (ttisp->tt_abbrind > sp->charcnt)
         return 1;
     }
-    for (i = 0; i < sp->charcnt; i++) sp->chars[i] = *p++;
+    for (i = 0; i < sp->charcnt; i++)
+      sp->chars[i] = *p++;
     sp->chars[i] = '\0'; /* ensure '\0' at end */
     for (i = 0; i < sp->leapcnt; i++)
     {
@@ -355,7 +357,8 @@ static my_bool prepare_tz_info(TIME_ZONE_INFO *sp, MEM_ROOT *storage)
     We will find first non-DST local time type and use it (or use first
     local time type if all of them are DST types).
   */
-  for (i = 0; i < sp->typecnt && sp->ttis[i].tt_isdst; i++) /* no-op */;
+  for (i = 0; i < sp->typecnt && sp->ttis[i].tt_isdst; i++)
+    /* no-op */;
   if (i == sp->typecnt)
     i = 0;
   sp->fallback_tti = &(sp->ttis[i]);
@@ -579,7 +582,8 @@ static void sec_to_TIME(MYSQL_TIME *tmp, my_time_t t, long offset)
   tmp->year = y;
 
   ip = mon_lengths[yleap];
-  for (tmp->month = 0; days >= (long)ip[tmp->month]; tmp->month++) days = days - (long)ip[tmp->month];
+  for (tmp->month = 0; days >= (long)ip[tmp->month]; tmp->month++)
+    days = days - (long)ip[tmp->month];
   tmp->month++;
   tmp->day = (uint)(days + 1);
 
@@ -963,7 +967,9 @@ static const String tz_SYSTEM_name("SYSTEM", 6, &my_charset_latin1);
 class Time_zone_system : public Time_zone
 {
  public:
-  Time_zone_system() {} /* Remove gcc warning */
+  Time_zone_system()
+  {
+  } /* Remove gcc warning */
   virtual my_time_t TIME_to_gmt_sec(const MYSQL_TIME *t, my_bool *in_dst_time_gap) const;
   virtual void gmt_sec_to_TIME(MYSQL_TIME *tmp, my_time_t t) const;
   virtual const String *get_name() const;
@@ -1036,7 +1042,10 @@ void Time_zone_system::gmt_sec_to_TIME(MYSQL_TIME *tmp, my_time_t t) const
   RETURN VALUE
     Name of time zone as String
 */
-const String *Time_zone_system::get_name() const { return &tz_SYSTEM_name; }
+const String *Time_zone_system::get_name() const
+{
+  return &tz_SYSTEM_name;
+}
 
 /*
   Instance of this class represents UTC time zone. It uses system gmtime_r
@@ -1047,7 +1056,9 @@ const String *Time_zone_system::get_name() const { return &tz_SYSTEM_name; }
 class Time_zone_utc : public Time_zone
 {
  public:
-  Time_zone_utc() {} /* Remove gcc warning */
+  Time_zone_utc()
+  {
+  } /* Remove gcc warning */
   virtual my_time_t TIME_to_gmt_sec(const MYSQL_TIME *t, my_bool *in_dst_time_gap) const;
   virtual void gmt_sec_to_TIME(MYSQL_TIME *tmp, my_time_t t) const;
   virtual const String *get_name() const;
@@ -1205,7 +1216,10 @@ void Time_zone_db::gmt_sec_to_TIME(MYSQL_TIME *tmp, my_time_t t) const
   RETURN VALUE
     Name of time zone as ASCIIZ-string
 */
-const String *Time_zone_db::get_name() const { return tz_name; }
+const String *Time_zone_db::get_name() const
+{
+  return tz_name;
+}
 
 /*
   Instance of this class represents time zone which
@@ -1308,7 +1322,10 @@ my_time_t Time_zone_offset::TIME_to_gmt_sec(const MYSQL_TIME *t, my_bool *in_dst
       tmp - pointer to MYSQL_TIME structure to fill-in
       t   - my_time_t value to be converted
 */
-void Time_zone_offset::gmt_sec_to_TIME(MYSQL_TIME *tmp, my_time_t t) const { sec_to_TIME(tmp, t, offset); }
+void Time_zone_offset::gmt_sec_to_TIME(MYSQL_TIME *tmp, my_time_t t) const
+{
+  sec_to_TIME(tmp, t, offset);
+}
 
 /*
   Get name of time zone
@@ -1319,7 +1336,10 @@ void Time_zone_offset::gmt_sec_to_TIME(MYSQL_TIME *tmp, my_time_t t) const { sec
   RETURN VALUE
     Name of time zone as pointer to String object
 */
-const String *Time_zone_offset::get_name() const { return &name; }
+const String *Time_zone_offset::get_name() const
+{
+  return &name;
+}
 
 static Time_zone_utc tz_UTC;
 static Time_zone_system tz_SYSTEM;

@@ -248,7 +248,8 @@ bool Condition_information::aggregate(THD *thd, const Diagnostics_area *da)
   }
 
   /* Advance to the requested condition. */
-  while (cond_number--) cond = it_conds++;
+  while (cond_number--)
+    cond = it_conds++;
 
   assert(cond);
 

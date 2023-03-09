@@ -73,7 +73,10 @@ void Hybrid_type_traits::fix_length_and_dec(Item *item, Item *arg) const
 
 static const Hybrid_type_traits real_traits_instance;
 
-const Hybrid_type_traits *Hybrid_type_traits::instance() { return &real_traits_instance; }
+const Hybrid_type_traits *Hybrid_type_traits::instance()
+{
+  return &real_traits_instance;
+}
 
 my_decimal *Hybrid_type_traits::val_decimal(Hybrid_type *val, my_decimal *to) const
 {
@@ -90,7 +93,10 @@ String *Hybrid_type_traits::val_str(Hybrid_type *val, String *to, uint8 decimals
 /* Hybrid_type_traits_decimal */
 static const Hybrid_type_traits_decimal decimal_traits_instance;
 
-const Hybrid_type_traits_decimal *Hybrid_type_traits_decimal::instance() { return &decimal_traits_instance; }
+const Hybrid_type_traits_decimal *Hybrid_type_traits_decimal::instance()
+{
+  return &decimal_traits_instance;
+}
 
 void Hybrid_type_traits_decimal::fix_length_and_dec(Item *item, Item *arg) const
 {
@@ -147,7 +153,10 @@ String *Hybrid_type_traits_decimal::val_str(Hybrid_type *val, String *to, uint8 
 /* Hybrid_type_traits_integer */
 static const Hybrid_type_traits_integer integer_traits_instance;
 
-const Hybrid_type_traits_integer *Hybrid_type_traits_integer::instance() { return &integer_traits_instance; }
+const Hybrid_type_traits_integer *Hybrid_type_traits_integer::instance()
+{
+  return &integer_traits_instance;
+}
 
 void Hybrid_type_traits_integer::fix_length_and_dec(Item *item, Item *arg) const
 {
@@ -1180,7 +1189,10 @@ Item *Item_static_float_func::safe_charset_converter(const CHARSET_INFO *tocs)
   return conv;
 }
 
-Item *Item_string::safe_charset_converter(const CHARSET_INFO *tocs) { return charset_converter(tocs, true); }
+Item *Item_string::safe_charset_converter(const CHARSET_INFO *tocs)
+{
+  return charset_converter(tocs, true);
+}
 
 /**
   Convert a string item into the requested character set.
@@ -1509,7 +1521,10 @@ zero:
   return false;
 }
 
-const CHARSET_INFO *Item::default_charset() { return current_thd->variables.collation_connection; }
+const CHARSET_INFO *Item::default_charset()
+{
+  return current_thd->variables.collation_connection;
+}
 
 /*
   Save value in field, but don't give any warnings
@@ -1664,7 +1679,10 @@ bool Item_sp_variable::get_time(MYSQL_TIME *ltime)
   return (null_value = it->get_time(ltime));
 }
 
-bool Item_sp_variable::is_null() { return this_item()->is_null(); }
+bool Item_sp_variable::is_null()
+{
+  return this_item()->is_null();
+}
 
 /*****************************************************************************
   Item_splocal methods
@@ -1814,7 +1832,10 @@ bool Item_name_const::get_time(MYSQL_TIME *ltime)
   return (null_value = value_item->get_time(ltime));
 }
 
-bool Item_name_const::is_null() { return value_item->is_null(); }
+bool Item_name_const::is_null()
+{
+  return value_item->is_null();
+}
 
 Item_name_const::Item_name_const(const POS &pos, Item *name_arg, Item *val)
     : super(pos), value_item(val), name_item(name_arg)
@@ -1961,7 +1982,10 @@ class Item_aggregate_ref : public Item_ref
     else
       Item_ident::print(str, query_type);
   }
-  virtual Ref_Type ref_type() const { return AGGREGATE_REF; }
+  virtual Ref_Type ref_type() const
+  {
+    return AGGREGATE_REF;
+  }
 };
 
 /**
@@ -2849,7 +2873,10 @@ bool Item_field::val_bool_result()
   }
 }
 
-bool Item_field::is_null_result() { return (null_value = result_field->is_null()); }
+bool Item_field::is_null_result()
+{
+  return (null_value = result_field->is_null());
+}
 
 bool Item_field::eq(const Item *item, bool binary_cmp) const
 {
@@ -3314,7 +3341,10 @@ longlong Item_string::val_int()
                                          (char *)str_value.ptr() + str_value.length());
 }
 
-my_decimal *Item_string::val_decimal(my_decimal *decimal_value) { return val_decimal_from_string(decimal_value); }
+my_decimal *Item_string::val_decimal(my_decimal *decimal_value)
+{
+  return val_decimal_from_string(decimal_value);
+}
 
 bool Item_null::itemize(Parse_context *pc, Item **res)
 {
@@ -3326,7 +3356,10 @@ bool Item_null::itemize(Parse_context *pc, Item **res)
   return false;
 }
 
-bool Item_null::eq(const Item *item, bool binary_cmp) const { return item->type() == type(); }
+bool Item_null::eq(const Item *item, bool binary_cmp) const
+{
+  return item->type() == type();
+}
 
 double Item_null::val_real()
 {
@@ -3351,7 +3384,10 @@ String *Item_null::val_str(String *str)
   return 0;
 }
 
-my_decimal *Item_null::val_decimal(my_decimal *decimal_value) { return 0; }
+my_decimal *Item_null::val_decimal(my_decimal *decimal_value)
+{
+  return 0;
+}
 
 bool Item_null::val_json(Json_wrapper *wr)
 {
@@ -4202,7 +4238,10 @@ void Item_param::set_out_param_info(Send_field *info)
   result set.
 */
 
-const Send_field *Item_param::get_out_param_info() const { return m_out_param_info; }
+const Send_field *Item_param::get_out_param_info() const
+{
+  return m_out_param_info;
+}
 
 /**
   Fill meta-data information for the corresponding column in a result set.
@@ -4318,15 +4357,23 @@ bool Item_copy_string::get_date(MYSQL_TIME *ltime, my_time_flags_t fuzzydate)
   return get_date_from_string(ltime, fuzzydate);
 }
 
-bool Item_copy_string::get_time(MYSQL_TIME *ltime) { return get_time_from_string(ltime); }
+bool Item_copy_string::get_time(MYSQL_TIME *ltime)
+{
+  return get_time_from_string(ltime);
+}
 
 /****************************************************************************
  Item_copy_json
  ****************************************************************************/
 
-Item_copy_json::Item_copy_json(Item *item) : Item_copy(item), m_value(new Json_wrapper()) {}
+Item_copy_json::Item_copy_json(Item *item) : Item_copy(item), m_value(new Json_wrapper())
+{
+}
 
-Item_copy_json::~Item_copy_json() { delete m_value; }
+Item_copy_json::~Item_copy_json()
+{
+  delete m_value;
+}
 
 bool Item_copy_json::copy(const THD *thd)
 {
@@ -5607,7 +5654,10 @@ Item_equal *Item_field::find_item_equal(COND_EQUAL *cond_equal)
     FALSE  otherwise
 */
 
-bool Item_field::subst_argument_checker(uchar **arg) { return (result_type() != STRING_RESULT) || (*arg); }
+bool Item_field::subst_argument_checker(uchar **arg)
+{
+  return (result_type() != STRING_RESULT) || (*arg);
+}
 
 /**
   Convert a numeric value to a zero-filled string
@@ -5772,7 +5822,10 @@ void Item::init_make_field(Send_field *tmp_field, enum enum_field_types field_ty
   tmp_field->field = false;
 }
 
-void Item::make_field(Send_field *tmp_field) { init_make_field(tmp_field, field_type()); }
+void Item::make_field(Send_field *tmp_field)
+{
+  init_make_field(tmp_field, field_type());
+}
 
 enum_field_types Item::string_field_type() const
 {
@@ -5784,7 +5837,10 @@ enum_field_types Item::string_field_type() const
   return f_type;
 }
 
-void Item_empty_string::make_field(Send_field *tmp_field) { init_make_field(tmp_field, string_field_type()); }
+void Item_empty_string::make_field(Send_field *tmp_field)
+{
+  init_make_field(tmp_field, string_field_type());
+}
 
 enum_field_types Item::field_type() const
 {
@@ -6161,7 +6217,10 @@ type_conversion_status Item_null::save_in_field_inner(Field *field, bool no_conv
     1	 Field doesn't support NULL values
 */
 
-type_conversion_status Item_null::save_safe_in_field(Field *field) { return set_field_to_null(field); }
+type_conversion_status Item_null::save_safe_in_field(Field *field)
+{
+  return set_field_to_null(field);
+}
 
 type_conversion_status Item::save_in_field(Field *field, bool no_conversions)
 {
@@ -6552,9 +6611,15 @@ inline uint char_val(char X)
   return (uint)(X >= '0' && X <= '9' ? X - '0' : X >= 'A' && X <= 'Z' ? X - 'A' + 10 : X - 'a' + 10);
 }
 
-Item_hex_string::Item_hex_string() { hex_string_init("", 0); }
+Item_hex_string::Item_hex_string()
+{
+  hex_string_init("", 0);
+}
 
-Item_hex_string::Item_hex_string(const char *str, uint str_length) { hex_string_init(str, str_length); }
+Item_hex_string::Item_hex_string(const char *str, uint str_length)
+{
+  hex_string_init(str, str_length);
+}
 
 Item_hex_string::Item_hex_string(const POS &pos, const LEX_STRING &literal) : super(pos)
 {
@@ -6631,7 +6696,8 @@ longlong Item_hex_string::val_int()
 
   ptr = end - str_value.length();
   ulonglong value = 0;
-  for (; ptr != end; ptr++) value = (value << 8) + (ulonglong)(uchar)*ptr;
+  for (; ptr != end; ptr++)
+    value = (value << 8) + (ulonglong)(uchar)*ptr;
   return (longlong)value;
 }
 
@@ -6783,8 +6849,14 @@ class Item_json : public Item_basic_constant
     item_name = name;
     collation.set(coll);
   }
-  enum Type type() const { return STRING_ITEM; }
-  enum_field_types field_type() const { return MYSQL_TYPE_JSON; }
+  enum Type type() const
+  {
+    return STRING_ITEM;
+  }
+  enum_field_types field_type() const
+  {
+    return MYSQL_TYPE_JSON;
+  }
 
   /*
     The functions below don't get called currently, because Item_json
@@ -6798,14 +6870,23 @@ class Item_json : public Item_basic_constant
   */
 
   /* purecov: begin inspected */
-  enum Item_result result_type() const { return STRING_RESULT; }
+  enum Item_result result_type() const
+  {
+    return STRING_RESULT;
+  }
   bool val_json(Json_wrapper *result)
   {
     *result = m_value;
     return false;
   }
-  double val_real() { return m_value.coerce_real(item_name.ptr()); }
-  longlong val_int() { return m_value.coerce_int(item_name.ptr()); }
+  double val_real()
+  {
+    return m_value.coerce_real(item_name.ptr());
+  }
+  longlong val_int()
+  {
+    return m_value.coerce_int(item_name.ptr());
+  }
   String *val_str(String *str)
   {
     str->length(0);
@@ -6813,12 +6894,18 @@ class Item_json : public Item_basic_constant
       return error_str();
     return str;
   }
-  my_decimal *val_decimal(my_decimal *buf) { return m_value.coerce_decimal(buf, item_name.ptr()); }
+  my_decimal *val_decimal(my_decimal *buf)
+  {
+    return m_value.coerce_decimal(buf, item_name.ptr());
+  }
   bool get_date(MYSQL_TIME *ltime, my_time_flags_t fuzzydate)
   {
     return m_value.coerce_date(ltime, fuzzydate, item_name.ptr());
   }
-  bool get_time(MYSQL_TIME *ltime) { return m_value.coerce_time(ltime, item_name.ptr()); }
+  bool get_time(MYSQL_TIME *ltime)
+  {
+    return m_value.coerce_time(ltime, item_name.ptr());
+  }
   Item *clone_item()
   {
     Json_wrapper wr(m_value.clone_dom());
@@ -6831,7 +6918,10 @@ class Item_json : public Item_basic_constant
   Pack data in buffer for sending.
 */
 
-bool Item_null::send(Protocol *protocol, String *packet) { return protocol->store_null(); }
+bool Item_null::send(Protocol *protocol, String *packet)
+{
+  return protocol->store_null();
+}
 
 /**
   This is only called from items that is not of type item_field.
@@ -7124,7 +7214,10 @@ Item *Item_field::item_field_by_name_transformer(uchar *arg)
   return item;
 }
 
-bool Item_field::send(Protocol *protocol, String *buffer) { return protocol->store(result_field); }
+bool Item_field::send(Protocol *protocol, String *buffer)
+{
+  return protocol->store(result_field);
+}
 
 void Item_field::update_null_value()
 {
@@ -7833,7 +7926,10 @@ type_conversion_status Item_ref::save_in_field_inner(Field *to, bool no_conversi
   return res;
 }
 
-void Item_ref::save_org_in_field(Field *field) { (*ref)->save_org_in_field(field); }
+void Item_ref::save_org_in_field(Field *field)
+{
+  (*ref)->save_org_in_field(field);
+}
 
 void Item_ref::make_field(Send_field *field)
 {
@@ -7926,7 +8022,10 @@ bool Item_direct_ref::val_bool()
   return tmp;
 }
 
-bool Item_direct_ref::is_null() { return (*ref)->is_null(); }
+bool Item_direct_ref::is_null()
+{
+  return (*ref)->is_null();
+}
 
 bool Item_direct_ref::get_date(MYSQL_TIME *ltime, my_time_flags_t fuzzydate)
 {
@@ -8740,7 +8839,10 @@ int stored_field_cmp_to_item(THD *thd, Field *field, Item *item)
   return 0;
 }
 
-Item_cache *Item_cache::get_cache(const Item *item) { return get_cache(item, item->result_type()); }
+Item_cache *Item_cache::get_cache(const Item *item)
+{
+  return get_cache(item, item->result_type());
+}
 
 /**
   Get a cache item of given type.
@@ -9049,7 +9151,10 @@ bool Item_cache_datetime::get_time(MYSQL_TIME *ltime)
   return true;
 }
 
-double Item_cache_datetime::val_real() { return val_real_from_decimal(); }
+double Item_cache_datetime::val_real()
+{
+  return val_real_from_decimal();
+}
 
 longlong Item_cache_datetime::val_time_temporal()
 {
@@ -9079,11 +9184,19 @@ longlong Item_cache_datetime::val_date_temporal()
   return int_value;
 }
 
-longlong Item_cache_datetime::val_int() { return val_int_from_decimal(); }
+longlong Item_cache_datetime::val_int()
+{
+  return val_int_from_decimal();
+}
 
-Item_cache_json::Item_cache_json() : Item_cache(MYSQL_TYPE_JSON), m_value(new Json_wrapper()) {}
+Item_cache_json::Item_cache_json() : Item_cache(MYSQL_TYPE_JSON), m_value(new Json_wrapper())
+{
+}
 
-Item_cache_json::~Item_cache_json() { delete m_value; }
+Item_cache_json::~Item_cache_json()
+{
+  delete m_value;
+}
 
 /**
   Read the JSON value and cache it.
@@ -9117,7 +9230,10 @@ bool Item_cache_json::val_json(Json_wrapper *wr)
 }
 
 /// Get the name of the cached field of an Item_cache_json instance.
-inline static const char *whence(const Field *cached_field) { return cached_field ? cached_field->field_name : "?"; }
+inline static const char *whence(const Field *cached_field)
+{
+  return cached_field ? cached_field->field_name : "?";
+}
 
 String *Item_cache_json::val_str(String *tmp)
 {
@@ -9403,7 +9519,8 @@ void Item_cache_row::store(Item *item)
     null_value = TRUE;
     return;
   }
-  for (uint i = 0; i < item_count; i++) values[i]->store(item->element_index(i));
+  for (uint i = 0; i < item_count; i++)
+    values[i]->store(item->element_index(i));
 }
 
 bool Item_cache_row::cache_value()
@@ -9478,7 +9595,8 @@ void Item_cache_row::bring_value()
     return;
   example->bring_value();
   null_value = example->null_value;
-  for (uint i = 0; i < item_count; i++) values[i]->bring_value();
+  for (uint i = 0; i < item_count; i++)
+    values[i]->bring_value();
 }
 
 Item_type_holder::Item_type_holder(THD *thd, Item *item)
@@ -9505,7 +9623,10 @@ Item_type_holder::Item_type_holder(THD *thd, Item *item)
     Item_result (type of internal MySQL expression result)
 */
 
-Item_result Item_type_holder::result_type() const { return Field::result_merge_type(fld_type); }
+Item_result Item_type_holder::result_type() const
+{
+  return Field::result_merge_type(fld_type);
+}
 
 /**
   Find real field type of item.

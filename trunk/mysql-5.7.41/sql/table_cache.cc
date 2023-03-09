@@ -40,7 +40,10 @@ extern "C" uchar *table_cache_key(const uchar *record, size_t *length, my_bool n
   return (uchar *)share->table_cache_key.str;
 }
 
-extern "C" void table_cache_free_entry(Table_cache_element *element) { delete element; }
+extern "C" void table_cache_free_entry(Table_cache_element *element)
+{
+  delete element;
+}
 
 /**
   Initialize instance of table cache.
@@ -213,7 +216,8 @@ bool Table_cache_manager::init()
   {
     if (m_table_cache[i].init())
     {
-      for (uint j = 0; j < i; j++) m_table_cache[i].destroy();
+      for (uint j = 0; j < i; j++)
+        m_table_cache[i].destroy();
       return true;
     }
   }
@@ -225,7 +229,8 @@ bool Table_cache_manager::init()
 
 void Table_cache_manager::destroy()
 {
-  for (uint i = 0; i < table_cache_instances; i++) m_table_cache[i].destroy();
+  for (uint i = 0; i < table_cache_instances; i++)
+    m_table_cache[i].destroy();
 }
 
 /**
@@ -239,7 +244,8 @@ uint Table_cache_manager::cached_tables()
 {
   uint result = 0;
 
-  for (uint i = 0; i < table_cache_instances; i++) result += m_table_cache[i].cached_tables();
+  for (uint i = 0; i < table_cache_instances; i++)
+    result += m_table_cache[i].cached_tables();
 
   return result;
 }
@@ -251,7 +257,8 @@ uint Table_cache_manager::cached_tables()
 
 void Table_cache_manager::lock_all_and_tdc()
 {
-  for (uint i = 0; i < table_cache_instances; i++) m_table_cache[i].lock();
+  for (uint i = 0; i < table_cache_instances; i++)
+    m_table_cache[i].lock();
 
   mysql_mutex_lock(&LOCK_open);
 }
@@ -265,7 +272,8 @@ void Table_cache_manager::unlock_all_and_tdc()
 {
   mysql_mutex_unlock(&LOCK_open);
 
-  for (uint i = 0; i < table_cache_instances; i++) m_table_cache[i].unlock();
+  for (uint i = 0; i < table_cache_instances; i++)
+    m_table_cache[i].unlock();
 }
 
 /**
@@ -274,7 +282,8 @@ void Table_cache_manager::unlock_all_and_tdc()
 
 void Table_cache_manager::assert_owner_all()
 {
-  for (uint i = 0; i < table_cache_instances; i++) m_table_cache[i].assert_owner();
+  for (uint i = 0; i < table_cache_instances; i++)
+    m_table_cache[i].assert_owner();
 }
 
 /**
@@ -351,7 +360,8 @@ void Table_cache_manager::free_all_unused_tables()
 {
   assert_owner_all_and_tdc();
 
-  for (uint i = 0; i < table_cache_instances; i++) m_table_cache[i].free_all_unused_tables();
+  for (uint i = 0; i < table_cache_instances; i++)
+    m_table_cache[i].free_all_unused_tables();
 }
 
 #ifndef NDEBUG
@@ -363,6 +373,7 @@ void Table_cache_manager::print_tables()
 {
   puts("DB             Table                            Version  Thread  Open  Lock");
 
-  for (uint i = 0; i < table_cache_instances; i++) m_table_cache[i].print_tables();
+  for (uint i = 0; i < table_cache_instances; i++)
+    m_table_cache[i].print_tables();
 }
 #endif

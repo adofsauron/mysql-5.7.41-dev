@@ -266,7 +266,9 @@ static bool subst_spvars(THD *thd, sp_instr *instr, LEX_STRING *query_str)
 class SP_instr_error_handler : public Internal_error_handler
 {
  public:
-  SP_instr_error_handler() : cts_table_exists_error(false) {}
+  SP_instr_error_handler() : cts_table_exists_error(false)
+  {
+  }
 
   virtual bool handle_condition(THD *thd, uint sql_errno, const char *, Sql_condition::enum_severity_level *,
                                 const char *)
@@ -1413,7 +1415,8 @@ uint sp_instr_hpush_jump::opt_mark(sp_head *sp, List< sp_instr > *leads)
   */
   if (m_handler->type == sp_handler::CONTINUE)
   {
-    for (uint scope_ip = m_dest + 1; scope_ip <= m_opt_hpop; scope_ip++) sp->add_mark_lead(scope_ip, leads);
+    for (uint scope_ip = m_dest + 1; scope_ip <= m_opt_hpop; scope_ip++)
+      sp->add_mark_lead(scope_ip, leads);
   }
 
   return get_ip() + 1;

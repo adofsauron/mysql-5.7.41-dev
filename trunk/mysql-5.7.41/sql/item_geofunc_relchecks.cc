@@ -148,7 +148,9 @@ Item_func_spatial_rel::Item_func_spatial_rel(const POS &pos, Item *a, Item *b, e
   spatial_rel = sp_rel;
 }
 
-Item_func_spatial_rel::~Item_func_spatial_rel() {}
+Item_func_spatial_rel::~Item_func_spatial_rel()
+{
+}
 
 const char *Item_func_spatial_rel::func_name() const
 {
@@ -576,7 +578,8 @@ int Item_func_spatial_rel::geocol_relcheck_within(const typename BG_geometry_col
     {
       if (no_fill)
       {
-        for (size_t j = 0; j < i; j++) bggc.fill((*gv1)[j]);
+        for (size_t j = 0; j < i; j++)
+          bggc.fill((*gv1)[j]);
         no_fill = false;
       }
 

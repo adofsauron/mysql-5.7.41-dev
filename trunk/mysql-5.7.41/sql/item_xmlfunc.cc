@@ -112,7 +112,9 @@ typedef struct my_xpath_st
 class XPathFilter : public String
 {
  public:
-  XPathFilter() : String() {}
+  XPathFilter() : String()
+  {
+  }
   inline bool append_element(MY_XPATH_FLT *flt)
   {
     String *str = this;
@@ -134,8 +136,14 @@ class XPathFilter : public String
     add.size = size;
     return append_element(&add);
   }
-  inline MY_XPATH_FLT *element(uint i) { return (MY_XPATH_FLT *)(ptr() + i * sizeof(MY_XPATH_FLT)); }
-  inline size_t numelements() { return length() / sizeof(MY_XPATH_FLT); }
+  inline MY_XPATH_FLT *element(uint i)
+  {
+    return (MY_XPATH_FLT *)(ptr() + i * sizeof(MY_XPATH_FLT));
+  }
+  inline size_t numelements()
+  {
+    return length() / sizeof(MY_XPATH_FLT);
+  }
 };
 
 /*
@@ -152,10 +160,18 @@ class Item_nodeset_func : public Item_str_func
  public:
   String *pxml;
   String context_cache;
-  Item_nodeset_func(String *pxml_arg) : Item_str_func(), pxml(pxml_arg) {}
-  Item_nodeset_func(Item *a, String *pxml_arg) : Item_str_func(a), pxml(pxml_arg) {}
-  Item_nodeset_func(Item *a, Item *b, String *pxml_arg) : Item_str_func(a, b), pxml(pxml_arg) {}
-  Item_nodeset_func(Item *a, Item *b, Item *c, String *pxml_arg) : Item_str_func(a, b, c), pxml(pxml_arg) {}
+  Item_nodeset_func(String *pxml_arg) : Item_str_func(), pxml(pxml_arg)
+  {
+  }
+  Item_nodeset_func(Item *a, String *pxml_arg) : Item_str_func(a), pxml(pxml_arg)
+  {
+  }
+  Item_nodeset_func(Item *a, Item *b, String *pxml_arg) : Item_str_func(a, b), pxml(pxml_arg)
+  {
+  }
+  Item_nodeset_func(Item *a, Item *b, Item *c, String *pxml_arg) : Item_str_func(a, b, c), pxml(pxml_arg)
+  {
+  }
   void prepare_nodes()
   {
     nodebeg = (MY_XML_NODE *)pxml->ptr();
@@ -170,7 +186,10 @@ class Item_nodeset_func : public Item_str_func
     fltend = (MY_XPATH_FLT *)(res->ptr() + res->length());
     nodeset->length(0);
   }
-  enum Type type() const { return XPATH_NODESET; }
+  enum Type type() const
+  {
+    return XPATH_NODESET;
+  }
   String *val_str(String *str)
   {
     prepare_nodes();
@@ -204,7 +223,10 @@ class Item_nodeset_func : public Item_str_func
     }
     return str;
   }
-  enum Item_result result_type() const { return STRING_RESULT; }
+  enum Item_result result_type() const
+  {
+    return STRING_RESULT;
+  }
   void fix_length_and_dec()
   {
     max_length = MAX_BLOB_WIDTH;
@@ -213,15 +235,23 @@ class Item_nodeset_func : public Item_str_func
     used_tables_cache = RAND_TABLE_BIT;
     const_item_cache = false;
   }
-  const char *func_name() const { return "nodeset"; }
+  const char *func_name() const
+  {
+    return "nodeset";
+  }
 };
 
 /* Returns an XML root */
 class Item_nodeset_func_rootelement : public Item_nodeset_func
 {
  public:
-  Item_nodeset_func_rootelement(String *pxml) : Item_nodeset_func(pxml) {}
-  const char *func_name() const { return "xpath_rootelement"; }
+  Item_nodeset_func_rootelement(String *pxml) : Item_nodeset_func(pxml)
+  {
+  }
+  const char *func_name() const
+  {
+    return "xpath_rootelement";
+  }
   String *val_nodeset(String *nodeset);
 };
 
@@ -229,8 +259,13 @@ class Item_nodeset_func_rootelement : public Item_nodeset_func
 class Item_nodeset_func_union : public Item_nodeset_func
 {
  public:
-  Item_nodeset_func_union(Item *a, Item *b, String *pxml) : Item_nodeset_func(a, b, pxml) {}
-  const char *func_name() const { return "xpath_union"; }
+  Item_nodeset_func_union(Item *a, Item *b, String *pxml) : Item_nodeset_func(a, b, pxml)
+  {
+  }
+  const char *func_name() const
+  {
+    return "xpath_union";
+  }
   String *val_nodeset(String *nodeset);
 };
 
@@ -245,7 +280,10 @@ class Item_nodeset_func_axisbyname : public Item_nodeset_func
       : Item_nodeset_func(a, pxml), node_name(n_arg), node_namelen(l_arg)
   {
   }
-  const char *func_name() const { return "xpath_axisbyname"; }
+  const char *func_name() const
+  {
+    return "xpath_axisbyname";
+  }
   bool validname(MY_XML_NODE *n)
   {
     if (node_name[0] == '*')
@@ -262,7 +300,10 @@ class Item_nodeset_func_selfbyname : public Item_nodeset_func_axisbyname
       : Item_nodeset_func_axisbyname(a, n_arg, l_arg, pxml)
   {
   }
-  const char *func_name() const { return "xpath_selfbyname"; }
+  const char *func_name() const
+  {
+    return "xpath_selfbyname";
+  }
   String *val_nodeset(String *nodeset);
 };
 
@@ -274,7 +315,10 @@ class Item_nodeset_func_childbyname : public Item_nodeset_func_axisbyname
       : Item_nodeset_func_axisbyname(a, n_arg, l_arg, pxml)
   {
   }
-  const char *func_name() const { return "xpath_childbyname"; }
+  const char *func_name() const
+  {
+    return "xpath_childbyname";
+  }
   String *val_nodeset(String *nodeset);
 };
 
@@ -288,7 +332,10 @@ class Item_nodeset_func_descendantbyname : public Item_nodeset_func_axisbyname
       : Item_nodeset_func_axisbyname(a, n_arg, l_arg, pxml), need_self(need_self_arg)
   {
   }
-  const char *func_name() const { return "xpath_descendantbyname"; }
+  const char *func_name() const
+  {
+    return "xpath_descendantbyname";
+  }
   String *val_nodeset(String *nodeset);
 };
 
@@ -302,7 +349,10 @@ class Item_nodeset_func_ancestorbyname : public Item_nodeset_func_axisbyname
       : Item_nodeset_func_axisbyname(a, n_arg, l_arg, pxml), need_self(need_self_arg)
   {
   }
-  const char *func_name() const { return "xpath_ancestorbyname"; }
+  const char *func_name() const
+  {
+    return "xpath_ancestorbyname";
+  }
   String *val_nodeset(String *nodeset);
 };
 
@@ -314,7 +364,10 @@ class Item_nodeset_func_parentbyname : public Item_nodeset_func_axisbyname
       : Item_nodeset_func_axisbyname(a, n_arg, l_arg, pxml)
   {
   }
-  const char *func_name() const { return "xpath_parentbyname"; }
+  const char *func_name() const
+  {
+    return "xpath_parentbyname";
+  }
   String *val_nodeset(String *nodeset);
 };
 
@@ -326,7 +379,10 @@ class Item_nodeset_func_attributebyname : public Item_nodeset_func_axisbyname
       : Item_nodeset_func_axisbyname(a, n_arg, l_arg, pxml)
   {
   }
-  const char *func_name() const { return "xpath_attributebyname"; }
+  const char *func_name() const
+  {
+    return "xpath_attributebyname";
+  }
   String *val_nodeset(String *nodeset);
 };
 
@@ -338,8 +394,13 @@ class Item_nodeset_func_attributebyname : public Item_nodeset_func_axisbyname
 class Item_nodeset_func_predicate : public Item_nodeset_func
 {
  public:
-  Item_nodeset_func_predicate(Item *a, Item *b, String *pxml) : Item_nodeset_func(a, b, pxml) {}
-  const char *func_name() const { return "xpath_predicate"; }
+  Item_nodeset_func_predicate(Item *a, Item *b, String *pxml) : Item_nodeset_func(a, b, pxml)
+  {
+  }
+  const char *func_name() const
+  {
+    return "xpath_predicate";
+  }
   String *val_nodeset(String *nodeset);
 };
 
@@ -347,8 +408,13 @@ class Item_nodeset_func_predicate : public Item_nodeset_func
 class Item_nodeset_func_elementbyindex : public Item_nodeset_func
 {
  public:
-  Item_nodeset_func_elementbyindex(Item *a, Item *b, String *pxml) : Item_nodeset_func(a, b, pxml) {}
-  const char *func_name() const { return "xpath_elementbyindex"; }
+  Item_nodeset_func_elementbyindex(Item *a, Item *b, String *pxml) : Item_nodeset_func(a, b, pxml)
+  {
+  }
+  const char *func_name() const
+  {
+    return "xpath_elementbyindex";
+  }
   String *val_nodeset(String *nodeset);
 };
 
@@ -359,9 +425,17 @@ class Item_nodeset_func_elementbyindex : public Item_nodeset_func
 class Item_bool : public Item_int
 {
  public:
-  Item_bool(int32 i) : Item_int(i) {}
-  const char *func_name() const { return "xpath_bool"; }
-  bool is_bool_func() { return 1; }
+  Item_bool(int32 i) : Item_int(i)
+  {
+  }
+  const char *func_name() const
+  {
+    return "xpath_bool";
+  }
+  bool is_bool_func()
+  {
+    return 1;
+  }
 };
 
 /*
@@ -375,9 +449,17 @@ class Item_xpath_cast_bool : public Item_int_func
   String tmp_value;
 
  public:
-  Item_xpath_cast_bool(Item *a) : Item_int_func(a) {}
-  const char *func_name() const { return "xpath_cast_bool"; }
-  bool is_bool_func() { return 1; }
+  Item_xpath_cast_bool(Item *a) : Item_int_func(a)
+  {
+  }
+  const char *func_name() const
+  {
+    return "xpath_cast_bool";
+  }
+  bool is_bool_func()
+  {
+    return 1;
+  }
   longlong val_int()
   {
     if (args[0]->type() == XPATH_NODESET)
@@ -395,9 +477,17 @@ class Item_xpath_cast_bool : public Item_int_func
 class Item_xpath_cast_number : public Item_real_func
 {
  public:
-  Item_xpath_cast_number(Item *a) : Item_real_func(a) {}
-  const char *func_name() const { return "xpath_cast_number"; }
-  virtual double val_real() { return args[0]->val_real(); }
+  Item_xpath_cast_number(Item *a) : Item_real_func(a)
+  {
+  }
+  const char *func_name() const
+  {
+    return "xpath_cast_number";
+  }
+  virtual double val_real()
+  {
+    return args[0]->val_real();
+  }
 };
 
 /*
@@ -407,9 +497,17 @@ class Item_nodeset_context_cache : public Item_nodeset_func
 {
  public:
   String *string_cache;
-  Item_nodeset_context_cache(String *str_arg, String *pxml) : Item_nodeset_func(pxml), string_cache(str_arg) {}
-  String *val_nodeset(String *res) { return string_cache; }
-  void fix_length_and_dec() { max_length = MAX_BLOB_WIDTH; }
+  Item_nodeset_context_cache(String *str_arg, String *pxml) : Item_nodeset_func(pxml), string_cache(str_arg)
+  {
+  }
+  String *val_nodeset(String *res)
+  {
+    return string_cache;
+  }
+  void fix_length_and_dec()
+  {
+    max_length = MAX_BLOB_WIDTH;
+  }
 };
 
 class Item_func_xpath_position : public Item_int_func
@@ -417,9 +515,17 @@ class Item_func_xpath_position : public Item_int_func
   String tmp_value;
 
  public:
-  Item_func_xpath_position(Item *a) : Item_int_func(a) {}
-  const char *func_name() const { return "xpath_position"; }
-  void fix_length_and_dec() { max_length = 10; }
+  Item_func_xpath_position(Item *a) : Item_int_func(a)
+  {
+  }
+  const char *func_name() const
+  {
+    return "xpath_position";
+  }
+  void fix_length_and_dec()
+  {
+    max_length = 10;
+  }
   longlong val_int()
   {
     String *flt = args[0]->val_nodeset(&tmp_value);
@@ -434,9 +540,17 @@ class Item_func_xpath_count : public Item_int_func
   String tmp_value;
 
  public:
-  Item_func_xpath_count(Item *a) : Item_int_func(a) {}
-  const char *func_name() const { return "xpath_count"; }
-  void fix_length_and_dec() { max_length = 10; }
+  Item_func_xpath_count(Item *a) : Item_int_func(a)
+  {
+  }
+  const char *func_name() const
+  {
+    return "xpath_count";
+  }
+  void fix_length_and_dec()
+  {
+    max_length = 10;
+  }
   longlong val_int()
   {
     uint predicate_supplied_context_size;
@@ -453,9 +567,14 @@ class Item_func_xpath_sum : public Item_real_func
   String tmp_value;
 
  public:
-  Item_func_xpath_sum(Item *a, String *p) : Item_real_func(a), pxml(p) {}
+  Item_func_xpath_sum(Item *a, String *p) : Item_real_func(a), pxml(p)
+  {
+  }
 
-  const char *func_name() const { return "xpath_sum"; }
+  const char *func_name() const
+  {
+    return "xpath_sum";
+  }
   double val_real()
   {
     double sum = 0;
@@ -496,9 +615,18 @@ class Item_nodeset_to_const_comparator : public Item_bool_func
   Item_nodeset_to_const_comparator(Item *nodeset, Item *cmpfunc, String *p) : Item_bool_func(nodeset, cmpfunc), pxml(p)
   {
   }
-  enum Type type() const { return XPATH_NODESET_CMP; };
-  const char *func_name() const { return "xpath_nodeset_to_const_comparator"; }
-  bool is_bool_func() { return 1; }
+  enum Type type() const
+  {
+    return XPATH_NODESET_CMP;
+  };
+  const char *func_name() const
+  {
+    return "xpath_nodeset_to_const_comparator";
+  }
+  bool is_bool_func()
+  {
+    return 1;
+  }
 
   longlong val_int()
   {
@@ -550,11 +678,13 @@ String *Item_nodeset_func_union::val_nodeset(String *nodeset)
 
   fltbeg = (MY_XPATH_FLT *)s0->ptr();
   fltend = (MY_XPATH_FLT *)(s0->ptr() + s0->length());
-  for (flt = fltbeg; flt < fltend; flt++) both[flt->num] = 1;
+  for (flt = fltbeg; flt < fltend; flt++)
+    both[flt->num] = 1;
 
   fltbeg = (MY_XPATH_FLT *)s1->ptr();
   fltend = (MY_XPATH_FLT *)(s1->ptr() + s1->length());
-  for (flt = fltbeg; flt < fltend; flt++) both[flt->num] = 1;
+  for (flt = fltbeg; flt < fltend; flt++)
+    both[flt->num] = 1;
 
   nodeset->length(0);
   for (uint i = 0, pos = 0; i < num_nodes; i++)
@@ -1045,20 +1175,35 @@ static int my_xpath_keyword(MY_XPATH *x, struct my_xpath_keyword_names_st *keywo
   Functions to create an item, a-la those in item_create.cc
 */
 
-static Item *create_func_true(MY_XPATH *xpath, Item **args, uint nargs) { return new Item_bool(1); }
+static Item *create_func_true(MY_XPATH *xpath, Item **args, uint nargs)
+{
+  return new Item_bool(1);
+}
 
-static Item *create_func_false(MY_XPATH *xpath, Item **args, uint nargs) { return new Item_bool(0); }
+static Item *create_func_false(MY_XPATH *xpath, Item **args, uint nargs)
+{
+  return new Item_bool(0);
+}
 
 static Item *create_func_not(MY_XPATH *xpath, Item **args, uint nargs)
 {
   return new Item_func_not(nodeset2bool(xpath, args[0]));
 }
 
-static Item *create_func_ceiling(MY_XPATH *xpath, Item **args, uint nargs) { return new Item_func_ceiling(args[0]); }
+static Item *create_func_ceiling(MY_XPATH *xpath, Item **args, uint nargs)
+{
+  return new Item_func_ceiling(args[0]);
+}
 
-static Item *create_func_floor(MY_XPATH *xpath, Item **args, uint nargs) { return new Item_func_floor(args[0]); }
+static Item *create_func_floor(MY_XPATH *xpath, Item **args, uint nargs)
+{
+  return new Item_func_floor(args[0]);
+}
 
-static Item *create_func_bool(MY_XPATH *xpath, Item **args, uint nargs) { return new Item_xpath_cast_bool(args[0]); }
+static Item *create_func_bool(MY_XPATH *xpath, Item **args, uint nargs)
+{
+  return new Item_xpath_cast_bool(args[0]);
+}
 
 static Item *create_func_number(MY_XPATH *xpath, Item **args, uint nargs)
 {
@@ -1219,9 +1364,15 @@ static void my_xpath_lex_init(MY_XPATH_LEX *lex, const char *str, const char *st
 }
 
 /* Initialize an XPath query parser */
-static void my_xpath_init(MY_XPATH *xpath) { memset(xpath, 0, sizeof(xpath[0])); }
+static void my_xpath_init(MY_XPATH *xpath)
+{
+  memset(xpath, 0, sizeof(xpath[0]));
+}
 
-static int my_xdigit(int c) { return ((c) >= '0' && (c) <= '9'); }
+static int my_xdigit(int c)
+{
+  return ((c) >= '0' && (c) <= '9');
+}
 
 /*
   Scan the next token
@@ -1866,7 +2017,10 @@ static int my_xpath_parse_PathExpr(MY_XPATH *xpath)
     0 - failure
 
 */
-static int my_xpath_parse_FilterExpr(MY_XPATH *xpath) { return my_xpath_parse_PrimaryExpr(xpath); }
+static int my_xpath_parse_FilterExpr(MY_XPATH *xpath)
+{
+  return my_xpath_parse_PrimaryExpr(xpath);
+}
 
 /*
   Scan Or Expression

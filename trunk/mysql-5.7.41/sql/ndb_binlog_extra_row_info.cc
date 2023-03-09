@@ -35,7 +35,10 @@ Ndb_binlog_extra_row_info::Ndb_binlog_extra_row_info()
   buff[EXTRA_ROW_INFO_FORMAT_OFFSET] = ERIF_NDB;
 }
 
-void Ndb_binlog_extra_row_info::setFlags(Uint16 _flags) { flags = _flags; }
+void Ndb_binlog_extra_row_info::setFlags(Uint16 _flags)
+{
+  flags = _flags;
+}
 
 void Ndb_binlog_extra_row_info::setTransactionId(Uint64 _transactionId)
 {
@@ -43,7 +46,10 @@ void Ndb_binlog_extra_row_info::setTransactionId(Uint64 _transactionId)
   transactionId = _transactionId;
 };
 
-void Ndb_binlog_extra_row_info::setConflictFlags(Uint16 _conflictFlags) { conflictFlags = _conflictFlags; }
+void Ndb_binlog_extra_row_info::setConflictFlags(Uint16 _conflictFlags)
+{
+  conflictFlags = _conflictFlags;
+}
 
 int Ndb_binlog_extra_row_info::loadFromBuffer(const uchar *extra_row_info)
 {

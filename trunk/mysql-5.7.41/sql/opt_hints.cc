@@ -114,7 +114,8 @@ void Opt_hints::print(THD *thd, String *str, enum_query_type query_type)
     }
   }
 
-  for (uint i = 0; i < child_array.size(); i++) child_array[i]->print(thd, str, query_type);
+  for (uint i = 0; i < child_array.size(); i++)
+    child_array[i]->print(thd, str, query_type);
 }
 
 void Opt_hints::append_hint_type(String *str, opt_hints_enum type)
@@ -149,7 +150,8 @@ void Opt_hints::check_unresolved(THD *thd)
 
   if (!is_all_resolved())
   {
-    for (uint i = 0; i < child_array.size(); i++) child_array[i]->check_unresolved(thd);
+    for (uint i = 0; i < child_array.size(); i++)
+      child_array[i]->check_unresolved(thd);
   }
 }
 

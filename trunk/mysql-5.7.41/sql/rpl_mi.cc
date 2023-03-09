@@ -292,7 +292,10 @@ err:
   DBUG_RETURN(1);
 }
 
-void Master_info::set_relay_log_info(Relay_log_info *info) { rli = info; }
+void Master_info::set_relay_log_info(Relay_log_info *info)
+{
+  rli = info;
+}
 
 /**
   Creates or reads information from the repository, initializing the
@@ -338,7 +341,10 @@ err:
   DBUG_RETURN(1);
 }
 
-size_t Master_info::get_number_info_mi_fields() { return sizeof(info_mi_fields) / sizeof(info_mi_fields[0]); }
+size_t Master_info::get_number_info_mi_fields()
+{
+  return sizeof(info_mi_fields) / sizeof(info_mi_fields[0]);
+}
 
 uint Master_info::get_channel_field_num()
 {
@@ -346,7 +352,10 @@ uint Master_info::get_channel_field_num()
   return channel_field;
 }
 
-const uint *Master_info::get_table_pk_field_indexes() { return info_mi_table_pk_field_indexes; }
+const uint *Master_info::get_table_pk_field_indexes()
+{
+  return info_mi_table_pk_field_indexes;
+}
 
 bool Master_info::read_info(Rpl_info_handler *from)
 {
@@ -606,7 +615,8 @@ void Master_info::wait_until_no_reference(THD *thd)
 
   thd->enter_stage(&stage_waiting_for_no_channel_reference, old_stage, __func__, __FILE__, __LINE__);
 
-  while (references.atomic_get() != 0) my_sleep(10000);
+  while (references.atomic_get() != 0)
+    my_sleep(10000);
 
   THD_STAGE_INFO(thd, *old_stage);
 }

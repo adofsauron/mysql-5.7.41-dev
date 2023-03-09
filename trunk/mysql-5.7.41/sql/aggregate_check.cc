@@ -417,7 +417,8 @@ bool Group_check::is_fd_on_source(Item *item)
       find_fd_in_cond(select->where_cond(), 0, false);
 
     table_map map_of_new_fds = 0;
-    for (; last_fd < fd.size(); ++last_fd) map_of_new_fds |= fd.at(last_fd)->used_tables();
+    for (; last_fd < fd.size(); ++last_fd)
+      map_of_new_fds |= fd.at(last_fd)->used_tables();
 
     if (map_of_new_fds != 0)  // something new, check again
     {
@@ -557,7 +558,8 @@ Item *Group_check::select_expression(uint idx)
 {
   List_iterator< Item > it_select_list_of_subq(*select->get_item_list());
   Item *expr_under;
-  for (uint k = 0; k <= idx; k++) expr_under = it_select_list_of_subq++;
+  for (uint k = 0; k <= idx; k++)
+    expr_under = it_select_list_of_subq++;
   assert(expr_under);
   return expr_under;
 }
@@ -990,7 +992,8 @@ void Group_check::find_fd_in_cond(Item *cond, table_map weak_tables, bool weak_s
       return;
     List_iterator< Item > li(*(cnd->argument_list()));
     Item *item;
-    while ((item = li++)) analyze_conjunct(cond, item, weak_tables, weak_side_upwards);
+    while ((item = li++))
+      analyze_conjunct(cond, item, weak_tables, weak_side_upwards);
   }
   else  // only one conjunct
     analyze_conjunct(cond, cond, weak_tables, weak_side_upwards);
@@ -1085,7 +1088,8 @@ void Group_check::to_opt_trace2(Opt_trace_context *ctx, Opt_trace_object *parent
   if (!fd.empty())
   {
     Opt_trace_array array(ctx, "columns");
-    for (uint j = 0; j < fd.size(); j++) array.add_utf8(fd.at(j)->full_name());
+    for (uint j = 0; j < fd.size(); j++)
+      array.add_utf8(fd.at(j)->full_name());
   }
   if (is_child())
   {

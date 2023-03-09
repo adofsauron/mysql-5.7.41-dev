@@ -745,9 +745,15 @@ int Gtid_state::save_gtids_of_last_binlog_into_table(bool on_rotation)
   DBUG_RETURN(ret);
 }
 
-int Gtid_state::read_gtid_executed_from_table() { return gtid_table_persistor->fetch_gtids(&executed_gtids); }
+int Gtid_state::read_gtid_executed_from_table()
+{
+  return gtid_table_persistor->fetch_gtids(&executed_gtids);
+}
 
-int Gtid_state::compress(THD *thd) { return gtid_table_persistor->compress(thd); }
+int Gtid_state::compress(THD *thd)
+{
+  return gtid_table_persistor->compress(thd);
+}
 
 #ifdef MYSQL_SERVER
 int Gtid_state::warn_or_err_on_modify_gtid_table(THD *thd, TABLE_LIST *table)

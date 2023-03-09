@@ -444,7 +444,10 @@ static LEX_STRING default_db_cl_name = NULL_STR;
   @return true if TRN-file does not exists, false otherwise.
 */
 
-bool Trigger_loader::check_trn_exists(const LEX_STRING &trn_path) { return access(trn_path.str, F_OK) != 0; }
+bool Trigger_loader::check_trn_exists(const LEX_STRING &trn_path)
+{
+  return access(trn_path.str, F_OK) != 0;
+}
 
 ///////////////////////////////////////////////////////////////////////////
 

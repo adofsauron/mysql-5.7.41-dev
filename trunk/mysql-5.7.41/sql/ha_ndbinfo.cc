@@ -150,7 +150,9 @@ struct ha_ndbinfo_impl
   // can only be reset by closing the table
   bool m_offline;
 
-  ha_ndbinfo_impl() : m_table(NULL), m_scan_op(NULL), m_first_use(true), m_offline(false) {}
+  ha_ndbinfo_impl() : m_table(NULL), m_scan_op(NULL), m_first_use(true), m_offline(false)
+  {
+  }
 };
 
 ha_ndbinfo::ha_ndbinfo(handlerton *hton, TABLE_SHARE *table_arg)
@@ -158,7 +160,10 @@ ha_ndbinfo::ha_ndbinfo(handlerton *hton, TABLE_SHARE *table_arg)
 {
 }
 
-ha_ndbinfo::~ha_ndbinfo() { delete &m_impl; }
+ha_ndbinfo::~ha_ndbinfo()
+{
+  delete &m_impl;
+}
 
 enum ndbinfo_error_codes
 {
@@ -295,9 +300,15 @@ int ha_ndbinfo::create(const char *name, TABLE *form, HA_CREATE_INFO *create_inf
   DBUG_RETURN(0);
 }
 
-bool ha_ndbinfo::is_open(void) const { return m_impl.m_table != NULL; }
+bool ha_ndbinfo::is_open(void) const
+{
+  return m_impl.m_table != NULL;
+}
 
-bool ha_ndbinfo::is_offline(void) const { return m_impl.m_offline; }
+bool ha_ndbinfo::is_offline(void) const
+{
+  return m_impl.m_offline;
+}
 
 int ha_ndbinfo::open(const char *name, int mode, uint test_if_locked)
 {
@@ -395,7 +406,8 @@ int ha_ndbinfo::open(const char *name, int mode, uint test_if_locked)
 
   /* Increase "ref_length" to allow a whole row to be stored in "ref" */
   ref_length = 0;
-  for (uint i = 0; i < table->s->fields; i++) ref_length += table->field[i]->pack_length();
+  for (uint i = 0; i < table->s->fields; i++)
+    ref_length += table->field[i]->pack_length();
   DBUG_PRINT("info", ("ref_length: %u", ref_length));
 
   DBUG_RETURN(0);
@@ -598,7 +610,8 @@ int ha_ndbinfo::rnd_pos(uchar *buf, uchar *pos)
 
   /* Copy the saved row into "buf" and set all fields to not null */
   memcpy(buf, pos, ref_length);
-  for (uint i = 0; i < table->s->fields; i++) table->field[i]->set_notnull();
+  for (uint i = 0; i < table->s->fields; i++)
+    table->field[i]->set_notnull();
 
   DBUG_RETURN(0);
 }

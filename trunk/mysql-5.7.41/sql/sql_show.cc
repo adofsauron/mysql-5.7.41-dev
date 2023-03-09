@@ -330,7 +330,10 @@ char *opt_ignore_db_dirs = NULL;
   we need the character sets initialized before setting up the hash.
 */
 
-void ignore_db_dirs_init() { ignore_db_dirs_array = new Ignore_db_dirs_array(key_memory_ignored_db); }
+void ignore_db_dirs_init()
+{
+  ignore_db_dirs_array = new Ignore_db_dirs_array(key_memory_ignored_db);
+}
 
 /**
   Retrieves the key (the string itself) from the LEX_STRING hash members.
@@ -388,7 +391,10 @@ bool push_ignored_db_dir(char *path)
   with an empty argument.
 */
 
-void ignore_db_dirs_reset() { my_free_container_pointers(*ignore_db_dirs_array); }
+void ignore_db_dirs_reset()
+{
+  my_free_container_pointers(*ignore_db_dirs_array);
+}
 
 /**
   Free the directory ignore option variables.
@@ -1982,7 +1988,10 @@ class thread_info : public Sql_alloc
 class thread_info_compare : public std::binary_function< const thread_info *, const thread_info *, bool >
 {
  public:
-  bool operator()(const thread_info *p1, const thread_info *p2) { return p1->thread_id < p2->thread_id; }
+  bool operator()(const thread_info *p1, const thread_info *p2)
+  {
+    return p1->thread_id < p2->thread_id;
+  }
 };
 
 static const char *thread_state_info(THD *tmp)
@@ -2219,7 +2228,9 @@ class Fill_process_list : public Do_THD_Impl
   TABLE_LIST *m_tables;
 
  public:
-  Fill_process_list(THD *thd_value, TABLE_LIST *tables_value) : m_client_thd(thd_value), m_tables(tables_value) {}
+  Fill_process_list(THD *thd_value, TABLE_LIST *tables_value) : m_client_thd(thd_value), m_tables(tables_value)
+  {
+  }
 
   virtual void operator()(THD *inspect_thd)
   {
@@ -2374,7 +2385,10 @@ bool status_vars_inited = 0;
 /* Version counter, protected by LOCK_STATUS. */
 ulonglong status_var_array_version = 0;
 
-static inline int show_var_cmp(const SHOW_VAR *var1, const SHOW_VAR *var2) { return strcmp(var1->name, var2->name); }
+static inline int show_var_cmp(const SHOW_VAR *var1, const SHOW_VAR *var2)
+{
+  return strcmp(var1->name, var2->name);
+}
 
 class Show_var_cmp : public std::binary_function< const st_mysql_show_var &, const st_mysql_show_var &, bool >
 {
@@ -2385,7 +2399,10 @@ class Show_var_cmp : public std::binary_function< const st_mysql_show_var &, con
   }
 };
 
-static inline bool is_show_undef(const st_mysql_show_var &var) { return var.type == SHOW_UNDEF; }
+static inline bool is_show_undef(const st_mysql_show_var &var)
+{
+  return var.type == SHOW_UNDEF;
+}
 
 /*
   Deletes all the SHOW_UNDEF elements from the array.
@@ -2424,7 +2441,8 @@ int add_status_vars(const SHOW_VAR *list)
 
   try
   {
-    while (list->name) all_status_vars.push_back(*list++);
+    while (list->name)
+      all_status_vars.push_back(*list++);
   }
   catch (const std::bad_alloc &)
   {
@@ -2469,7 +2487,10 @@ void reset_status_vars()
 /*
   Current version of the all_status_vars.
 */
-ulonglong get_status_vars_version(void) { return (status_var_array_version); }
+ulonglong get_status_vars_version(void)
+{
+  return (status_var_array_version);
+}
 
 /*
   catch-all cleanup function, cleans up everything no matter what
@@ -2516,7 +2537,8 @@ bool get_status_var(THD *thd, SHOW_VAR *list, const char *name, char *const valu
         Repeat as necessary, if new var is again SHOW_FUNC
        */
       SHOW_VAR tmp;
-      for (; list->type == SHOW_FUNC; list = &tmp) ((mysql_show_var_func)(list->value))(thd, &tmp, value);
+      for (; list->type == SHOW_FUNC; list = &tmp)
+        ((mysql_show_var_func)(list->value))(thd, &tmp, value);
 
       get_one_variable(thd, list, var_type, list->type, NULL, NULL, value, length);
       return TRUE;
@@ -2586,7 +2608,8 @@ void remove_status_vars(SHOW_VAR *list)
 
 inline void make_upper(char *buf)
 {
-  for (; *buf; buf++) *buf = my_toupper(system_charset_info, *buf);
+  for (; *buf; buf++)
+    *buf = my_toupper(system_charset_info, *buf);
 }
 
 /**
@@ -2822,7 +2845,8 @@ static bool show_status_array(THD *thd, const char *wild, SHOW_VAR *variables, e
       if var->type is SHOW_FUNC, call the function.
       Repeat as necessary, if new var is again SHOW_FUNC
     */
-    for (var = variables; var->type == SHOW_FUNC; var = &tmp) ((mysql_show_var_func)(var->value))(thd, &tmp, buff);
+    for (var = variables; var->type == SHOW_FUNC; var = &tmp)
+      ((mysql_show_var_func)(var->value))(thd, &tmp, buff);
 
     SHOW_TYPE show_type = var->type;
     if (show_type == SHOW_ARRAY)
@@ -2873,7 +2897,9 @@ end:
 class Add_status : public Do_THD_Impl
 {
  public:
-  Add_status(STATUS_VAR *value) : m_stat_var(value) {}
+  Add_status(STATUS_VAR *value) : m_stat_var(value)
+  {
+  }
   virtual void operator()(THD *thd)
   {
     if (!thd->status_var_aggregated)
@@ -4431,8 +4457,14 @@ int fill_schema_schemata(THD *thd, TABLE_LIST *tables, Item *cond)
   class free_tmp_mem_root
   {
    public:
-    free_tmp_mem_root() { init_sql_alloc(key_memory_fill_schema_schemata, &tmp_mem_root, TABLE_ALLOC_BLOCK_SIZE, 0); }
-    ~free_tmp_mem_root() { free_root(&tmp_mem_root, MYF(0)); }
+    free_tmp_mem_root()
+    {
+      init_sql_alloc(key_memory_fill_schema_schemata, &tmp_mem_root, TABLE_ALLOC_BLOCK_SIZE, 0);
+    }
+    ~free_tmp_mem_root()
+    {
+      free_root(&tmp_mem_root, MYF(0));
+    }
     MEM_ROOT tmp_mem_root;
   };
 
@@ -6929,7 +6961,10 @@ ST_SCHEMA_TABLE *find_schema_table(THD *thd, const char *table_name)
   DBUG_RETURN(NULL);
 }
 
-ST_SCHEMA_TABLE *get_schema_table(enum enum_schema_tables schema_table_idx) { return &schema_tables[schema_table_idx]; }
+ST_SCHEMA_TABLE *get_schema_table(enum enum_schema_tables schema_table_idx)
+{
+  return &schema_tables[schema_table_idx];
+}
 
 /**
   Create information_schema table using schema_table data.
@@ -7979,7 +8014,8 @@ ST_FIELD_INFO files_fields_info[] = {
 void init_fill_schema_files_row(TABLE *table)
 {
   int i;
-  for (i = 0; files_fields_info[i].field_name != NULL; i++) table->field[i]->set_null();
+  for (i = 0; files_fields_info[i].field_name != NULL; i++)
+    table->field[i]->set_null();
 
   table->field[IS_FILES_STATUS]->set_notnull();
   table->field[IS_FILES_STATUS]->store("NORMAL", 6, system_charset_info);

@@ -128,7 +128,10 @@ extern "C" int srv_session_info_killed(Srv_session *session)
   Returns the number opened sessions in thread initialized by srv_session
   service.
 */
-unsigned int srv_session_info_session_count() { return Srv_session::session_count(); }
+unsigned int srv_session_info_session_count()
+{
+  return Srv_session::session_count();
+}
 
 /**
   Returns the number opened sessions in thread initialized by srv_session
@@ -137,4 +140,7 @@ unsigned int srv_session_info_session_count() { return Srv_session::session_coun
   @param plugin Pointer to the plugin structure, passed to the plugin over
                 the plugin init function.
 */
-unsigned int srv_session_info_thread_count(const void *plugin) { return Srv_session::thread_count(plugin); }
+unsigned int srv_session_info_thread_count(const void *plugin)
+{
+  return Srv_session::thread_count(plugin);
+}

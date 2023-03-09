@@ -342,7 +342,8 @@ Item_sum::Item_sum(const POS &pos, PT_item_list *opt_list)
     List_iterator_fast< Item > li(opt_list->value);
     Item *item;
 
-    while ((item = li++)) args[i++] = item;
+    while ((item = li++))
+      args[i++] = item;
   }
   init_aggregator();
 }
@@ -373,7 +374,10 @@ Item_sum::Item_sum(THD *thd, Item_sum *item)
     set_aggregator(item->aggr->Aggrtype());
 }
 
-void Item_sum::mark_as_sum_func() { mark_as_sum_func(current_thd->lex->current_select()); }
+void Item_sum::mark_as_sum_func()
+{
+  mark_as_sum_func(current_thd->lex->current_select());
+}
 
 void Item_sum::mark_as_sum_func(st_select_lex *cur_select)
 {
@@ -397,7 +401,8 @@ void Item_sum::print(String *str, enum_query_type query_type)
 void Item_sum::fix_num_length_and_dec()
 {
   decimals = 0;
-  for (uint i = 0; i < arg_count; i++) set_if_bigger(decimals, args[i]->decimals);
+  for (uint i = 0; i < arg_count; i++)
+    set_if_bigger(decimals, args[i]->decimals);
   max_length = float_length(decimals);
 }
 
@@ -1167,13 +1172,25 @@ void Aggregator_distinct::endup()
   endup_done = TRUE;
 }
 
-String *Item_sum_num::val_str(String *str) { return val_string_from_real(str); }
+String *Item_sum_num::val_str(String *str)
+{
+  return val_string_from_real(str);
+}
 
-my_decimal *Item_sum_num::val_decimal(my_decimal *decimal_value) { return val_decimal_from_real(decimal_value); }
+my_decimal *Item_sum_num::val_decimal(my_decimal *decimal_value)
+{
+  return val_decimal_from_real(decimal_value);
+}
 
-String *Item_sum_int::val_str(String *str) { return val_string_from_int(str); }
+String *Item_sum_int::val_str(String *str)
+{
+  return val_string_from_int(str);
+}
 
-my_decimal *Item_sum_int::val_decimal(my_decimal *decimal_value) { return val_decimal_from_int(decimal_value); }
+my_decimal *Item_sum_int::val_decimal(my_decimal *decimal_value)
+{
+  return val_decimal_from_int(decimal_value);
+}
 
 bool Item_sum_num::fix_fields(THD *thd, Item **ref)
 {
@@ -1338,7 +1355,10 @@ Item_sum_sum::Item_sum_sum(THD *thd, Item_sum_sum *item)
     sum = item->sum;
 }
 
-Item *Item_sum_sum::copy_or_same(THD *thd) { return new (thd->mem_root) Item_sum_sum(thd, this); }
+Item *Item_sum_sum::copy_or_same(THD *thd)
+{
+  return new (thd->mem_root) Item_sum_sum(thd, this);
+}
 
 void Item_sum_sum::clear()
 {
@@ -1504,9 +1524,15 @@ Aggregator_distinct::~Aggregator_distinct()
   }
 }
 
-my_decimal *Aggregator_simple::arg_val_decimal(my_decimal *value) { return item_sum->args[0]->val_decimal(value); }
+my_decimal *Aggregator_simple::arg_val_decimal(my_decimal *value)
+{
+  return item_sum->args[0]->val_decimal(value);
+}
 
-double Aggregator_simple::arg_val_real() { return item_sum->args[0]->val_real(); }
+double Aggregator_simple::arg_val_real()
+{
+  return item_sum->args[0]->val_real();
+}
 
 bool Aggregator_simple::arg_is_null(bool use_null_value)
 {
@@ -1553,9 +1579,15 @@ bool Aggregator_distinct::arg_is_null(bool use_null_value)
                         : (item_sum->args[0]->maybe_null && item_sum->args[0]->is_null());
 }
 
-Item *Item_sum_count::copy_or_same(THD *thd) { return new (thd->mem_root) Item_sum_count(thd, this); }
+Item *Item_sum_count::copy_or_same(THD *thd)
+{
+  return new (thd->mem_root) Item_sum_count(thd, this);
+}
 
-void Item_sum_count::clear() { count = 0; }
+void Item_sum_count::clear()
+{
+  count = 0;
+}
 
 bool Item_sum_count::add()
 {
@@ -1605,7 +1637,10 @@ void Item_sum_avg::fix_length_and_dec()
   }
 }
 
-Item *Item_sum_avg::copy_or_same(THD *thd) { return new (thd->mem_root) Item_sum_avg(thd, this); }
+Item *Item_sum_avg::copy_or_same(THD *thd)
+{
+  return new (thd->mem_root) Item_sum_avg(thd, this);
+}
 
 Field *Item_sum_avg::create_tmp_field(bool group, TABLE *table)
 {
@@ -1704,7 +1739,10 @@ double Item_sum_std::val_real()
   return sqrt(nr);
 }
 
-Item *Item_sum_std::copy_or_same(THD *thd) { return new (thd->mem_root) Item_sum_std(thd, this); }
+Item *Item_sum_std::copy_or_same(THD *thd)
+{
+  return new (thd->mem_root) Item_sum_std(thd, this);
+}
 
 /*
   Variance
@@ -1782,7 +1820,10 @@ void Item_sum_variance::fix_length_and_dec()
   DBUG_VOID_RETURN;
 }
 
-Item *Item_sum_variance::copy_or_same(THD *thd) { return new (thd->mem_root) Item_sum_variance(thd, this); }
+Item *Item_sum_variance::copy_or_same(THD *thd)
+{
+  return new (thd->mem_root) Item_sum_variance(thd, this);
+}
 
 /**
   Create a new field to match the type of value we're expected to yield.
@@ -1810,7 +1851,10 @@ Field *Item_sum_variance::create_tmp_field(bool group, TABLE *table)
   return field;
 }
 
-void Item_sum_variance::clear() { count = 0; }
+void Item_sum_variance::clear()
+{
+  count = 0;
+}
 
 bool Item_sum_variance::add()
 {
@@ -2074,9 +2118,15 @@ longlong Item_sum_bit::val_int()
   return (longlong)bits;
 }
 
-void Item_sum_bit::clear() { bits = reset_bits; }
+void Item_sum_bit::clear()
+{
+  bits = reset_bits;
+}
 
-Item *Item_sum_or::copy_or_same(THD *thd) { return new (thd->mem_root) Item_sum_or(thd, this); }
+Item *Item_sum_or::copy_or_same(THD *thd)
+{
+  return new (thd->mem_root) Item_sum_or(thd, this);
+}
 
 bool Item_sum_or::add()
 {
@@ -2086,7 +2136,10 @@ bool Item_sum_or::add()
   return 0;
 }
 
-Item *Item_sum_xor::copy_or_same(THD *thd) { return new (thd->mem_root) Item_sum_xor(thd, this); }
+Item *Item_sum_xor::copy_or_same(THD *thd)
+{
+  return new (thd->mem_root) Item_sum_xor(thd, this);
+}
 
 bool Item_sum_xor::add()
 {
@@ -2096,7 +2149,10 @@ bool Item_sum_xor::add()
   return 0;
 }
 
-Item *Item_sum_and::copy_or_same(THD *thd) { return new (thd->mem_root) Item_sum_and(thd, this); }
+Item *Item_sum_and::copy_or_same(THD *thd)
+{
+  return new (thd->mem_root) Item_sum_and(thd, this);
+}
 
 bool Item_sum_and::add()
 {
@@ -2590,7 +2646,9 @@ String *Item_avg_field::val_str(String *str)
   return val_string_from_real(str);
 }
 
-Item_std_field::Item_std_field(Item_sum_std *item) : Item_variance_field(item) {}
+Item_std_field::Item_std_field(Item_sum_std *item) : Item_variance_field(item)
+{
+}
 
 double Item_std_field::val_real()
 {
@@ -2718,7 +2776,10 @@ void Item_udf_sum::print(String *str, enum_query_type query_type)
   str->append(')');
 }
 
-Item *Item_sum_udf_float::copy_or_same(THD *thd) { return new (thd->mem_root) Item_sum_udf_float(thd, this); }
+Item *Item_sum_udf_float::copy_or_same(THD *thd)
+{
+  return new (thd->mem_root) Item_sum_udf_float(thd, this);
+}
 
 double Item_sum_udf_float::val_real()
 {
@@ -2728,15 +2789,30 @@ double Item_sum_udf_float::val_real()
   DBUG_RETURN(udf.val(&null_value));
 }
 
-String *Item_sum_udf_float::val_str(String *str) { return val_string_from_real(str); }
+String *Item_sum_udf_float::val_str(String *str)
+{
+  return val_string_from_real(str);
+}
 
-my_decimal *Item_sum_udf_float::val_decimal(my_decimal *dec) { return val_decimal_from_real(dec); }
+my_decimal *Item_sum_udf_float::val_decimal(my_decimal *dec)
+{
+  return val_decimal_from_real(dec);
+}
 
-String *Item_sum_udf_decimal::val_str(String *str) { return val_string_from_decimal(str); }
+String *Item_sum_udf_decimal::val_str(String *str)
+{
+  return val_string_from_decimal(str);
+}
 
-double Item_sum_udf_decimal::val_real() { return val_real_from_decimal(); }
+double Item_sum_udf_decimal::val_real()
+{
+  return val_real_from_decimal();
+}
 
-longlong Item_sum_udf_decimal::val_int() { return val_int_from_decimal(); }
+longlong Item_sum_udf_decimal::val_int()
+{
+  return val_int_from_decimal();
+}
 
 my_decimal *Item_sum_udf_decimal::val_decimal(my_decimal *dec_buf)
 {
@@ -2747,9 +2823,15 @@ my_decimal *Item_sum_udf_decimal::val_decimal(my_decimal *dec_buf)
   DBUG_RETURN(udf.val_decimal(&null_value, dec_buf));
 }
 
-Item *Item_sum_udf_decimal::copy_or_same(THD *thd) { return new (thd->mem_root) Item_sum_udf_decimal(thd, this); }
+Item *Item_sum_udf_decimal::copy_or_same(THD *thd)
+{
+  return new (thd->mem_root) Item_sum_udf_decimal(thd, this);
+}
 
-Item *Item_sum_udf_int::copy_or_same(THD *thd) { return new (thd->mem_root) Item_sum_udf_int(thd, this); }
+Item *Item_sum_udf_int::copy_or_same(THD *thd)
+{
+  return new (thd->mem_root) Item_sum_udf_int(thd, this);
+}
 
 longlong Item_sum_udf_int::val_int()
 {
@@ -2759,9 +2841,15 @@ longlong Item_sum_udf_int::val_int()
   DBUG_RETURN(udf.val_int(&null_value));
 }
 
-String *Item_sum_udf_int::val_str(String *str) { return val_string_from_int(str); }
+String *Item_sum_udf_int::val_str(String *str)
+{
+  return val_string_from_int(str);
+}
 
-my_decimal *Item_sum_udf_int::val_decimal(my_decimal *dec) { return val_decimal_from_int(dec); }
+my_decimal *Item_sum_udf_int::val_decimal(my_decimal *dec)
+{
+  return val_decimal_from_int(dec);
+}
 
 /** Default max_length is max argument length. */
 
@@ -2769,13 +2857,20 @@ void Item_sum_udf_str::fix_length_and_dec()
 {
   DBUG_ENTER("Item_sum_udf_str::fix_length_and_dec");
   max_length = 0;
-  for (uint i = 0; i < arg_count; i++) set_if_bigger(max_length, args[i]->max_length);
+  for (uint i = 0; i < arg_count; i++)
+    set_if_bigger(max_length, args[i]->max_length);
   DBUG_VOID_RETURN;
 }
 
-Item *Item_sum_udf_str::copy_or_same(THD *thd) { return new (thd->mem_root) Item_sum_udf_str(thd, this); }
+Item *Item_sum_udf_str::copy_or_same(THD *thd)
+{
+  return new (thd->mem_root) Item_sum_udf_str(thd, this);
+}
 
-my_decimal *Item_sum_udf_str::val_decimal(my_decimal *dec) { return val_decimal_from_string(dec); }
+my_decimal *Item_sum_udf_str::val_decimal(my_decimal *dec)
+{
+  return val_decimal_from_string(dec);
+}
 
 String *Item_sum_udf_str::val_str(String *str)
 {
@@ -3011,7 +3106,8 @@ Item_func_group_concat::Item_func_group_concat(const POS &pos, bool distinct_arg
   /* fill args items of show and sort */
   List_iterator_fast< Item > li(select_list->value);
 
-  for (arg_ptr = args; (item_select = li++); arg_ptr++) *arg_ptr = item_select;
+  for (arg_ptr = args; (item_select = li++); arg_ptr++)
+    *arg_ptr = item_select;
 
   if (arg_count_order)
   {
@@ -3156,7 +3252,10 @@ Field *Item_func_group_concat::make_string_field(TABLE *table_arg)
   return field;
 }
 
-Item *Item_func_group_concat::copy_or_same(THD *thd) { return new (thd->mem_root) Item_func_group_concat(thd, this); }
+Item *Item_func_group_concat::copy_or_same(THD *thd)
+{
+  return new (thd->mem_root) Item_func_group_concat(thd, this);
+}
 
 void Item_func_group_concat::clear()
 {
@@ -3691,7 +3790,10 @@ bool Item_sum_json_array::add()
   return false;
 }
 
-Item *Item_sum_json_array::copy_or_same(THD *thd) { return new (thd->mem_root) Item_sum_json_array(thd, this); }
+Item *Item_sum_json_array::copy_or_same(THD *thd)
+{
+  return new (thd->mem_root) Item_sum_json_array(thd, this);
+}
 
 bool Item_sum_json_object::add()
 {
@@ -3750,4 +3852,7 @@ bool Item_sum_json_object::add()
   return false;
 }
 
-Item *Item_sum_json_object::copy_or_same(THD *thd) { return new (thd->mem_root) Item_sum_json_object(thd, this); }
+Item *Item_sum_json_object::copy_or_same(THD *thd)
+{
+  return new (thd->mem_root) Item_sum_json_object(thd, this);
+}

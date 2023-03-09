@@ -24,9 +24,13 @@
 
 #include "ndb_component.h"
 
-Ndb_component::Ndb_component(const char *name) : m_thread_state(TS_UNINIT), m_name(name) {}
+Ndb_component::Ndb_component(const char *name) : m_thread_state(TS_UNINIT), m_name(name)
+{
+}
 
-Ndb_component::~Ndb_component() {}
+Ndb_component::~Ndb_component()
+{
+}
 
 int Ndb_component::init()
 {

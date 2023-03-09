@@ -403,7 +403,8 @@ static long long g_server_api_client_stats[Ndb::NumClientStatistics];
 
 void update_slave_api_stats(Ndb *ndb)
 {
-  for (Uint32 i = 0; i < Ndb::NumClientStatistics; i++) g_slave_api_client_stats[i] = ndb->getClientStat(i);
+  for (Uint32 i = 0; i < Ndb::NumClientStatistics; i++)
+    g_slave_api_client_stats[i] = ndb->getClientStat(i);
 }
 
 st_ndb_slave_state g_ndb_slave_state;
@@ -1130,7 +1131,10 @@ Thd_ndb::~Thd_ndb()
   free_root(&m_batch_mem_root, MYF(0));
 }
 
-Ndb *ha_ndbcluster::get_ndb(THD *thd) const { return thd_get_thd_ndb(thd)->ndb; }
+Ndb *ha_ndbcluster::get_ndb(THD *thd) const
+{
+  return thd_get_thd_ndb(thd)->ndb;
+}
 
 /*
  * manage uncommitted insert/deletes during transactio to get records correct
@@ -4083,7 +4087,10 @@ class Ndb_tuple_id_range_guard
   {
     native_mutex_lock(&m_share->mutex);
   }
-  ~Ndb_tuple_id_range_guard() { native_mutex_unlock(&m_share->mutex); }
+  ~Ndb_tuple_id_range_guard()
+  {
+    native_mutex_unlock(&m_share->mutex);
+  }
   Ndb::TupleIdRange &range;
 };
 
@@ -5587,7 +5594,10 @@ void ha_ndbcluster::end_bulk_update()
   DBUG_VOID_RETURN;
 }
 
-int ha_ndbcluster::update_row(const uchar *old_data, uchar *new_data) { return ndb_update_row(old_data, new_data, 0); }
+int ha_ndbcluster::update_row(const uchar *old_data, uchar *new_data)
+{
+  return ndb_update_row(old_data, new_data, 0);
+}
 
 void ha_ndbcluster::setup_key_ref_for_ndb_record(const NdbRecord **key_rec, const uchar **key_row, const uchar *record,
                                                  bool use_active_index)
@@ -5905,7 +5915,10 @@ int ha_ndbcluster::ndb_update_row(const uchar *old_data, uchar *new_data, int is
   handler delete interface
 */
 
-int ha_ndbcluster::delete_row(const uchar *record) { return ndb_delete_row(record, FALSE); }
+int ha_ndbcluster::delete_row(const uchar *record)
+{
+  return ndb_delete_row(record, FALSE);
+}
 
 bool ha_ndbcluster::start_bulk_delete()
 {
@@ -7362,7 +7375,10 @@ int ha_ndbcluster::extra_opt(enum ha_extra_function operation, ulong cache_size)
 
 static const char *ha_ndbcluster_exts[] = {ha_ndb_ext, NullS};
 
-const char **ha_ndbcluster::bas_ext() const { return ha_ndbcluster_exts; }
+const char **ha_ndbcluster::bas_ext() const
+{
+  return ha_ndbcluster_exts;
+}
 
 /**
   How many seeks it will take to read through the table.
@@ -8308,7 +8324,10 @@ class NDB_Modifiers
   int parse_modifier(THD *thd, const char *prefix, struct NDB_Modifier *m, const char *str);
 };
 
-static bool end_of_token(const char *str) { return str[0] == 0 || str[0] == ' ' || str[0] == ','; }
+static bool end_of_token(const char *str)
+{
+  return str[0] == 0 || str[0] == ' ' || str[0] == ',';
+}
 
 NDB_Modifiers::NDB_Modifiers(const NDB_Modifier modifiers[])
 {
@@ -8319,7 +8338,10 @@ NDB_Modifiers::NDB_Modifiers(const NDB_Modifier modifiers[])
   memcpy(m_modifiers, modifiers, m_len * sizeof(NDB_Modifier));
 }
 
-NDB_Modifiers::~NDB_Modifiers() { delete[] m_modifiers; }
+NDB_Modifiers::~NDB_Modifiers()
+{
+  delete[] m_modifiers;
+}
 
 int NDB_Modifiers::parse_modifier(THD *thd, const char *prefix, struct NDB_Modifier *m, const char *str)
 {
@@ -10013,7 +10035,8 @@ int ha_ndbcluster::add_index_impl(THD *thd, TABLE *table_arg, KEY *key_info, uin
     NDB_INDEX_TYPE idx_type = get_index_type_from_key(idx, key_info, false);
     DBUG_PRINT("info", ("Adding index: '%s'", key_info[idx].name));
     // Add fields to key_part struct
-    for (; key_part != end; key_part++) key_part->field = table->field[key_part->fieldnr];
+    for (; key_part != end; key_part++)
+      key_part->field = table->field[key_part->fieldnr];
     // Check index type
     // Create index in ndb
     if ((error = create_index(thd, key_info[idx].name, key, idx_type, idx)))
@@ -10872,7 +10895,8 @@ ha_ndbcluster::ha_ndbcluster(handlerton *hton, TABLE_SHARE *table_arg)
   stats.records = ~(ha_rows)0;  // uninitialized
   stats.block_size = 1024;
 
-  for (i = 0; i < MAX_KEY; i++) ndb_init_index(m_index[i]);
+  for (i = 0; i < MAX_KEY; i++)
+    ndb_init_index(m_index[i]);
 
   // make sure is initialized
   init_alloc_root(PSI_INSTRUMENT_ME, &m_fk_mem_root, fk_root_block_size, 0);
@@ -10999,7 +11023,8 @@ int ha_ndbcluster::open(const char *name, int mode, uint test_if_locked)
         key = table->key_info + i;
         key_part_info = key->key_part;
         key_parts = key->user_defined_key_parts;
-        for (j = 0; j < key_parts; j++, key_part_info++) bitmap_set_bit(m_key_fields[i], key_part_info->fieldnr - 1);
+        for (j = 0; j < key_parts; j++, key_part_info++)
+          bitmap_set_bit(m_key_fields[i], key_part_info->fieldnr - 1);
       }
       else
       {
@@ -12337,25 +12362,37 @@ void ha_ndbcluster::print_error(int error, myf errflag)
   Set a given location from full pathname to database name.
 */
 
-void ha_ndbcluster::set_dbname(const char *path_name, char *dbname) { ndb_set_dbname(path_name, dbname); }
+void ha_ndbcluster::set_dbname(const char *path_name, char *dbname)
+{
+  ndb_set_dbname(path_name, dbname);
+}
 
 /**
   Set m_dbname from full pathname to table file.
 */
 
-void ha_ndbcluster::set_dbname(const char *path_name) { ndb_set_dbname(path_name, m_dbname); }
+void ha_ndbcluster::set_dbname(const char *path_name)
+{
+  ndb_set_dbname(path_name, m_dbname);
+}
 
 /**
   Set a given location from full pathname to table file.
 */
 
-void ha_ndbcluster::set_tabname(const char *path_name, char *tabname) { ndb_set_tabname(path_name, tabname); }
+void ha_ndbcluster::set_tabname(const char *path_name, char *tabname)
+{
+  ndb_set_tabname(path_name, tabname);
+}
 
 /**
   Set m_tabname from full pathname to table file.
 */
 
-void ha_ndbcluster::set_tabname(const char *path_name) { ndb_set_tabname(path_name, m_tabname); }
+void ha_ndbcluster::set_tabname(const char *path_name)
+{
+  ndb_set_tabname(path_name, m_tabname);
+}
 
 /*
   If there are no stored stats, should we do a tree-dive on all db
@@ -12581,11 +12618,26 @@ ulonglong ha_ndbcluster::table_flags(void) const
   return f;
 }
 
-const char *ha_ndbcluster::table_type() const { return ("NDBCLUSTER"); }
-uint ha_ndbcluster::max_supported_record_length() const { return NDB_MAX_TUPLE_SIZE; }
-uint ha_ndbcluster::max_supported_keys() const { return MAX_KEY; }
-uint ha_ndbcluster::max_supported_key_parts() const { return NDB_MAX_NO_OF_ATTRIBUTES_IN_KEY; }
-uint ha_ndbcluster::max_supported_key_length() const { return NDB_MAX_KEY_SIZE; }
+const char *ha_ndbcluster::table_type() const
+{
+  return ("NDBCLUSTER");
+}
+uint ha_ndbcluster::max_supported_record_length() const
+{
+  return NDB_MAX_TUPLE_SIZE;
+}
+uint ha_ndbcluster::max_supported_keys() const
+{
+  return MAX_KEY;
+}
+uint ha_ndbcluster::max_supported_key_parts() const
+{
+  return NDB_MAX_NO_OF_ATTRIBUTES_IN_KEY;
+}
+uint ha_ndbcluster::max_supported_key_length() const
+{
+  return NDB_MAX_KEY_SIZE;
+}
 uint ha_ndbcluster::max_supported_key_part_length(HA_CREATE_INFO *create_info MY_ATTRIBUTE((unused))) const
 {
   return NDB_MAX_KEY_SIZE;
@@ -13683,7 +13735,10 @@ static ulong multi_range_max_entry(NDB_INDEX_TYPE keytype, ulong reclength)
   return multi_range_entry_size(keytype != ORDERED_INDEX, reclength);
 }
 
-static uchar &multi_range_entry_type(uchar *p) { return *p; }
+static uchar &multi_range_entry_type(uchar *p)
+{
+  return *p;
+}
 
 /* Find the start of the next entry in HANDLER_BUFFER. */
 static uchar *multi_range_next_entry(uchar *p, ulong reclength)
@@ -14858,7 +14913,10 @@ void Ndb_util_thread::do_wakeup()
   native_mutex_unlock(&LOCK);
 }
 
-void ndb_util_thread_stop(void) { ndb_util_thread.stop(); }
+void ndb_util_thread_stop(void)
+{
+  ndb_util_thread.stop();
+}
 
 #include "ndb_log.h"
 
@@ -15586,7 +15644,10 @@ class NDB_ALTER_DATA : public inplace_alter_handler_ctx
         old_table_version(table->getObjectVersion())
   {
   }
-  ~NDB_ALTER_DATA() { delete new_table; }
+  ~NDB_ALTER_DATA()
+  {
+    delete new_table;
+  }
   NdbDictionary::Dictionary *dictionary;
   const NdbDictionary::Table *old_table;
   NdbDictionary::Table *new_table;
@@ -16020,7 +16081,8 @@ bool ha_ndbcluster::prepare_inplace_alter_table(TABLE *altered_table, Alter_inpl
       *key = ha_alter_info->key_info_buffer[*idx_p];
       /* Fix the key parts. */
       part_end = key->key_part + key->user_defined_key_parts;
-      for (key_part = key->key_part; key_part < part_end; key_part++) key_part->field = table->field[key_part->fieldnr];
+      for (key_part = key->key_part; key_part < part_end; key_part++)
+        key_part->field = table->field[key_part->fieldnr];
     }
     if ((error = add_index_impl(thd, altered_table, key_info, ha_alter_info->index_add_count)))
     {
@@ -17084,7 +17146,8 @@ static int show_ndb_vars(THD *thd, SHOW_VAR *var, char *buff)
     memcpy(st_var, &ndb_status_variables_dynamic, sizeof(ndb_status_variables_dynamic));
     int i = 0;
     SHOW_VAR *tmp = &(ndb_status_variables_dynamic[0]);
-    for (; tmp->value; tmp++, i++) st_var[i].value = mem + (tmp->value - (char *)&g_ndb_status);
+    for (; tmp->value; tmp++, i++)
+      st_var[i].value = mem + (tmp->value - (char *)&g_ndb_status);
   }
   {
     Thd_ndb *thd_ndb = get_thd_ndb(thd);
@@ -17462,7 +17525,10 @@ static MYSQL_SYSVAR_BOOL(log_empty_epochs,              /* name */
                          0                              /* default */
 );
 
-bool ndb_log_empty_epochs(void) { return opt_ndb_log_empty_epochs; }
+bool ndb_log_empty_epochs(void)
+{
+  return opt_ndb_log_empty_epochs;
+}
 
 my_bool opt_ndb_log_apply_status;
 static MYSQL_SYSVAR_BOOL(log_apply_status,         /* name */

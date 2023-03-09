@@ -296,7 +296,8 @@ static bool sj_table_is_included(JOIN *join, JOIN_TAB *join_tab)
     table_map depends_on = 0;
     uint idx;
 
-    for (uint kp = 0; kp < join_tab->ref().key_parts; kp++) depends_on |= join_tab->ref().items[kp]->used_tables();
+    for (uint kp = 0; kp < join_tab->ref().key_parts; kp++)
+      depends_on |= join_tab->ref().items[kp]->used_tables();
 
     Table_map_iterator it(depends_on & ~PSEUDO_TABLE_BITS);
     while ((idx = it.next_bit()) != Table_map_iterator::BITMAP_END)
@@ -842,7 +843,8 @@ void JOIN::reset()
   if (sum_funcs)
   {
     Item_sum *func, **func_ptr = sum_funcs;
-    while ((func = *(func_ptr++))) func->clear();
+    while ((func = *(func_ptr++)))
+      func->clear();
   }
 
   if (select_lex->has_ft_funcs())
@@ -910,7 +912,8 @@ bool JOIN::destroy()
   if (qep_tab)
   {
     assert(!join_tab);
-    for (uint i = 0; i < tables; i++) qep_tab[i].cleanup();
+    for (uint i = 0; i < tables; i++)
+      qep_tab[i].cleanup();
   }
   if (join_tab || best_ref)
   {
@@ -942,7 +945,8 @@ bool JOIN::destroy()
 
   List_iterator< Semijoin_mat_exec > sjm_list_it(sjm_exec_list);
   Semijoin_mat_exec *sjm;
-  while ((sjm = sjm_list_it++)) delete sjm;
+  while ((sjm = sjm_list_it++))
+    delete sjm;
   sjm_exec_list.empty();
 
   keyuse_array.clear();
@@ -955,7 +959,8 @@ void JOIN::cleanup_item_list(List< Item > &items) const
   {
     List_iterator_fast< Item > it(items);
     Item *item;
-    while ((item = it++)) item->cleanup();
+    while ((item = it++))
+      item->cleanup();
   }
 }
 
@@ -2894,7 +2899,8 @@ bool JOIN::alloc_func_list()
     if (order)
     {
       ORDER *ord;
-      for (ord = order; ord; ord = ord->next) group_parts++;
+      for (ord = order; ord; ord = ord->next)
+        group_parts++;
     }
   }
 
@@ -2945,7 +2951,8 @@ bool JOIN::make_sum_func_list(List< Item > &field_list, List< Item > &send_resul
   }
   else if (rollup.state == ROLLUP::STATE_NONE)
   {
-    for (uint i = 0; i <= send_group_parts; i++) sum_funcs_end[i] = func;
+    for (uint i = 0; i <= send_group_parts; i++)
+      sum_funcs_end[i] = func;
   }
   else if (rollup.state == ROLLUP::STATE_READY)
     DBUG_RETURN(FALSE);  // Don't put end marker
@@ -2962,7 +2969,8 @@ bool JOIN::make_sum_func_list(List< Item > &field_list, List< Item > &send_resul
 
 void free_underlaid_joins(THD *thd, SELECT_LEX *select)
 {
-  for (SELECT_LEX_UNIT *unit = select->first_inner_unit(); unit; unit = unit->next_unit()) unit->cleanup(false);
+  for (SELECT_LEX_UNIT *unit = select->first_inner_unit(); unit; unit = unit->next_unit())
+    unit->cleanup(false);
 }
 
 /****************************************************************************
@@ -3172,7 +3180,8 @@ bool JOIN::clear()
   if (sum_funcs)
   {
     Item_sum *func, **func_ptr = sum_funcs;
-    while ((func = *(func_ptr++))) func->clear();
+    while ((func = *(func_ptr++)))
+      func->clear();
   }
   return false;
 }
@@ -3704,7 +3713,8 @@ bool JOIN::make_tmp_tables_info()
 void JOIN::unplug_join_tabs()
 {
   ASSERT_BEST_REF_IN_JOIN_ORDER(this);
-  for (uint i = 0; i < tables; ++i) best_ref[i]->cleanup();
+  for (uint i = 0; i < tables; ++i)
+    best_ref[i]->cleanup();
 
   best_ref = NULL;
 }

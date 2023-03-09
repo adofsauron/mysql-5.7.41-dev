@@ -73,9 +73,13 @@ class Create_native_func : public Create_func
 
  protected:
   /** Constructor. */
-  Create_native_func() {}
+  Create_native_func()
+  {
+  }
   /** Destructor. */
-  virtual ~Create_native_func() {}
+  virtual ~Create_native_func()
+  {
+  }
 };
 
 /**
@@ -96,9 +100,13 @@ class Create_func_arg0 : public Create_func
 
  protected:
   /** Constructor. */
-  Create_func_arg0() {}
+  Create_func_arg0()
+  {
+  }
   /** Destructor. */
-  virtual ~Create_func_arg0() {}
+  virtual ~Create_func_arg0()
+  {
+  }
 };
 
 /**
@@ -120,9 +128,13 @@ class Create_func_arg1 : public Create_func
 
  protected:
   /** Constructor. */
-  Create_func_arg1() {}
+  Create_func_arg1()
+  {
+  }
   /** Destructor. */
-  virtual ~Create_func_arg1() {}
+  virtual ~Create_func_arg1()
+  {
+  }
 };
 
 /**
@@ -145,9 +157,13 @@ class Create_func_arg2 : public Create_func
 
  protected:
   /** Constructor. */
-  Create_func_arg2() {}
+  Create_func_arg2()
+  {
+  }
   /** Destructor. */
-  virtual ~Create_func_arg2() {}
+  virtual ~Create_func_arg2()
+  {
+  }
 };
 
 /**
@@ -171,9 +187,13 @@ class Create_func_arg3 : public Create_func
 
  protected:
   /** Constructor. */
-  Create_func_arg3() {}
+  Create_func_arg3()
+  {
+  }
   /** Destructor. */
-  virtual ~Create_func_arg3() {}
+  virtual ~Create_func_arg3()
+  {
+  }
 };
 
 /**
@@ -189,9 +209,13 @@ class Create_sp_func : public Create_qfunc
 
  protected:
   /** Constructor. */
-  Create_sp_func() {}
+  Create_sp_func()
+  {
+  }
   /** Destructor. */
-  virtual ~Create_sp_func() {}
+  virtual ~Create_sp_func()
+  {
+  }
 };
 
 /*
@@ -208,8 +232,12 @@ class Create_func_abs : public Create_func_arg1
   static Create_func_abs s_singleton;
 
  protected:
-  Create_func_abs() {}
-  virtual ~Create_func_abs() {}
+  Create_func_abs()
+  {
+  }
+  virtual ~Create_func_abs()
+  {
+  }
 };
 
 class Create_func_acos : public Create_func_arg1
@@ -220,8 +248,12 @@ class Create_func_acos : public Create_func_arg1
   static Create_func_acos s_singleton;
 
  protected:
-  Create_func_acos() {}
-  virtual ~Create_func_acos() {}
+  Create_func_acos()
+  {
+  }
+  virtual ~Create_func_acos()
+  {
+  }
 };
 
 class Create_func_addtime : public Create_func_arg2
@@ -232,8 +264,12 @@ class Create_func_addtime : public Create_func_arg2
   static Create_func_addtime s_singleton;
 
  protected:
-  Create_func_addtime() {}
-  virtual ~Create_func_addtime() {}
+  Create_func_addtime()
+  {
+  }
+  virtual ~Create_func_addtime()
+  {
+  }
 };
 
 class Create_func_aes_base : public Create_native_func
@@ -309,8 +345,12 @@ class Create_func_aes_base : public Create_native_func
   virtual Item *create_aes(THD *thd, Item *arg1, Item *arg2, Item *arg3, Item *arg4, Item *arg5, Item *arg6) = 0;
 
  protected:
-  Create_func_aes_base() {}
-  virtual ~Create_func_aes_base() {}
+  Create_func_aes_base()
+  {
+  }
+  virtual ~Create_func_aes_base()
+  {
+  }
 };
 
 class Create_func_aes_encrypt : public Create_func_aes_base
@@ -340,8 +380,12 @@ class Create_func_aes_encrypt : public Create_func_aes_base
   static Create_func_aes_encrypt s_singleton;
 
  protected:
-  Create_func_aes_encrypt() {}
-  virtual ~Create_func_aes_encrypt() {}
+  Create_func_aes_encrypt()
+  {
+  }
+  virtual ~Create_func_aes_encrypt()
+  {
+  }
 };
 
 class Create_func_aes_decrypt : public Create_func_aes_base
@@ -370,31 +414,49 @@ class Create_func_aes_decrypt : public Create_func_aes_base
   static Create_func_aes_decrypt s_singleton;
 
  protected:
-  Create_func_aes_decrypt() {}
-  virtual ~Create_func_aes_decrypt() {}
+  Create_func_aes_decrypt()
+  {
+  }
+  virtual ~Create_func_aes_decrypt()
+  {
+  }
 };
 
 class Create_func_random_bytes : public Create_func_arg1
 {
  public:
-  virtual Item *create(THD *thd, Item *arg1) { return new (thd->mem_root) Item_func_random_bytes(POS(), arg1); }
+  virtual Item *create(THD *thd, Item *arg1)
+  {
+    return new (thd->mem_root) Item_func_random_bytes(POS(), arg1);
+  }
   static Create_func_random_bytes s_singleton;
 
  protected:
-  Create_func_random_bytes() {}
-  virtual ~Create_func_random_bytes() {}
+  Create_func_random_bytes()
+  {
+  }
+  virtual ~Create_func_random_bytes()
+  {
+  }
 };
 
 class Create_func_any_value : public Create_func_arg1
 {
  public:
-  virtual Item *create(THD *thd, Item *arg1) { return new (thd->mem_root) Item_func_any_value(POS(), arg1); }
+  virtual Item *create(THD *thd, Item *arg1)
+  {
+    return new (thd->mem_root) Item_func_any_value(POS(), arg1);
+  }
 
   static Create_func_any_value s_singleton;
 
  protected:
-  Create_func_any_value() {}
-  virtual ~Create_func_any_value() {}
+  Create_func_any_value()
+  {
+  }
+  virtual ~Create_func_any_value()
+  {
+  }
 };
 
 class Create_func_area : public Create_func_arg1
@@ -405,8 +467,12 @@ class Create_func_area : public Create_func_arg1
   static Create_func_area s_singleton;
 
  protected:
-  Create_func_area() {}
-  virtual ~Create_func_area() {}
+  Create_func_area()
+  {
+  }
+  virtual ~Create_func_area()
+  {
+  }
 };
 
 class Create_func_area_deprecated : public Create_func_area
@@ -430,8 +496,12 @@ class Create_func_as_geojson : public Create_native_func
   static Create_func_as_geojson s_singleton;
 
  protected:
-  Create_func_as_geojson() {}
-  virtual ~Create_func_as_geojson() {}
+  Create_func_as_geojson()
+  {
+  }
+  virtual ~Create_func_as_geojson()
+  {
+  }
 };
 
 class Create_func_as_wkb : public Create_func_arg1
@@ -442,8 +512,12 @@ class Create_func_as_wkb : public Create_func_arg1
   static Create_func_as_wkb s_singleton;
 
  protected:
-  Create_func_as_wkb() {}
-  virtual ~Create_func_as_wkb() {}
+  Create_func_as_wkb()
+  {
+  }
+  virtual ~Create_func_as_wkb()
+  {
+  }
 };
 
 class Create_func_as_binary_deprecated : public Create_func_as_wkb
@@ -480,8 +554,12 @@ class Create_func_as_wkt : public Create_func_arg1
   static Create_func_as_wkt s_singleton;
 
  protected:
-  Create_func_as_wkt() {}
-  virtual ~Create_func_as_wkt() {}
+  Create_func_as_wkt()
+  {
+  }
+  virtual ~Create_func_as_wkt()
+  {
+  }
 };
 
 class Create_func_as_text_deprecated : public Create_func_as_wkt
@@ -518,8 +596,12 @@ class Create_func_asin : public Create_func_arg1
   static Create_func_asin s_singleton;
 
  protected:
-  Create_func_asin() {}
-  virtual ~Create_func_asin() {}
+  Create_func_asin()
+  {
+  }
+  virtual ~Create_func_asin()
+  {
+  }
 };
 
 class Create_func_atan : public Create_native_func
@@ -530,8 +612,12 @@ class Create_func_atan : public Create_native_func
   static Create_func_atan s_singleton;
 
  protected:
-  Create_func_atan() {}
-  virtual ~Create_func_atan() {}
+  Create_func_atan()
+  {
+  }
+  virtual ~Create_func_atan()
+  {
+  }
 };
 
 class Create_func_benchmark : public Create_func_arg2
@@ -542,8 +628,12 @@ class Create_func_benchmark : public Create_func_arg2
   static Create_func_benchmark s_singleton;
 
  protected:
-  Create_func_benchmark() {}
-  virtual ~Create_func_benchmark() {}
+  Create_func_benchmark()
+  {
+  }
+  virtual ~Create_func_benchmark()
+  {
+  }
 };
 
 class Create_func_bin : public Create_func_arg1
@@ -554,8 +644,12 @@ class Create_func_bin : public Create_func_arg1
   static Create_func_bin s_singleton;
 
  protected:
-  Create_func_bin() {}
-  virtual ~Create_func_bin() {}
+  Create_func_bin()
+  {
+  }
+  virtual ~Create_func_bin()
+  {
+  }
 };
 
 class Create_func_bit_count : public Create_func_arg1
@@ -566,8 +660,12 @@ class Create_func_bit_count : public Create_func_arg1
   static Create_func_bit_count s_singleton;
 
  protected:
-  Create_func_bit_count() {}
-  virtual ~Create_func_bit_count() {}
+  Create_func_bit_count()
+  {
+  }
+  virtual ~Create_func_bit_count()
+  {
+  }
 };
 
 class Create_func_bit_length : public Create_func_arg1
@@ -578,8 +676,12 @@ class Create_func_bit_length : public Create_func_arg1
   static Create_func_bit_length s_singleton;
 
  protected:
-  Create_func_bit_length() {}
-  virtual ~Create_func_bit_length() {}
+  Create_func_bit_length()
+  {
+  }
+  virtual ~Create_func_bit_length()
+  {
+  }
 };
 
 class Create_func_buffer_strategy : public Create_native_func
@@ -590,8 +692,12 @@ class Create_func_buffer_strategy : public Create_native_func
   static Create_func_buffer_strategy s_singleton;
 
  protected:
-  Create_func_buffer_strategy() {}
-  virtual ~Create_func_buffer_strategy() {}
+  Create_func_buffer_strategy()
+  {
+  }
+  virtual ~Create_func_buffer_strategy()
+  {
+  }
 };
 
 class Create_func_ceiling : public Create_func_arg1
@@ -602,8 +708,12 @@ class Create_func_ceiling : public Create_func_arg1
   static Create_func_ceiling s_singleton;
 
  protected:
-  Create_func_ceiling() {}
-  virtual ~Create_func_ceiling() {}
+  Create_func_ceiling()
+  {
+  }
+  virtual ~Create_func_ceiling()
+  {
+  }
 };
 
 class Create_func_centroid : public Create_func_arg1
@@ -614,8 +724,12 @@ class Create_func_centroid : public Create_func_arg1
   static Create_func_centroid s_singleton;
 
  protected:
-  Create_func_centroid() {}
-  virtual ~Create_func_centroid() {}
+  Create_func_centroid()
+  {
+  }
+  virtual ~Create_func_centroid()
+  {
+  }
 };
 
 class Create_func_centroid_deprecated : public Create_func_centroid
@@ -639,8 +753,12 @@ class Create_func_char_length : public Create_func_arg1
   static Create_func_char_length s_singleton;
 
  protected:
-  Create_func_char_length() {}
-  virtual ~Create_func_char_length() {}
+  Create_func_char_length()
+  {
+  }
+  virtual ~Create_func_char_length()
+  {
+  }
 };
 
 class Create_func_coercibility : public Create_func_arg1
@@ -651,8 +769,12 @@ class Create_func_coercibility : public Create_func_arg1
   static Create_func_coercibility s_singleton;
 
  protected:
-  Create_func_coercibility() {}
-  virtual ~Create_func_coercibility() {}
+  Create_func_coercibility()
+  {
+  }
+  virtual ~Create_func_coercibility()
+  {
+  }
 };
 
 class Create_func_compress : public Create_func_arg1
@@ -663,8 +785,12 @@ class Create_func_compress : public Create_func_arg1
   static Create_func_compress s_singleton;
 
  protected:
-  Create_func_compress() {}
-  virtual ~Create_func_compress() {}
+  Create_func_compress()
+  {
+  }
+  virtual ~Create_func_compress()
+  {
+  }
 };
 
 class Create_func_concat : public Create_native_func
@@ -675,8 +801,12 @@ class Create_func_concat : public Create_native_func
   static Create_func_concat s_singleton;
 
  protected:
-  Create_func_concat() {}
-  virtual ~Create_func_concat() {}
+  Create_func_concat()
+  {
+  }
+  virtual ~Create_func_concat()
+  {
+  }
 };
 
 class Create_func_concat_ws : public Create_native_func
@@ -687,8 +817,12 @@ class Create_func_concat_ws : public Create_native_func
   static Create_func_concat_ws s_singleton;
 
  protected:
-  Create_func_concat_ws() {}
-  virtual ~Create_func_concat_ws() {}
+  Create_func_concat_ws()
+  {
+  }
+  virtual ~Create_func_concat_ws()
+  {
+  }
 };
 
 class Create_func_connection_id : public Create_func_arg0
@@ -699,8 +833,12 @@ class Create_func_connection_id : public Create_func_arg0
   static Create_func_connection_id s_singleton;
 
  protected:
-  Create_func_connection_id() {}
-  virtual ~Create_func_connection_id() {}
+  Create_func_connection_id()
+  {
+  }
+  virtual ~Create_func_connection_id()
+  {
+  }
 };
 
 class Create_func_convex_hull : public Create_func_arg1
@@ -711,8 +849,12 @@ class Create_func_convex_hull : public Create_func_arg1
   static Create_func_convex_hull s_singleton;
 
  protected:
-  Create_func_convex_hull() {}
-  virtual ~Create_func_convex_hull() {}
+  Create_func_convex_hull()
+  {
+  }
+  virtual ~Create_func_convex_hull()
+  {
+  }
 };
 
 class Create_func_mbr_covered_by : public Create_func_arg2
@@ -723,8 +865,12 @@ class Create_func_mbr_covered_by : public Create_func_arg2
   static Create_func_mbr_covered_by s_singleton;
 
  protected:
-  Create_func_mbr_covered_by() {}
-  virtual ~Create_func_mbr_covered_by() {}
+  Create_func_mbr_covered_by()
+  {
+  }
+  virtual ~Create_func_mbr_covered_by()
+  {
+  }
 };
 
 class Create_func_mbr_covers : public Create_func_arg2
@@ -735,8 +881,12 @@ class Create_func_mbr_covers : public Create_func_arg2
   static Create_func_mbr_covers s_singleton;
 
  protected:
-  Create_func_mbr_covers() {}
-  virtual ~Create_func_mbr_covers() {}
+  Create_func_mbr_covers()
+  {
+  }
+  virtual ~Create_func_mbr_covers()
+  {
+  }
 };
 
 class Create_func_convex_hull_deprecated : public Create_func_convex_hull
@@ -760,8 +910,12 @@ class Create_func_mbr_contains : public Create_func_arg2
   static Create_func_mbr_contains s_singleton;
 
  protected:
-  Create_func_mbr_contains() {}
-  virtual ~Create_func_mbr_contains() {}
+  Create_func_mbr_contains()
+  {
+  }
+  virtual ~Create_func_mbr_contains()
+  {
+  }
 };
 
 class Create_func_contains : public Create_func_arg2
@@ -772,8 +926,12 @@ class Create_func_contains : public Create_func_arg2
   static Create_func_contains s_singleton;
 
  protected:
-  Create_func_contains() {}
-  virtual ~Create_func_contains() {}
+  Create_func_contains()
+  {
+  }
+  virtual ~Create_func_contains()
+  {
+  }
 };
 
 class Create_func_conv : public Create_func_arg3
@@ -784,8 +942,12 @@ class Create_func_conv : public Create_func_arg3
   static Create_func_conv s_singleton;
 
  protected:
-  Create_func_conv() {}
-  virtual ~Create_func_conv() {}
+  Create_func_conv()
+  {
+  }
+  virtual ~Create_func_conv()
+  {
+  }
 };
 
 class Create_func_convert_tz : public Create_func_arg3
@@ -796,8 +958,12 @@ class Create_func_convert_tz : public Create_func_arg3
   static Create_func_convert_tz s_singleton;
 
  protected:
-  Create_func_convert_tz() {}
-  virtual ~Create_func_convert_tz() {}
+  Create_func_convert_tz()
+  {
+  }
+  virtual ~Create_func_convert_tz()
+  {
+  }
 };
 
 class Create_func_cos : public Create_func_arg1
@@ -808,8 +974,12 @@ class Create_func_cos : public Create_func_arg1
   static Create_func_cos s_singleton;
 
  protected:
-  Create_func_cos() {}
-  virtual ~Create_func_cos() {}
+  Create_func_cos()
+  {
+  }
+  virtual ~Create_func_cos()
+  {
+  }
 };
 
 class Create_func_cot : public Create_func_arg1
@@ -820,8 +990,12 @@ class Create_func_cot : public Create_func_arg1
   static Create_func_cot s_singleton;
 
  protected:
-  Create_func_cot() {}
-  virtual ~Create_func_cot() {}
+  Create_func_cot()
+  {
+  }
+  virtual ~Create_func_cot()
+  {
+  }
 };
 
 class Create_func_crc32 : public Create_func_arg1
@@ -832,8 +1006,12 @@ class Create_func_crc32 : public Create_func_arg1
   static Create_func_crc32 s_singleton;
 
  protected:
-  Create_func_crc32() {}
-  virtual ~Create_func_crc32() {}
+  Create_func_crc32()
+  {
+  }
+  virtual ~Create_func_crc32()
+  {
+  }
 };
 
 class Create_func_crosses : public Create_func_arg2
@@ -844,8 +1022,12 @@ class Create_func_crosses : public Create_func_arg2
   static Create_func_crosses s_singleton;
 
  protected:
-  Create_func_crosses() {}
-  virtual ~Create_func_crosses() {}
+  Create_func_crosses()
+  {
+  }
+  virtual ~Create_func_crosses()
+  {
+  }
 };
 
 class Create_func_crosses_deprecated : public Create_func_crosses
@@ -869,8 +1051,12 @@ class Create_func_date_format : public Create_func_arg2
   static Create_func_date_format s_singleton;
 
  protected:
-  Create_func_date_format() {}
-  virtual ~Create_func_date_format() {}
+  Create_func_date_format()
+  {
+  }
+  virtual ~Create_func_date_format()
+  {
+  }
 };
 
 class Create_func_datediff : public Create_func_arg2
@@ -881,8 +1067,12 @@ class Create_func_datediff : public Create_func_arg2
   static Create_func_datediff s_singleton;
 
  protected:
-  Create_func_datediff() {}
-  virtual ~Create_func_datediff() {}
+  Create_func_datediff()
+  {
+  }
+  virtual ~Create_func_datediff()
+  {
+  }
 };
 
 class Create_func_dayname : public Create_func_arg1
@@ -893,8 +1083,12 @@ class Create_func_dayname : public Create_func_arg1
   static Create_func_dayname s_singleton;
 
  protected:
-  Create_func_dayname() {}
-  virtual ~Create_func_dayname() {}
+  Create_func_dayname()
+  {
+  }
+  virtual ~Create_func_dayname()
+  {
+  }
 };
 
 class Create_func_dayofmonth : public Create_func_arg1
@@ -905,8 +1099,12 @@ class Create_func_dayofmonth : public Create_func_arg1
   static Create_func_dayofmonth s_singleton;
 
  protected:
-  Create_func_dayofmonth() {}
-  virtual ~Create_func_dayofmonth() {}
+  Create_func_dayofmonth()
+  {
+  }
+  virtual ~Create_func_dayofmonth()
+  {
+  }
 };
 
 class Create_func_dayofweek : public Create_func_arg1
@@ -917,8 +1115,12 @@ class Create_func_dayofweek : public Create_func_arg1
   static Create_func_dayofweek s_singleton;
 
  protected:
-  Create_func_dayofweek() {}
-  virtual ~Create_func_dayofweek() {}
+  Create_func_dayofweek()
+  {
+  }
+  virtual ~Create_func_dayofweek()
+  {
+  }
 };
 
 class Create_func_dayofyear : public Create_func_arg1
@@ -929,8 +1131,12 @@ class Create_func_dayofyear : public Create_func_arg1
   static Create_func_dayofyear s_singleton;
 
  protected:
-  Create_func_dayofyear() {}
-  virtual ~Create_func_dayofyear() {}
+  Create_func_dayofyear()
+  {
+  }
+  virtual ~Create_func_dayofyear()
+  {
+  }
 };
 
 class Create_func_decode : public Create_func_arg2
@@ -941,8 +1147,12 @@ class Create_func_decode : public Create_func_arg2
   static Create_func_decode s_singleton;
 
  protected:
-  Create_func_decode() {}
-  virtual ~Create_func_decode() {}
+  Create_func_decode()
+  {
+  }
+  virtual ~Create_func_decode()
+  {
+  }
 };
 
 class Create_func_degrees : public Create_func_arg1
@@ -953,8 +1163,12 @@ class Create_func_degrees : public Create_func_arg1
   static Create_func_degrees s_singleton;
 
  protected:
-  Create_func_degrees() {}
-  virtual ~Create_func_degrees() {}
+  Create_func_degrees()
+  {
+  }
+  virtual ~Create_func_degrees()
+  {
+  }
 };
 
 class Create_func_des_decrypt : public Create_native_func
@@ -965,8 +1179,12 @@ class Create_func_des_decrypt : public Create_native_func
   static Create_func_des_decrypt s_singleton;
 
  protected:
-  Create_func_des_decrypt() {}
-  virtual ~Create_func_des_decrypt() {}
+  Create_func_des_decrypt()
+  {
+  }
+  virtual ~Create_func_des_decrypt()
+  {
+  }
 };
 
 class Create_func_des_encrypt : public Create_native_func
@@ -977,8 +1195,12 @@ class Create_func_des_encrypt : public Create_native_func
   static Create_func_des_encrypt s_singleton;
 
  protected:
-  Create_func_des_encrypt() {}
-  virtual ~Create_func_des_encrypt() {}
+  Create_func_des_encrypt()
+  {
+  }
+  virtual ~Create_func_des_encrypt()
+  {
+  }
 };
 
 class Create_func_dimension : public Create_func_arg1
@@ -989,8 +1211,12 @@ class Create_func_dimension : public Create_func_arg1
   static Create_func_dimension s_singleton;
 
  protected:
-  Create_func_dimension() {}
-  virtual ~Create_func_dimension() {}
+  Create_func_dimension()
+  {
+  }
+  virtual ~Create_func_dimension()
+  {
+  }
 };
 
 class Create_func_dimension_deprecated : public Create_func_dimension
@@ -1014,8 +1240,12 @@ class Create_func_mbr_disjoint : public Create_func_arg2
   static Create_func_mbr_disjoint s_singleton;
 
  protected:
-  Create_func_mbr_disjoint() {}
-  virtual ~Create_func_mbr_disjoint() {}
+  Create_func_mbr_disjoint()
+  {
+  }
+  virtual ~Create_func_mbr_disjoint()
+  {
+  }
 };
 
 class Create_func_disjoint : public Create_func_arg2
@@ -1026,8 +1256,12 @@ class Create_func_disjoint : public Create_func_arg2
   static Create_func_disjoint s_singleton;
 
  protected:
-  Create_func_disjoint() {}
-  virtual ~Create_func_disjoint() {}
+  Create_func_disjoint()
+  {
+  }
+  virtual ~Create_func_disjoint()
+  {
+  }
 };
 
 class Create_func_distance : public Create_native_func
@@ -1038,8 +1272,12 @@ class Create_func_distance : public Create_native_func
   static Create_func_distance s_singleton;
 
  protected:
-  Create_func_distance() {}
-  virtual ~Create_func_distance() {}
+  Create_func_distance()
+  {
+  }
+  virtual ~Create_func_distance()
+  {
+  }
 };
 
 class Create_func_distance_sphere : public Create_native_func
@@ -1050,8 +1288,12 @@ class Create_func_distance_sphere : public Create_native_func
   static Create_func_distance_sphere s_singleton;
 
  protected:
-  Create_func_distance_sphere() {}
-  virtual ~Create_func_distance_sphere() {}
+  Create_func_distance_sphere()
+  {
+  }
+  virtual ~Create_func_distance_sphere()
+  {
+  }
 };
 
 class Create_func_distance_deprecated : public Create_func_distance
@@ -1075,8 +1317,12 @@ class Create_func_elt : public Create_native_func
   static Create_func_elt s_singleton;
 
  protected:
-  Create_func_elt() {}
-  virtual ~Create_func_elt() {}
+  Create_func_elt()
+  {
+  }
+  virtual ~Create_func_elt()
+  {
+  }
 };
 
 class Create_func_encode : public Create_func_arg2
@@ -1087,8 +1333,12 @@ class Create_func_encode : public Create_func_arg2
   static Create_func_encode s_singleton;
 
  protected:
-  Create_func_encode() {}
-  virtual ~Create_func_encode() {}
+  Create_func_encode()
+  {
+  }
+  virtual ~Create_func_encode()
+  {
+  }
 };
 
 class Create_func_encrypt : public Create_native_func
@@ -1099,8 +1349,12 @@ class Create_func_encrypt : public Create_native_func
   static Create_func_encrypt s_singleton;
 
  protected:
-  Create_func_encrypt() {}
-  virtual ~Create_func_encrypt() {}
+  Create_func_encrypt()
+  {
+  }
+  virtual ~Create_func_encrypt()
+  {
+  }
 };
 
 class Create_func_endpoint : public Create_func_arg1
@@ -1111,8 +1365,12 @@ class Create_func_endpoint : public Create_func_arg1
   static Create_func_endpoint s_singleton;
 
  protected:
-  Create_func_endpoint() {}
-  virtual ~Create_func_endpoint() {}
+  Create_func_endpoint()
+  {
+  }
+  virtual ~Create_func_endpoint()
+  {
+  }
 };
 
 class Create_func_endpoint_deprecated : public Create_func_endpoint
@@ -1136,8 +1394,12 @@ class Create_func_envelope : public Create_func_arg1
   static Create_func_envelope s_singleton;
 
  protected:
-  Create_func_envelope() {}
-  virtual ~Create_func_envelope() {}
+  Create_func_envelope()
+  {
+  }
+  virtual ~Create_func_envelope()
+  {
+  }
 };
 
 class Create_func_envelope_deprecated : public Create_func_envelope
@@ -1161,8 +1423,12 @@ class Create_func_mbr_equals : public Create_func_arg2
   static Create_func_mbr_equals s_singleton;
 
  protected:
-  Create_func_mbr_equals() {}
-  virtual ~Create_func_mbr_equals() {}
+  Create_func_mbr_equals()
+  {
+  }
+  virtual ~Create_func_mbr_equals()
+  {
+  }
 };
 
 class Create_func_mbr_equal_deprecated : public Create_func_mbr_equals
@@ -1199,8 +1465,12 @@ class Create_func_equals : public Create_func_arg2
   static Create_func_equals s_singleton;
 
  protected:
-  Create_func_equals() {}
-  virtual ~Create_func_equals() {}
+  Create_func_equals()
+  {
+  }
+  virtual ~Create_func_equals()
+  {
+  }
 };
 
 class Create_func_exp : public Create_func_arg1
@@ -1211,8 +1481,12 @@ class Create_func_exp : public Create_func_arg1
   static Create_func_exp s_singleton;
 
  protected:
-  Create_func_exp() {}
-  virtual ~Create_func_exp() {}
+  Create_func_exp()
+  {
+  }
+  virtual ~Create_func_exp()
+  {
+  }
 };
 
 class Create_func_export_set : public Create_native_func
@@ -1223,8 +1497,12 @@ class Create_func_export_set : public Create_native_func
   static Create_func_export_set s_singleton;
 
  protected:
-  Create_func_export_set() {}
-  virtual ~Create_func_export_set() {}
+  Create_func_export_set()
+  {
+  }
+  virtual ~Create_func_export_set()
+  {
+  }
 };
 
 class Create_func_exteriorring : public Create_func_arg1
@@ -1235,8 +1513,12 @@ class Create_func_exteriorring : public Create_func_arg1
   static Create_func_exteriorring s_singleton;
 
  protected:
-  Create_func_exteriorring() {}
-  virtual ~Create_func_exteriorring() {}
+  Create_func_exteriorring()
+  {
+  }
+  virtual ~Create_func_exteriorring()
+  {
+  }
 };
 
 class Create_func_exteriorring_deprecated : public Create_func_exteriorring
@@ -1260,8 +1542,12 @@ class Create_func_field : public Create_native_func
   static Create_func_field s_singleton;
 
  protected:
-  Create_func_field() {}
-  virtual ~Create_func_field() {}
+  Create_func_field()
+  {
+  }
+  virtual ~Create_func_field()
+  {
+  }
 };
 
 class Create_func_find_in_set : public Create_func_arg2
@@ -1272,8 +1558,12 @@ class Create_func_find_in_set : public Create_func_arg2
   static Create_func_find_in_set s_singleton;
 
  protected:
-  Create_func_find_in_set() {}
-  virtual ~Create_func_find_in_set() {}
+  Create_func_find_in_set()
+  {
+  }
+  virtual ~Create_func_find_in_set()
+  {
+  }
 };
 
 class Create_func_floor : public Create_func_arg1
@@ -1284,8 +1574,12 @@ class Create_func_floor : public Create_func_arg1
   static Create_func_floor s_singleton;
 
  protected:
-  Create_func_floor() {}
-  virtual ~Create_func_floor() {}
+  Create_func_floor()
+  {
+  }
+  virtual ~Create_func_floor()
+  {
+  }
 };
 
 class Create_func_found_rows : public Create_func_arg0
@@ -1296,8 +1590,12 @@ class Create_func_found_rows : public Create_func_arg0
   static Create_func_found_rows s_singleton;
 
  protected:
-  Create_func_found_rows() {}
-  virtual ~Create_func_found_rows() {}
+  Create_func_found_rows()
+  {
+  }
+  virtual ~Create_func_found_rows()
+  {
+  }
 };
 
 class Create_func_from_base64 : public Create_func_arg1
@@ -1308,8 +1606,12 @@ class Create_func_from_base64 : public Create_func_arg1
   static Create_func_from_base64 s_singleton;
 
  protected:
-  Create_func_from_base64() {}
-  virtual ~Create_func_from_base64() {}
+  Create_func_from_base64()
+  {
+  }
+  virtual ~Create_func_from_base64()
+  {
+  }
 };
 
 class Create_func_from_days : public Create_func_arg1
@@ -1320,8 +1622,12 @@ class Create_func_from_days : public Create_func_arg1
   static Create_func_from_days s_singleton;
 
  protected:
-  Create_func_from_days() {}
-  virtual ~Create_func_from_days() {}
+  Create_func_from_days()
+  {
+  }
+  virtual ~Create_func_from_days()
+  {
+  }
 };
 
 class Create_func_from_unixtime : public Create_native_func
@@ -1332,8 +1638,12 @@ class Create_func_from_unixtime : public Create_native_func
   static Create_func_from_unixtime s_singleton;
 
  protected:
-  Create_func_from_unixtime() {}
-  virtual ~Create_func_from_unixtime() {}
+  Create_func_from_unixtime()
+  {
+  }
+  virtual ~Create_func_from_unixtime()
+  {
+  }
 };
 
 class Create_func_geohash : public Create_native_func
@@ -1344,8 +1654,12 @@ class Create_func_geohash : public Create_native_func
   static Create_func_geohash s_singleton;
 
  protected:
-  Create_func_geohash() {}
-  virtual ~Create_func_geohash() {}
+  Create_func_geohash()
+  {
+  }
+  virtual ~Create_func_geohash()
+  {
+  }
 };
 
 class Create_func_geometry_from_text : public Create_native_func
@@ -1356,8 +1670,12 @@ class Create_func_geometry_from_text : public Create_native_func
   static Create_func_geometry_from_text s_singleton;
 
  protected:
-  Create_func_geometry_from_text() {}
-  virtual ~Create_func_geometry_from_text() {}
+  Create_func_geometry_from_text()
+  {
+  }
+  virtual ~Create_func_geometry_from_text()
+  {
+  }
 };
 
 class Create_func_geomcollfromtext_deprecated : public Create_func_geometry_from_text
@@ -1563,8 +1881,12 @@ class Create_func_geometry_from_wkb : public Create_native_func
   static Create_func_geometry_from_wkb s_singleton;
 
  protected:
-  Create_func_geometry_from_wkb() {}
-  virtual ~Create_func_geometry_from_wkb() {}
+  Create_func_geometry_from_wkb()
+  {
+  }
+  virtual ~Create_func_geometry_from_wkb()
+  {
+  }
 };
 
 class Create_func_geomcollfromwkb_deprecated : public Create_func_geometry_from_wkb
@@ -1770,8 +2092,12 @@ class Create_func_geometry_type : public Create_func_arg1
   static Create_func_geometry_type s_singleton;
 
  protected:
-  Create_func_geometry_type() {}
-  virtual ~Create_func_geometry_type() {}
+  Create_func_geometry_type()
+  {
+  }
+  virtual ~Create_func_geometry_type()
+  {
+  }
 };
 
 class Create_func_geometry_type_deprecated : public Create_func_geometry_type
@@ -1795,8 +2121,12 @@ class Create_func_geometryn : public Create_func_arg2
   static Create_func_geometryn s_singleton;
 
  protected:
-  Create_func_geometryn() {}
-  virtual ~Create_func_geometryn() {}
+  Create_func_geometryn()
+  {
+  }
+  virtual ~Create_func_geometryn()
+  {
+  }
 };
 
 class Create_func_geometryn_deprecated : public Create_func_geometryn
@@ -1820,8 +2150,12 @@ class Create_func_geomfromgeojson : public Create_native_func
   static Create_func_geomfromgeojson s_singleton;
 
  protected:
-  Create_func_geomfromgeojson() {}
-  virtual ~Create_func_geomfromgeojson() {}
+  Create_func_geomfromgeojson()
+  {
+  }
+  virtual ~Create_func_geomfromgeojson()
+  {
+  }
 };
 
 class Create_func_get_lock : public Create_func_arg2
@@ -1832,8 +2166,12 @@ class Create_func_get_lock : public Create_func_arg2
   static Create_func_get_lock s_singleton;
 
  protected:
-  Create_func_get_lock() {}
-  virtual ~Create_func_get_lock() {}
+  Create_func_get_lock()
+  {
+  }
+  virtual ~Create_func_get_lock()
+  {
+  }
 };
 
 class Create_func_glength : public Create_func_arg1
@@ -1844,8 +2182,12 @@ class Create_func_glength : public Create_func_arg1
   static Create_func_glength s_singleton;
 
  protected:
-  Create_func_glength() {}
-  virtual ~Create_func_glength() {}
+  Create_func_glength()
+  {
+  }
+  virtual ~Create_func_glength()
+  {
+  }
 };
 
 class Create_func_glength_deprecated : public Create_func_glength
@@ -1869,8 +2211,12 @@ class Create_func_greatest : public Create_native_func
   static Create_func_greatest s_singleton;
 
  protected:
-  Create_func_greatest() {}
-  virtual ~Create_func_greatest() {}
+  Create_func_greatest()
+  {
+  }
+  virtual ~Create_func_greatest()
+  {
+  }
 };
 
 class Create_func_gtid_subtract : public Create_func_arg2
@@ -1881,8 +2227,12 @@ class Create_func_gtid_subtract : public Create_func_arg2
   static Create_func_gtid_subtract s_singleton;
 
  protected:
-  Create_func_gtid_subtract() {}
-  virtual ~Create_func_gtid_subtract() {}
+  Create_func_gtid_subtract()
+  {
+  }
+  virtual ~Create_func_gtid_subtract()
+  {
+  }
 };
 
 class Create_func_gtid_subset : public Create_func_arg2
@@ -1893,8 +2243,12 @@ class Create_func_gtid_subset : public Create_func_arg2
   static Create_func_gtid_subset s_singleton;
 
  protected:
-  Create_func_gtid_subset() {}
-  virtual ~Create_func_gtid_subset() {}
+  Create_func_gtid_subset()
+  {
+  }
+  virtual ~Create_func_gtid_subset()
+  {
+  }
 };
 
 class Create_func_hex : public Create_func_arg1
@@ -1905,8 +2259,12 @@ class Create_func_hex : public Create_func_arg1
   static Create_func_hex s_singleton;
 
  protected:
-  Create_func_hex() {}
-  virtual ~Create_func_hex() {}
+  Create_func_hex()
+  {
+  }
+  virtual ~Create_func_hex()
+  {
+  }
 };
 
 class Create_func_ifnull : public Create_func_arg2
@@ -1917,8 +2275,12 @@ class Create_func_ifnull : public Create_func_arg2
   static Create_func_ifnull s_singleton;
 
  protected:
-  Create_func_ifnull() {}
-  virtual ~Create_func_ifnull() {}
+  Create_func_ifnull()
+  {
+  }
+  virtual ~Create_func_ifnull()
+  {
+  }
 };
 
 class Create_func_inet_ntoa : public Create_func_arg1
@@ -1929,8 +2291,12 @@ class Create_func_inet_ntoa : public Create_func_arg1
   static Create_func_inet_ntoa s_singleton;
 
  protected:
-  Create_func_inet_ntoa() {}
-  virtual ~Create_func_inet_ntoa() {}
+  Create_func_inet_ntoa()
+  {
+  }
+  virtual ~Create_func_inet_ntoa()
+  {
+  }
 };
 
 class Create_func_inet_aton : public Create_func_arg1
@@ -1941,8 +2307,12 @@ class Create_func_inet_aton : public Create_func_arg1
   static Create_func_inet_aton s_singleton;
 
  protected:
-  Create_func_inet_aton() {}
-  virtual ~Create_func_inet_aton() {}
+  Create_func_inet_aton()
+  {
+  }
+  virtual ~Create_func_inet_aton()
+  {
+  }
 };
 
 class Create_func_inet6_aton : public Create_func_arg1
@@ -1953,8 +2323,12 @@ class Create_func_inet6_aton : public Create_func_arg1
   static Create_func_inet6_aton s_singleton;
 
  protected:
-  Create_func_inet6_aton() {}
-  virtual ~Create_func_inet6_aton() {}
+  Create_func_inet6_aton()
+  {
+  }
+  virtual ~Create_func_inet6_aton()
+  {
+  }
 };
 
 class Create_func_inet6_ntoa : public Create_func_arg1
@@ -1965,8 +2339,12 @@ class Create_func_inet6_ntoa : public Create_func_arg1
   static Create_func_inet6_ntoa s_singleton;
 
  protected:
-  Create_func_inet6_ntoa() {}
-  virtual ~Create_func_inet6_ntoa() {}
+  Create_func_inet6_ntoa()
+  {
+  }
+  virtual ~Create_func_inet6_ntoa()
+  {
+  }
 };
 
 class Create_func_is_ipv4 : public Create_func_arg1
@@ -1977,8 +2355,12 @@ class Create_func_is_ipv4 : public Create_func_arg1
   static Create_func_is_ipv4 s_singleton;
 
  protected:
-  Create_func_is_ipv4() {}
-  virtual ~Create_func_is_ipv4() {}
+  Create_func_is_ipv4()
+  {
+  }
+  virtual ~Create_func_is_ipv4()
+  {
+  }
 };
 
 class Create_func_is_ipv6 : public Create_func_arg1
@@ -1989,8 +2371,12 @@ class Create_func_is_ipv6 : public Create_func_arg1
   static Create_func_is_ipv6 s_singleton;
 
  protected:
-  Create_func_is_ipv6() {}
-  virtual ~Create_func_is_ipv6() {}
+  Create_func_is_ipv6()
+  {
+  }
+  virtual ~Create_func_is_ipv6()
+  {
+  }
 };
 
 class Create_func_is_ipv4_compat : public Create_func_arg1
@@ -2001,8 +2387,12 @@ class Create_func_is_ipv4_compat : public Create_func_arg1
   static Create_func_is_ipv4_compat s_singleton;
 
  protected:
-  Create_func_is_ipv4_compat() {}
-  virtual ~Create_func_is_ipv4_compat() {}
+  Create_func_is_ipv4_compat()
+  {
+  }
+  virtual ~Create_func_is_ipv4_compat()
+  {
+  }
 };
 
 class Create_func_is_ipv4_mapped : public Create_func_arg1
@@ -2013,8 +2403,12 @@ class Create_func_is_ipv4_mapped : public Create_func_arg1
   static Create_func_is_ipv4_mapped s_singleton;
 
  protected:
-  Create_func_is_ipv4_mapped() {}
-  virtual ~Create_func_is_ipv4_mapped() {}
+  Create_func_is_ipv4_mapped()
+  {
+  }
+  virtual ~Create_func_is_ipv4_mapped()
+  {
+  }
 };
 
 class Create_func_instr : public Create_func_arg2
@@ -2025,8 +2419,12 @@ class Create_func_instr : public Create_func_arg2
   static Create_func_instr s_singleton;
 
  protected:
-  Create_func_instr() {}
-  virtual ~Create_func_instr() {}
+  Create_func_instr()
+  {
+  }
+  virtual ~Create_func_instr()
+  {
+  }
 };
 
 class Create_func_interiorringn : public Create_func_arg2
@@ -2037,8 +2435,12 @@ class Create_func_interiorringn : public Create_func_arg2
   static Create_func_interiorringn s_singleton;
 
  protected:
-  Create_func_interiorringn() {}
-  virtual ~Create_func_interiorringn() {}
+  Create_func_interiorringn()
+  {
+  }
+  virtual ~Create_func_interiorringn()
+  {
+  }
 };
 
 class Create_func_interiorringn_deprecated : public Create_func_interiorringn
@@ -2062,8 +2464,12 @@ class Create_func_mbr_intersects : public Create_func_arg2
   static Create_func_mbr_intersects s_singleton;
 
  protected:
-  Create_func_mbr_intersects() {}
-  virtual ~Create_func_mbr_intersects() {}
+  Create_func_mbr_intersects()
+  {
+  }
+  virtual ~Create_func_mbr_intersects()
+  {
+  }
 };
 
 class Create_func_intersects_deprecated : public Create_func_mbr_intersects
@@ -2087,8 +2493,12 @@ class Create_func_intersects : public Create_func_arg2
   static Create_func_intersects s_singleton;
 
  protected:
-  Create_func_intersects() {}
-  virtual ~Create_func_intersects() {}
+  Create_func_intersects()
+  {
+  }
+  virtual ~Create_func_intersects()
+  {
+  }
 };
 
 class Create_func_intersection : public Create_func_arg2
@@ -2099,8 +2509,12 @@ class Create_func_intersection : public Create_func_arg2
   static Create_func_intersection s_singleton;
 
  protected:
-  Create_func_intersection() {}
-  virtual ~Create_func_intersection() {}
+  Create_func_intersection()
+  {
+  }
+  virtual ~Create_func_intersection()
+  {
+  }
 };
 
 class Create_func_difference : public Create_func_arg2
@@ -2111,8 +2525,12 @@ class Create_func_difference : public Create_func_arg2
   static Create_func_difference s_singleton;
 
  protected:
-  Create_func_difference() {}
-  virtual ~Create_func_difference() {}
+  Create_func_difference()
+  {
+  }
+  virtual ~Create_func_difference()
+  {
+  }
 };
 
 class Create_func_union : public Create_func_arg2
@@ -2123,8 +2541,12 @@ class Create_func_union : public Create_func_arg2
   static Create_func_union s_singleton;
 
  protected:
-  Create_func_union() {}
-  virtual ~Create_func_union() {}
+  Create_func_union()
+  {
+  }
+  virtual ~Create_func_union()
+  {
+  }
 };
 
 class Create_func_symdifference : public Create_func_arg2
@@ -2135,8 +2557,12 @@ class Create_func_symdifference : public Create_func_arg2
   static Create_func_symdifference s_singleton;
 
  protected:
-  Create_func_symdifference() {}
-  virtual ~Create_func_symdifference() {}
+  Create_func_symdifference()
+  {
+  }
+  virtual ~Create_func_symdifference()
+  {
+  }
 };
 
 class Create_func_buffer : public Create_native_func
@@ -2147,8 +2573,12 @@ class Create_func_buffer : public Create_native_func
   static Create_func_buffer s_singleton;
 
  protected:
-  Create_func_buffer() {}
-  virtual ~Create_func_buffer() {}
+  Create_func_buffer()
+  {
+  }
+  virtual ~Create_func_buffer()
+  {
+  }
 };
 
 class Create_func_buffer_deprecated : public Create_func_buffer
@@ -2172,8 +2602,12 @@ class Create_func_is_free_lock : public Create_func_arg1
   static Create_func_is_free_lock s_singleton;
 
  protected:
-  Create_func_is_free_lock() {}
-  virtual ~Create_func_is_free_lock() {}
+  Create_func_is_free_lock()
+  {
+  }
+  virtual ~Create_func_is_free_lock()
+  {
+  }
 };
 
 class Create_func_is_used_lock : public Create_func_arg1
@@ -2184,8 +2618,12 @@ class Create_func_is_used_lock : public Create_func_arg1
   static Create_func_is_used_lock s_singleton;
 
  protected:
-  Create_func_is_used_lock() {}
-  virtual ~Create_func_is_used_lock() {}
+  Create_func_is_used_lock()
+  {
+  }
+  virtual ~Create_func_is_used_lock()
+  {
+  }
 };
 
 class Create_func_isclosed : public Create_func_arg1
@@ -2196,8 +2634,12 @@ class Create_func_isclosed : public Create_func_arg1
   static Create_func_isclosed s_singleton;
 
  protected:
-  Create_func_isclosed() {}
-  virtual ~Create_func_isclosed() {}
+  Create_func_isclosed()
+  {
+  }
+  virtual ~Create_func_isclosed()
+  {
+  }
 };
 
 class Create_func_isclosed_deprecated : public Create_func_isclosed
@@ -2221,8 +2663,12 @@ class Create_func_isempty : public Create_func_arg1
   static Create_func_isempty s_singleton;
 
  protected:
-  Create_func_isempty() {}
-  virtual ~Create_func_isempty() {}
+  Create_func_isempty()
+  {
+  }
+  virtual ~Create_func_isempty()
+  {
+  }
 };
 
 class Create_func_isempty_deprecated : public Create_func_isempty
@@ -2246,8 +2692,12 @@ class Create_func_isnull : public Create_func_arg1
   static Create_func_isnull s_singleton;
 
  protected:
-  Create_func_isnull() {}
-  virtual ~Create_func_isnull() {}
+  Create_func_isnull()
+  {
+  }
+  virtual ~Create_func_isnull()
+  {
+  }
 };
 
 class Create_func_issimple : public Create_func_arg1
@@ -2258,8 +2708,12 @@ class Create_func_issimple : public Create_func_arg1
   static Create_func_issimple s_singleton;
 
  protected:
-  Create_func_issimple() {}
-  virtual ~Create_func_issimple() {}
+  Create_func_issimple()
+  {
+  }
+  virtual ~Create_func_issimple()
+  {
+  }
 };
 
 class Create_func_json_valid : public Create_func_arg1
@@ -2270,8 +2724,12 @@ class Create_func_json_valid : public Create_func_arg1
   static Create_func_json_valid s_singleton;
 
  protected:
-  Create_func_json_valid() {}
-  virtual ~Create_func_json_valid() {}
+  Create_func_json_valid()
+  {
+  }
+  virtual ~Create_func_json_valid()
+  {
+  }
 };
 
 class Create_func_json_contains : public Create_native_func
@@ -2282,8 +2740,12 @@ class Create_func_json_contains : public Create_native_func
   static Create_func_json_contains s_singleton;
 
  protected:
-  Create_func_json_contains() {}
-  virtual ~Create_func_json_contains() {}
+  Create_func_json_contains()
+  {
+  }
+  virtual ~Create_func_json_contains()
+  {
+  }
 };
 
 class Create_func_json_contains_path : public Create_native_func
@@ -2294,8 +2756,12 @@ class Create_func_json_contains_path : public Create_native_func
   static Create_func_json_contains_path s_singleton;
 
  protected:
-  Create_func_json_contains_path() {}
-  virtual ~Create_func_json_contains_path() {}
+  Create_func_json_contains_path()
+  {
+  }
+  virtual ~Create_func_json_contains_path()
+  {
+  }
 };
 
 class Create_func_json_length : public Create_native_func
@@ -2306,8 +2772,12 @@ class Create_func_json_length : public Create_native_func
   static Create_func_json_length s_singleton;
 
  protected:
-  Create_func_json_length() {}
-  virtual ~Create_func_json_length() {}
+  Create_func_json_length()
+  {
+  }
+  virtual ~Create_func_json_length()
+  {
+  }
 };
 
 class Create_func_json_depth : public Create_native_func
@@ -2318,15 +2788,22 @@ class Create_func_json_depth : public Create_native_func
   static Create_func_json_depth s_singleton;
 
  protected:
-  Create_func_json_depth() {}
-  virtual ~Create_func_json_depth() {}
+  Create_func_json_depth()
+  {
+  }
+  virtual ~Create_func_json_depth()
+  {
+  }
 };
 
 class Create_func_json_pretty : public Create_func_arg1
 {
  public:
   static Create_func_json_pretty s_singleton;
-  virtual Item *create(THD *thd, Item *arg1) { return new (thd->mem_root) Item_func_json_pretty(POS(), arg1); }
+  virtual Item *create(THD *thd, Item *arg1)
+  {
+    return new (thd->mem_root) Item_func_json_pretty(POS(), arg1);
+  }
 };
 Create_func_json_pretty Create_func_json_pretty::s_singleton;
 
@@ -2338,8 +2815,12 @@ class Create_func_json_type : public Create_func_arg1
   static Create_func_json_type s_singleton;
 
  protected:
-  Create_func_json_type() {}
-  virtual ~Create_func_json_type() {}
+  Create_func_json_type()
+  {
+  }
+  virtual ~Create_func_json_type()
+  {
+  }
 };
 
 class Create_func_json_keys : public Create_native_func
@@ -2350,8 +2831,12 @@ class Create_func_json_keys : public Create_native_func
   static Create_func_json_keys s_singleton;
 
  protected:
-  Create_func_json_keys() {}
-  virtual ~Create_func_json_keys() {}
+  Create_func_json_keys()
+  {
+  }
+  virtual ~Create_func_json_keys()
+  {
+  }
 };
 
 class Create_func_json_extract : public Create_native_func
@@ -2362,8 +2847,12 @@ class Create_func_json_extract : public Create_native_func
   static Create_func_json_extract s_singleton;
 
  protected:
-  Create_func_json_extract() {}
-  virtual ~Create_func_json_extract() {}
+  Create_func_json_extract()
+  {
+  }
+  virtual ~Create_func_json_extract()
+  {
+  }
 };
 
 class Create_func_json_array_append : public Create_native_func
@@ -2374,8 +2863,12 @@ class Create_func_json_array_append : public Create_native_func
   static Create_func_json_array_append s_singleton;
 
  protected:
-  Create_func_json_array_append() {}
-  virtual ~Create_func_json_array_append() {}
+  Create_func_json_array_append()
+  {
+  }
+  virtual ~Create_func_json_array_append()
+  {
+  }
 };
 
 class Create_func_json_insert : public Create_native_func
@@ -2386,8 +2879,12 @@ class Create_func_json_insert : public Create_native_func
   static Create_func_json_insert s_singleton;
 
  protected:
-  Create_func_json_insert() {}
-  virtual ~Create_func_json_insert() {}
+  Create_func_json_insert()
+  {
+  }
+  virtual ~Create_func_json_insert()
+  {
+  }
 };
 
 class Create_func_json_array_insert : public Create_native_func
@@ -2398,8 +2895,12 @@ class Create_func_json_array_insert : public Create_native_func
   static Create_func_json_array_insert s_singleton;
 
  protected:
-  Create_func_json_array_insert() {}
-  virtual ~Create_func_json_array_insert() {}
+  Create_func_json_array_insert()
+  {
+  }
+  virtual ~Create_func_json_array_insert()
+  {
+  }
 };
 
 class Create_func_json_row_object : public Create_native_func
@@ -2410,8 +2911,12 @@ class Create_func_json_row_object : public Create_native_func
   static Create_func_json_row_object s_singleton;
 
  protected:
-  Create_func_json_row_object() {}
-  virtual ~Create_func_json_row_object() {}
+  Create_func_json_row_object()
+  {
+  }
+  virtual ~Create_func_json_row_object()
+  {
+  }
 };
 
 class Create_func_json_search : public Create_native_func
@@ -2422,8 +2927,12 @@ class Create_func_json_search : public Create_native_func
   static Create_func_json_search s_singleton;
 
  protected:
-  Create_func_json_search() {}
-  virtual ~Create_func_json_search() {}
+  Create_func_json_search()
+  {
+  }
+  virtual ~Create_func_json_search()
+  {
+  }
 };
 
 class Create_func_json_set : public Create_native_func
@@ -2434,8 +2943,12 @@ class Create_func_json_set : public Create_native_func
   static Create_func_json_set s_singleton;
 
  protected:
-  Create_func_json_set() {}
-  virtual ~Create_func_json_set() {}
+  Create_func_json_set()
+  {
+  }
+  virtual ~Create_func_json_set()
+  {
+  }
 };
 
 class Create_func_json_replace : public Create_native_func
@@ -2446,8 +2959,12 @@ class Create_func_json_replace : public Create_native_func
   static Create_func_json_replace s_singleton;
 
  protected:
-  Create_func_json_replace() {}
-  virtual ~Create_func_json_replace() {}
+  Create_func_json_replace()
+  {
+  }
+  virtual ~Create_func_json_replace()
+  {
+  }
 };
 
 class Create_func_json_array : public Create_native_func
@@ -2458,8 +2975,12 @@ class Create_func_json_array : public Create_native_func
   static Create_func_json_array s_singleton;
 
  protected:
-  Create_func_json_array() {}
-  virtual ~Create_func_json_array() {}
+  Create_func_json_array()
+  {
+  }
+  virtual ~Create_func_json_array()
+  {
+  }
 };
 
 class Create_func_json_remove : public Create_native_func
@@ -2470,8 +2991,12 @@ class Create_func_json_remove : public Create_native_func
   static Create_func_json_remove s_singleton;
 
  protected:
-  Create_func_json_remove() {}
-  virtual ~Create_func_json_remove() {}
+  Create_func_json_remove()
+  {
+  }
+  virtual ~Create_func_json_remove()
+  {
+  }
 };
 
 class Create_func_isvalid : public Create_func_arg1
@@ -2482,8 +3007,12 @@ class Create_func_isvalid : public Create_func_arg1
   static Create_func_isvalid s_singleton;
 
  protected:
-  Create_func_isvalid() {}
-  virtual ~Create_func_isvalid() {}
+  Create_func_isvalid()
+  {
+  }
+  virtual ~Create_func_isvalid()
+  {
+  }
 };
 
 class Create_func_validate : public Create_func_arg1
@@ -2494,8 +3023,12 @@ class Create_func_validate : public Create_func_arg1
   static Create_func_validate s_singleton;
 
  protected:
-  Create_func_validate() {}
-  virtual ~Create_func_validate() {}
+  Create_func_validate()
+  {
+  }
+  virtual ~Create_func_validate()
+  {
+  }
 };
 
 class Create_func_issimple_deprecated : public Create_func_issimple
@@ -2528,8 +3061,12 @@ class Create_func_json_merge_preserve : public Create_native_func
   static Create_func_json_merge_preserve s_singleton;
 
  protected:
-  Create_func_json_merge_preserve() {}
-  virtual ~Create_func_json_merge_preserve() {}
+  Create_func_json_merge_preserve()
+  {
+  }
+  virtual ~Create_func_json_merge_preserve()
+  {
+  }
 };
 Create_func_json_merge_preserve Create_func_json_merge_preserve::s_singleton;
 
@@ -2561,15 +3098,22 @@ class Create_func_json_quote : public Create_native_func
   static Create_func_json_quote s_singleton;
 
  protected:
-  Create_func_json_quote() {}
-  virtual ~Create_func_json_quote() {}
+  Create_func_json_quote()
+  {
+  }
+  virtual ~Create_func_json_quote()
+  {
+  }
 };
 
 class Create_func_json_storage_size : public Create_func_arg1
 {
  public:
   static Create_func_json_storage_size s_singleton;
-  virtual Item *create(THD *thd, Item *arg1) { return new (thd->mem_root) Item_func_json_storage_size(POS(), arg1); }
+  virtual Item *create(THD *thd, Item *arg1)
+  {
+    return new (thd->mem_root) Item_func_json_storage_size(POS(), arg1);
+  }
 };
 Create_func_json_storage_size Create_func_json_storage_size::s_singleton;
 
@@ -2581,8 +3125,12 @@ class Create_func_json_unquote : public Create_native_func
   static Create_func_json_unquote s_singleton;
 
  protected:
-  Create_func_json_unquote() {}
-  virtual ~Create_func_json_unquote() {}
+  Create_func_json_unquote()
+  {
+  }
+  virtual ~Create_func_json_unquote()
+  {
+  }
 };
 
 class Create_func_latfromgeohash : public Create_func_arg1
@@ -2593,8 +3141,12 @@ class Create_func_latfromgeohash : public Create_func_arg1
   static Create_func_latfromgeohash s_singleton;
 
  protected:
-  Create_func_latfromgeohash() {}
-  virtual ~Create_func_latfromgeohash() {}
+  Create_func_latfromgeohash()
+  {
+  }
+  virtual ~Create_func_latfromgeohash()
+  {
+  }
 };
 
 class Create_func_longfromgeohash : public Create_func_arg1
@@ -2605,8 +3157,12 @@ class Create_func_longfromgeohash : public Create_func_arg1
   static Create_func_longfromgeohash s_singleton;
 
  protected:
-  Create_func_longfromgeohash() {}
-  virtual ~Create_func_longfromgeohash() {}
+  Create_func_longfromgeohash()
+  {
+  }
+  virtual ~Create_func_longfromgeohash()
+  {
+  }
 };
 
 class Create_func_last_day : public Create_func_arg1
@@ -2617,8 +3173,12 @@ class Create_func_last_day : public Create_func_arg1
   static Create_func_last_day s_singleton;
 
  protected:
-  Create_func_last_day() {}
-  virtual ~Create_func_last_day() {}
+  Create_func_last_day()
+  {
+  }
+  virtual ~Create_func_last_day()
+  {
+  }
 };
 
 class Create_func_last_insert_id : public Create_native_func
@@ -2629,8 +3189,12 @@ class Create_func_last_insert_id : public Create_native_func
   static Create_func_last_insert_id s_singleton;
 
  protected:
-  Create_func_last_insert_id() {}
-  virtual ~Create_func_last_insert_id() {}
+  Create_func_last_insert_id()
+  {
+  }
+  virtual ~Create_func_last_insert_id()
+  {
+  }
 };
 
 class Create_func_lower : public Create_func_arg1
@@ -2641,8 +3205,12 @@ class Create_func_lower : public Create_func_arg1
   static Create_func_lower s_singleton;
 
  protected:
-  Create_func_lower() {}
-  virtual ~Create_func_lower() {}
+  Create_func_lower()
+  {
+  }
+  virtual ~Create_func_lower()
+  {
+  }
 };
 
 class Create_func_least : public Create_native_func
@@ -2653,8 +3221,12 @@ class Create_func_least : public Create_native_func
   static Create_func_least s_singleton;
 
  protected:
-  Create_func_least() {}
-  virtual ~Create_func_least() {}
+  Create_func_least()
+  {
+  }
+  virtual ~Create_func_least()
+  {
+  }
 };
 
 class Create_func_length : public Create_func_arg1
@@ -2665,8 +3237,12 @@ class Create_func_length : public Create_func_arg1
   static Create_func_length s_singleton;
 
  protected:
-  Create_func_length() {}
-  virtual ~Create_func_length() {}
+  Create_func_length()
+  {
+  }
+  virtual ~Create_func_length()
+  {
+  }
 };
 
 #ifndef NDEBUG
@@ -2678,8 +3254,12 @@ class Create_func_like_range_min : public Create_func_arg2
   static Create_func_like_range_min s_singleton;
 
  protected:
-  Create_func_like_range_min() {}
-  virtual ~Create_func_like_range_min() {}
+  Create_func_like_range_min()
+  {
+  }
+  virtual ~Create_func_like_range_min()
+  {
+  }
 };
 
 class Create_func_like_range_max : public Create_func_arg2
@@ -2690,8 +3270,12 @@ class Create_func_like_range_max : public Create_func_arg2
   static Create_func_like_range_max s_singleton;
 
  protected:
-  Create_func_like_range_max() {}
-  virtual ~Create_func_like_range_max() {}
+  Create_func_like_range_max()
+  {
+  }
+  virtual ~Create_func_like_range_max()
+  {
+  }
 };
 #endif
 
@@ -2703,8 +3287,12 @@ class Create_func_ln : public Create_func_arg1
   static Create_func_ln s_singleton;
 
  protected:
-  Create_func_ln() {}
-  virtual ~Create_func_ln() {}
+  Create_func_ln()
+  {
+  }
+  virtual ~Create_func_ln()
+  {
+  }
 };
 
 class Create_func_load_file : public Create_func_arg1
@@ -2715,8 +3303,12 @@ class Create_func_load_file : public Create_func_arg1
   static Create_func_load_file s_singleton;
 
  protected:
-  Create_func_load_file() {}
-  virtual ~Create_func_load_file() {}
+  Create_func_load_file()
+  {
+  }
+  virtual ~Create_func_load_file()
+  {
+  }
 };
 
 class Create_func_locate : public Create_native_func
@@ -2727,8 +3319,12 @@ class Create_func_locate : public Create_native_func
   static Create_func_locate s_singleton;
 
  protected:
-  Create_func_locate() {}
-  virtual ~Create_func_locate() {}
+  Create_func_locate()
+  {
+  }
+  virtual ~Create_func_locate()
+  {
+  }
 };
 
 class Create_func_log : public Create_native_func
@@ -2739,8 +3335,12 @@ class Create_func_log : public Create_native_func
   static Create_func_log s_singleton;
 
  protected:
-  Create_func_log() {}
-  virtual ~Create_func_log() {}
+  Create_func_log()
+  {
+  }
+  virtual ~Create_func_log()
+  {
+  }
 };
 
 class Create_func_log10 : public Create_func_arg1
@@ -2751,8 +3351,12 @@ class Create_func_log10 : public Create_func_arg1
   static Create_func_log10 s_singleton;
 
  protected:
-  Create_func_log10() {}
-  virtual ~Create_func_log10() {}
+  Create_func_log10()
+  {
+  }
+  virtual ~Create_func_log10()
+  {
+  }
 };
 
 class Create_func_log2 : public Create_func_arg1
@@ -2763,8 +3367,12 @@ class Create_func_log2 : public Create_func_arg1
   static Create_func_log2 s_singleton;
 
  protected:
-  Create_func_log2() {}
-  virtual ~Create_func_log2() {}
+  Create_func_log2()
+  {
+  }
+  virtual ~Create_func_log2()
+  {
+  }
 };
 
 class Create_func_lpad : public Create_func_arg3
@@ -2775,8 +3383,12 @@ class Create_func_lpad : public Create_func_arg3
   static Create_func_lpad s_singleton;
 
  protected:
-  Create_func_lpad() {}
-  virtual ~Create_func_lpad() {}
+  Create_func_lpad()
+  {
+  }
+  virtual ~Create_func_lpad()
+  {
+  }
 };
 
 class Create_func_ltrim : public Create_func_arg1
@@ -2787,8 +3399,12 @@ class Create_func_ltrim : public Create_func_arg1
   static Create_func_ltrim s_singleton;
 
  protected:
-  Create_func_ltrim() {}
-  virtual ~Create_func_ltrim() {}
+  Create_func_ltrim()
+  {
+  }
+  virtual ~Create_func_ltrim()
+  {
+  }
 };
 
 class Create_func_makedate : public Create_func_arg2
@@ -2799,8 +3415,12 @@ class Create_func_makedate : public Create_func_arg2
   static Create_func_makedate s_singleton;
 
  protected:
-  Create_func_makedate() {}
-  virtual ~Create_func_makedate() {}
+  Create_func_makedate()
+  {
+  }
+  virtual ~Create_func_makedate()
+  {
+  }
 };
 
 class Create_func_make_envelope : public Create_func_arg2
@@ -2811,8 +3431,12 @@ class Create_func_make_envelope : public Create_func_arg2
   static Create_func_make_envelope s_singleton;
 
  protected:
-  Create_func_make_envelope() {}
-  virtual ~Create_func_make_envelope() {}
+  Create_func_make_envelope()
+  {
+  }
+  virtual ~Create_func_make_envelope()
+  {
+  }
 };
 
 class Create_func_maketime : public Create_func_arg3
@@ -2823,8 +3447,12 @@ class Create_func_maketime : public Create_func_arg3
   static Create_func_maketime s_singleton;
 
  protected:
-  Create_func_maketime() {}
-  virtual ~Create_func_maketime() {}
+  Create_func_maketime()
+  {
+  }
+  virtual ~Create_func_maketime()
+  {
+  }
 };
 
 class Create_func_make_set : public Create_native_func
@@ -2835,8 +3463,12 @@ class Create_func_make_set : public Create_native_func
   static Create_func_make_set s_singleton;
 
  protected:
-  Create_func_make_set() {}
-  virtual ~Create_func_make_set() {}
+  Create_func_make_set()
+  {
+  }
+  virtual ~Create_func_make_set()
+  {
+  }
 };
 
 class Create_func_master_pos_wait : public Create_native_func
@@ -2847,8 +3479,12 @@ class Create_func_master_pos_wait : public Create_native_func
   static Create_func_master_pos_wait s_singleton;
 
  protected:
-  Create_func_master_pos_wait() {}
-  virtual ~Create_func_master_pos_wait() {}
+  Create_func_master_pos_wait()
+  {
+  }
+  virtual ~Create_func_master_pos_wait()
+  {
+  }
 };
 
 class Create_func_executed_gtid_set_wait : public Create_native_func
@@ -2859,8 +3495,12 @@ class Create_func_executed_gtid_set_wait : public Create_native_func
   static Create_func_executed_gtid_set_wait s_singleton;
 
  protected:
-  Create_func_executed_gtid_set_wait() {}
-  virtual ~Create_func_executed_gtid_set_wait() {}
+  Create_func_executed_gtid_set_wait()
+  {
+  }
+  virtual ~Create_func_executed_gtid_set_wait()
+  {
+  }
 };
 
 class Create_func_master_gtid_set_wait : public Create_native_func
@@ -2871,8 +3511,12 @@ class Create_func_master_gtid_set_wait : public Create_native_func
   static Create_func_master_gtid_set_wait s_singleton;
 
  protected:
-  Create_func_master_gtid_set_wait() {}
-  virtual ~Create_func_master_gtid_set_wait() {}
+  Create_func_master_gtid_set_wait()
+  {
+  }
+  virtual ~Create_func_master_gtid_set_wait()
+  {
+  }
 };
 
 class Create_func_md5 : public Create_func_arg1
@@ -2883,8 +3527,12 @@ class Create_func_md5 : public Create_func_arg1
   static Create_func_md5 s_singleton;
 
  protected:
-  Create_func_md5() {}
-  virtual ~Create_func_md5() {}
+  Create_func_md5()
+  {
+  }
+  virtual ~Create_func_md5()
+  {
+  }
 };
 
 class Create_func_monthname : public Create_func_arg1
@@ -2895,8 +3543,12 @@ class Create_func_monthname : public Create_func_arg1
   static Create_func_monthname s_singleton;
 
  protected:
-  Create_func_monthname() {}
-  virtual ~Create_func_monthname() {}
+  Create_func_monthname()
+  {
+  }
+  virtual ~Create_func_monthname()
+  {
+  }
 };
 
 class Create_func_name_const : public Create_func_arg2
@@ -2907,8 +3559,12 @@ class Create_func_name_const : public Create_func_arg2
   static Create_func_name_const s_singleton;
 
  protected:
-  Create_func_name_const() {}
-  virtual ~Create_func_name_const() {}
+  Create_func_name_const()
+  {
+  }
+  virtual ~Create_func_name_const()
+  {
+  }
 };
 
 class Create_func_nullif : public Create_func_arg2
@@ -2919,8 +3575,12 @@ class Create_func_nullif : public Create_func_arg2
   static Create_func_nullif s_singleton;
 
  protected:
-  Create_func_nullif() {}
-  virtual ~Create_func_nullif() {}
+  Create_func_nullif()
+  {
+  }
+  virtual ~Create_func_nullif()
+  {
+  }
 };
 
 class Create_func_numgeometries : public Create_func_arg1
@@ -2931,8 +3591,12 @@ class Create_func_numgeometries : public Create_func_arg1
   static Create_func_numgeometries s_singleton;
 
  protected:
-  Create_func_numgeometries() {}
-  virtual ~Create_func_numgeometries() {}
+  Create_func_numgeometries()
+  {
+  }
+  virtual ~Create_func_numgeometries()
+  {
+  }
 };
 
 class Create_func_numgeometries_deprecated : public Create_func_numgeometries
@@ -2956,8 +3620,12 @@ class Create_func_numinteriorring : public Create_func_arg1
   static Create_func_numinteriorring s_singleton;
 
  protected:
-  Create_func_numinteriorring() {}
-  virtual ~Create_func_numinteriorring() {}
+  Create_func_numinteriorring()
+  {
+  }
+  virtual ~Create_func_numinteriorring()
+  {
+  }
 };
 
 class Create_func_numinteriorring_deprecated : public Create_func_numinteriorring
@@ -2981,8 +3649,12 @@ class Create_func_numpoints : public Create_func_arg1
   static Create_func_numpoints s_singleton;
 
  protected:
-  Create_func_numpoints() {}
-  virtual ~Create_func_numpoints() {}
+  Create_func_numpoints()
+  {
+  }
+  virtual ~Create_func_numpoints()
+  {
+  }
 };
 
 class Create_func_numpoints_deprecated : public Create_func_numpoints
@@ -3006,8 +3678,12 @@ class Create_func_oct : public Create_func_arg1
   static Create_func_oct s_singleton;
 
  protected:
-  Create_func_oct() {}
-  virtual ~Create_func_oct() {}
+  Create_func_oct()
+  {
+  }
+  virtual ~Create_func_oct()
+  {
+  }
 };
 
 class Create_func_ord : public Create_func_arg1
@@ -3018,8 +3694,12 @@ class Create_func_ord : public Create_func_arg1
   static Create_func_ord s_singleton;
 
  protected:
-  Create_func_ord() {}
-  virtual ~Create_func_ord() {}
+  Create_func_ord()
+  {
+  }
+  virtual ~Create_func_ord()
+  {
+  }
 };
 
 class Create_func_mbr_overlaps : public Create_func_arg2
@@ -3030,8 +3710,12 @@ class Create_func_mbr_overlaps : public Create_func_arg2
   static Create_func_mbr_overlaps s_singleton;
 
  protected:
-  Create_func_mbr_overlaps() {}
-  virtual ~Create_func_mbr_overlaps() {}
+  Create_func_mbr_overlaps()
+  {
+  }
+  virtual ~Create_func_mbr_overlaps()
+  {
+  }
 };
 
 class Create_func_mbr_overlaps_deprecated : public Create_func_mbr_overlaps
@@ -3055,8 +3739,12 @@ class Create_func_overlaps : public Create_func_arg2
   static Create_func_overlaps s_singleton;
 
  protected:
-  Create_func_overlaps() {}
-  virtual ~Create_func_overlaps() {}
+  Create_func_overlaps()
+  {
+  }
+  virtual ~Create_func_overlaps()
+  {
+  }
 };
 
 class Create_func_period_add : public Create_func_arg2
@@ -3067,8 +3755,12 @@ class Create_func_period_add : public Create_func_arg2
   static Create_func_period_add s_singleton;
 
  protected:
-  Create_func_period_add() {}
-  virtual ~Create_func_period_add() {}
+  Create_func_period_add()
+  {
+  }
+  virtual ~Create_func_period_add()
+  {
+  }
 };
 
 class Create_func_period_diff : public Create_func_arg2
@@ -3079,8 +3771,12 @@ class Create_func_period_diff : public Create_func_arg2
   static Create_func_period_diff s_singleton;
 
  protected:
-  Create_func_period_diff() {}
-  virtual ~Create_func_period_diff() {}
+  Create_func_period_diff()
+  {
+  }
+  virtual ~Create_func_period_diff()
+  {
+  }
 };
 
 class Create_func_pi : public Create_func_arg0
@@ -3091,8 +3787,12 @@ class Create_func_pi : public Create_func_arg0
   static Create_func_pi s_singleton;
 
  protected:
-  Create_func_pi() {}
-  virtual ~Create_func_pi() {}
+  Create_func_pi()
+  {
+  }
+  virtual ~Create_func_pi()
+  {
+  }
 };
 
 class Create_func_pointfromgeohash : public Create_func_arg2
@@ -3103,8 +3803,12 @@ class Create_func_pointfromgeohash : public Create_func_arg2
   static Create_func_pointfromgeohash s_singleton;
 
  protected:
-  Create_func_pointfromgeohash() {}
-  virtual ~Create_func_pointfromgeohash() {}
+  Create_func_pointfromgeohash()
+  {
+  }
+  virtual ~Create_func_pointfromgeohash()
+  {
+  }
 };
 
 class Create_func_pointn : public Create_func_arg2
@@ -3115,8 +3819,12 @@ class Create_func_pointn : public Create_func_arg2
   static Create_func_pointn s_singleton;
 
  protected:
-  Create_func_pointn() {}
-  virtual ~Create_func_pointn() {}
+  Create_func_pointn()
+  {
+  }
+  virtual ~Create_func_pointn()
+  {
+  }
 };
 
 class Create_func_pointn_deprecated : public Create_func_pointn
@@ -3140,8 +3848,12 @@ class Create_func_pow : public Create_func_arg2
   static Create_func_pow s_singleton;
 
  protected:
-  Create_func_pow() {}
-  virtual ~Create_func_pow() {}
+  Create_func_pow()
+  {
+  }
+  virtual ~Create_func_pow()
+  {
+  }
 };
 
 class Create_func_quote : public Create_func_arg1
@@ -3152,8 +3864,12 @@ class Create_func_quote : public Create_func_arg1
   static Create_func_quote s_singleton;
 
  protected:
-  Create_func_quote() {}
-  virtual ~Create_func_quote() {}
+  Create_func_quote()
+  {
+  }
+  virtual ~Create_func_quote()
+  {
+  }
 };
 
 class Create_func_radians : public Create_func_arg1
@@ -3164,8 +3880,12 @@ class Create_func_radians : public Create_func_arg1
   static Create_func_radians s_singleton;
 
  protected:
-  Create_func_radians() {}
-  virtual ~Create_func_radians() {}
+  Create_func_radians()
+  {
+  }
+  virtual ~Create_func_radians()
+  {
+  }
 };
 
 class Create_func_rand : public Create_native_func
@@ -3176,8 +3896,12 @@ class Create_func_rand : public Create_native_func
   static Create_func_rand s_singleton;
 
  protected:
-  Create_func_rand() {}
-  virtual ~Create_func_rand() {}
+  Create_func_rand()
+  {
+  }
+  virtual ~Create_func_rand()
+  {
+  }
 };
 
 class Create_func_release_all_locks : public Create_func_arg0
@@ -3188,8 +3912,12 @@ class Create_func_release_all_locks : public Create_func_arg0
   static Create_func_release_all_locks s_singleton;
 
  protected:
-  Create_func_release_all_locks() {}
-  virtual ~Create_func_release_all_locks() {}
+  Create_func_release_all_locks()
+  {
+  }
+  virtual ~Create_func_release_all_locks()
+  {
+  }
 };
 
 class Create_func_release_lock : public Create_func_arg1
@@ -3200,8 +3928,12 @@ class Create_func_release_lock : public Create_func_arg1
   static Create_func_release_lock s_singleton;
 
  protected:
-  Create_func_release_lock() {}
-  virtual ~Create_func_release_lock() {}
+  Create_func_release_lock()
+  {
+  }
+  virtual ~Create_func_release_lock()
+  {
+  }
 };
 
 class Create_func_reverse : public Create_func_arg1
@@ -3212,8 +3944,12 @@ class Create_func_reverse : public Create_func_arg1
   static Create_func_reverse s_singleton;
 
  protected:
-  Create_func_reverse() {}
-  virtual ~Create_func_reverse() {}
+  Create_func_reverse()
+  {
+  }
+  virtual ~Create_func_reverse()
+  {
+  }
 };
 
 class Create_func_round : public Create_native_func
@@ -3224,8 +3960,12 @@ class Create_func_round : public Create_native_func
   static Create_func_round s_singleton;
 
  protected:
-  Create_func_round() {}
-  virtual ~Create_func_round() {}
+  Create_func_round()
+  {
+  }
+  virtual ~Create_func_round()
+  {
+  }
 };
 
 class Create_func_rpad : public Create_func_arg3
@@ -3236,8 +3976,12 @@ class Create_func_rpad : public Create_func_arg3
   static Create_func_rpad s_singleton;
 
  protected:
-  Create_func_rpad() {}
-  virtual ~Create_func_rpad() {}
+  Create_func_rpad()
+  {
+  }
+  virtual ~Create_func_rpad()
+  {
+  }
 };
 
 class Create_func_rtrim : public Create_func_arg1
@@ -3248,8 +3992,12 @@ class Create_func_rtrim : public Create_func_arg1
   static Create_func_rtrim s_singleton;
 
  protected:
-  Create_func_rtrim() {}
-  virtual ~Create_func_rtrim() {}
+  Create_func_rtrim()
+  {
+  }
+  virtual ~Create_func_rtrim()
+  {
+  }
 };
 
 class Create_func_sec_to_time : public Create_func_arg1
@@ -3260,8 +4008,12 @@ class Create_func_sec_to_time : public Create_func_arg1
   static Create_func_sec_to_time s_singleton;
 
  protected:
-  Create_func_sec_to_time() {}
-  virtual ~Create_func_sec_to_time() {}
+  Create_func_sec_to_time()
+  {
+  }
+  virtual ~Create_func_sec_to_time()
+  {
+  }
 };
 
 class Create_func_sha : public Create_func_arg1
@@ -3272,8 +4024,12 @@ class Create_func_sha : public Create_func_arg1
   static Create_func_sha s_singleton;
 
  protected:
-  Create_func_sha() {}
-  virtual ~Create_func_sha() {}
+  Create_func_sha()
+  {
+  }
+  virtual ~Create_func_sha()
+  {
+  }
 };
 
 class Create_func_sha2 : public Create_func_arg2
@@ -3284,8 +4040,12 @@ class Create_func_sha2 : public Create_func_arg2
   static Create_func_sha2 s_singleton;
 
  protected:
-  Create_func_sha2() {}
-  virtual ~Create_func_sha2() {}
+  Create_func_sha2()
+  {
+  }
+  virtual ~Create_func_sha2()
+  {
+  }
 };
 
 class Create_func_sign : public Create_func_arg1
@@ -3296,8 +4056,12 @@ class Create_func_sign : public Create_func_arg1
   static Create_func_sign s_singleton;
 
  protected:
-  Create_func_sign() {}
-  virtual ~Create_func_sign() {}
+  Create_func_sign()
+  {
+  }
+  virtual ~Create_func_sign()
+  {
+  }
 };
 
 class Create_func_sin : public Create_func_arg1
@@ -3308,8 +4072,12 @@ class Create_func_sin : public Create_func_arg1
   static Create_func_sin s_singleton;
 
  protected:
-  Create_func_sin() {}
-  virtual ~Create_func_sin() {}
+  Create_func_sin()
+  {
+  }
+  virtual ~Create_func_sin()
+  {
+  }
 };
 
 class Create_func_sleep : public Create_func_arg1
@@ -3320,8 +4088,12 @@ class Create_func_sleep : public Create_func_arg1
   static Create_func_sleep s_singleton;
 
  protected:
-  Create_func_sleep() {}
-  virtual ~Create_func_sleep() {}
+  Create_func_sleep()
+  {
+  }
+  virtual ~Create_func_sleep()
+  {
+  }
 };
 
 class Create_func_soundex : public Create_func_arg1
@@ -3332,8 +4104,12 @@ class Create_func_soundex : public Create_func_arg1
   static Create_func_soundex s_singleton;
 
  protected:
-  Create_func_soundex() {}
-  virtual ~Create_func_soundex() {}
+  Create_func_soundex()
+  {
+  }
+  virtual ~Create_func_soundex()
+  {
+  }
 };
 
 class Create_func_space : public Create_func_arg1
@@ -3344,8 +4120,12 @@ class Create_func_space : public Create_func_arg1
   static Create_func_space s_singleton;
 
  protected:
-  Create_func_space() {}
-  virtual ~Create_func_space() {}
+  Create_func_space()
+  {
+  }
+  virtual ~Create_func_space()
+  {
+  }
 };
 
 class Create_func_sqrt : public Create_func_arg1
@@ -3356,8 +4136,12 @@ class Create_func_sqrt : public Create_func_arg1
   static Create_func_sqrt s_singleton;
 
  protected:
-  Create_func_sqrt() {}
-  virtual ~Create_func_sqrt() {}
+  Create_func_sqrt()
+  {
+  }
+  virtual ~Create_func_sqrt()
+  {
+  }
 };
 
 class Create_func_simplify : public Create_func_arg2
@@ -3368,8 +4152,12 @@ class Create_func_simplify : public Create_func_arg2
   static Create_func_simplify s_singleton;
 
  protected:
-  Create_func_simplify() {}
-  virtual ~Create_func_simplify() {}
+  Create_func_simplify()
+  {
+  }
+  virtual ~Create_func_simplify()
+  {
+  }
 };
 
 class Create_func_srid : public Create_func_arg1
@@ -3380,8 +4168,12 @@ class Create_func_srid : public Create_func_arg1
   static Create_func_srid s_singleton;
 
  protected:
-  Create_func_srid() {}
-  virtual ~Create_func_srid() {}
+  Create_func_srid()
+  {
+  }
+  virtual ~Create_func_srid()
+  {
+  }
 };
 
 class Create_func_srid_deprecated : public Create_func_srid
@@ -3405,8 +4197,12 @@ class Create_func_startpoint : public Create_func_arg1
   static Create_func_startpoint s_singleton;
 
  protected:
-  Create_func_startpoint() {}
-  virtual ~Create_func_startpoint() {}
+  Create_func_startpoint()
+  {
+  }
+  virtual ~Create_func_startpoint()
+  {
+  }
 };
 
 class Create_func_startpoint_deprecated : public Create_func_startpoint
@@ -3430,8 +4226,12 @@ class Create_func_str_to_date : public Create_func_arg2
   static Create_func_str_to_date s_singleton;
 
  protected:
-  Create_func_str_to_date() {}
-  virtual ~Create_func_str_to_date() {}
+  Create_func_str_to_date()
+  {
+  }
+  virtual ~Create_func_str_to_date()
+  {
+  }
 };
 
 class Create_func_strcmp : public Create_func_arg2
@@ -3442,8 +4242,12 @@ class Create_func_strcmp : public Create_func_arg2
   static Create_func_strcmp s_singleton;
 
  protected:
-  Create_func_strcmp() {}
-  virtual ~Create_func_strcmp() {}
+  Create_func_strcmp()
+  {
+  }
+  virtual ~Create_func_strcmp()
+  {
+  }
 };
 
 class Create_func_substr_index : public Create_func_arg3
@@ -3454,8 +4258,12 @@ class Create_func_substr_index : public Create_func_arg3
   static Create_func_substr_index s_singleton;
 
  protected:
-  Create_func_substr_index() {}
-  virtual ~Create_func_substr_index() {}
+  Create_func_substr_index()
+  {
+  }
+  virtual ~Create_func_substr_index()
+  {
+  }
 };
 
 class Create_func_subtime : public Create_func_arg2
@@ -3466,8 +4274,12 @@ class Create_func_subtime : public Create_func_arg2
   static Create_func_subtime s_singleton;
 
  protected:
-  Create_func_subtime() {}
-  virtual ~Create_func_subtime() {}
+  Create_func_subtime()
+  {
+  }
+  virtual ~Create_func_subtime()
+  {
+  }
 };
 
 class Create_func_tan : public Create_func_arg1
@@ -3478,8 +4290,12 @@ class Create_func_tan : public Create_func_arg1
   static Create_func_tan s_singleton;
 
  protected:
-  Create_func_tan() {}
-  virtual ~Create_func_tan() {}
+  Create_func_tan()
+  {
+  }
+  virtual ~Create_func_tan()
+  {
+  }
 };
 
 class Create_func_time_format : public Create_func_arg2
@@ -3490,8 +4306,12 @@ class Create_func_time_format : public Create_func_arg2
   static Create_func_time_format s_singleton;
 
  protected:
-  Create_func_time_format() {}
-  virtual ~Create_func_time_format() {}
+  Create_func_time_format()
+  {
+  }
+  virtual ~Create_func_time_format()
+  {
+  }
 };
 
 class Create_func_time_to_sec : public Create_func_arg1
@@ -3502,8 +4322,12 @@ class Create_func_time_to_sec : public Create_func_arg1
   static Create_func_time_to_sec s_singleton;
 
  protected:
-  Create_func_time_to_sec() {}
-  virtual ~Create_func_time_to_sec() {}
+  Create_func_time_to_sec()
+  {
+  }
+  virtual ~Create_func_time_to_sec()
+  {
+  }
 };
 
 class Create_func_timediff : public Create_func_arg2
@@ -3514,8 +4338,12 @@ class Create_func_timediff : public Create_func_arg2
   static Create_func_timediff s_singleton;
 
  protected:
-  Create_func_timediff() {}
-  virtual ~Create_func_timediff() {}
+  Create_func_timediff()
+  {
+  }
+  virtual ~Create_func_timediff()
+  {
+  }
 };
 
 class Create_func_to_base64 : public Create_func_arg1
@@ -3526,8 +4354,12 @@ class Create_func_to_base64 : public Create_func_arg1
   static Create_func_to_base64 s_singleton;
 
  protected:
-  Create_func_to_base64() {}
-  virtual ~Create_func_to_base64() {}
+  Create_func_to_base64()
+  {
+  }
+  virtual ~Create_func_to_base64()
+  {
+  }
 };
 
 class Create_func_to_days : public Create_func_arg1
@@ -3538,8 +4370,12 @@ class Create_func_to_days : public Create_func_arg1
   static Create_func_to_days s_singleton;
 
  protected:
-  Create_func_to_days() {}
-  virtual ~Create_func_to_days() {}
+  Create_func_to_days()
+  {
+  }
+  virtual ~Create_func_to_days()
+  {
+  }
 };
 
 class Create_func_to_seconds : public Create_func_arg1
@@ -3550,8 +4386,12 @@ class Create_func_to_seconds : public Create_func_arg1
   static Create_func_to_seconds s_singleton;
 
  protected:
-  Create_func_to_seconds() {}
-  virtual ~Create_func_to_seconds() {}
+  Create_func_to_seconds()
+  {
+  }
+  virtual ~Create_func_to_seconds()
+  {
+  }
 };
 
 class Create_func_touches : public Create_func_arg2
@@ -3562,8 +4402,12 @@ class Create_func_touches : public Create_func_arg2
   static Create_func_touches s_singleton;
 
  protected:
-  Create_func_touches() {}
-  virtual ~Create_func_touches() {}
+  Create_func_touches()
+  {
+  }
+  virtual ~Create_func_touches()
+  {
+  }
 };
 
 class Create_func_mbr_touches : public Create_func_arg2
@@ -3574,8 +4418,12 @@ class Create_func_mbr_touches : public Create_func_arg2
   static Create_func_mbr_touches s_singleton;
 
  protected:
-  Create_func_mbr_touches() {}
-  virtual ~Create_func_mbr_touches() {}
+  Create_func_mbr_touches()
+  {
+  }
+  virtual ~Create_func_mbr_touches()
+  {
+  }
 };
 
 class Create_func_touches_deprecated : public Create_func_touches
@@ -3599,8 +4447,12 @@ class Create_func_upper : public Create_func_arg1
   static Create_func_upper s_singleton;
 
  protected:
-  Create_func_upper() {}
-  virtual ~Create_func_upper() {}
+  Create_func_upper()
+  {
+  }
+  virtual ~Create_func_upper()
+  {
+  }
 };
 
 class Create_func_uncompress : public Create_func_arg1
@@ -3611,8 +4463,12 @@ class Create_func_uncompress : public Create_func_arg1
   static Create_func_uncompress s_singleton;
 
  protected:
-  Create_func_uncompress() {}
-  virtual ~Create_func_uncompress() {}
+  Create_func_uncompress()
+  {
+  }
+  virtual ~Create_func_uncompress()
+  {
+  }
 };
 
 class Create_func_uncompressed_length : public Create_func_arg1
@@ -3623,8 +4479,12 @@ class Create_func_uncompressed_length : public Create_func_arg1
   static Create_func_uncompressed_length s_singleton;
 
  protected:
-  Create_func_uncompressed_length() {}
-  virtual ~Create_func_uncompressed_length() {}
+  Create_func_uncompressed_length()
+  {
+  }
+  virtual ~Create_func_uncompressed_length()
+  {
+  }
 };
 
 class Create_func_unhex : public Create_func_arg1
@@ -3635,8 +4495,12 @@ class Create_func_unhex : public Create_func_arg1
   static Create_func_unhex s_singleton;
 
  protected:
-  Create_func_unhex() {}
-  virtual ~Create_func_unhex() {}
+  Create_func_unhex()
+  {
+  }
+  virtual ~Create_func_unhex()
+  {
+  }
 };
 
 class Create_func_unix_timestamp : public Create_native_func
@@ -3647,8 +4511,12 @@ class Create_func_unix_timestamp : public Create_native_func
   static Create_func_unix_timestamp s_singleton;
 
  protected:
-  Create_func_unix_timestamp() {}
-  virtual ~Create_func_unix_timestamp() {}
+  Create_func_unix_timestamp()
+  {
+  }
+  virtual ~Create_func_unix_timestamp()
+  {
+  }
 };
 
 class Create_func_uuid : public Create_func_arg0
@@ -3659,8 +4527,12 @@ class Create_func_uuid : public Create_func_arg0
   static Create_func_uuid s_singleton;
 
  protected:
-  Create_func_uuid() {}
-  virtual ~Create_func_uuid() {}
+  Create_func_uuid()
+  {
+  }
+  virtual ~Create_func_uuid()
+  {
+  }
 };
 
 class Create_func_uuid_short : public Create_func_arg0
@@ -3671,8 +4543,12 @@ class Create_func_uuid_short : public Create_func_arg0
   static Create_func_uuid_short s_singleton;
 
  protected:
-  Create_func_uuid_short() {}
-  virtual ~Create_func_uuid_short() {}
+  Create_func_uuid_short()
+  {
+  }
+  virtual ~Create_func_uuid_short()
+  {
+  }
 };
 
 class Create_func_validate_password_strength : public Create_func_arg1
@@ -3683,8 +4559,12 @@ class Create_func_validate_password_strength : public Create_func_arg1
   static Create_func_validate_password_strength s_singleton;
 
  protected:
-  Create_func_validate_password_strength() {}
-  virtual ~Create_func_validate_password_strength() {}
+  Create_func_validate_password_strength()
+  {
+  }
+  virtual ~Create_func_validate_password_strength()
+  {
+  }
 };
 
 class Create_func_version : public Create_func_arg0
@@ -3695,8 +4575,12 @@ class Create_func_version : public Create_func_arg0
   static Create_func_version s_singleton;
 
  protected:
-  Create_func_version() {}
-  virtual ~Create_func_version() {}
+  Create_func_version()
+  {
+  }
+  virtual ~Create_func_version()
+  {
+  }
 };
 
 class Create_func_weekday : public Create_func_arg1
@@ -3707,8 +4591,12 @@ class Create_func_weekday : public Create_func_arg1
   static Create_func_weekday s_singleton;
 
  protected:
-  Create_func_weekday() {}
-  virtual ~Create_func_weekday() {}
+  Create_func_weekday()
+  {
+  }
+  virtual ~Create_func_weekday()
+  {
+  }
 };
 
 class Create_func_weekofyear : public Create_func_arg1
@@ -3719,8 +4607,12 @@ class Create_func_weekofyear : public Create_func_arg1
   static Create_func_weekofyear s_singleton;
 
  protected:
-  Create_func_weekofyear() {}
-  virtual ~Create_func_weekofyear() {}
+  Create_func_weekofyear()
+  {
+  }
+  virtual ~Create_func_weekofyear()
+  {
+  }
 };
 
 class Create_func_mbr_within : public Create_func_arg2
@@ -3731,8 +4623,12 @@ class Create_func_mbr_within : public Create_func_arg2
   static Create_func_mbr_within s_singleton;
 
  protected:
-  Create_func_mbr_within() {}
-  virtual ~Create_func_mbr_within() {}
+  Create_func_mbr_within()
+  {
+  }
+  virtual ~Create_func_mbr_within()
+  {
+  }
 };
 
 class Create_func_within_deprecated : public Create_func_mbr_within
@@ -3756,8 +4652,12 @@ class Create_func_within : public Create_func_arg2
   static Create_func_within s_singleton;
 
  protected:
-  Create_func_within() {}
-  virtual ~Create_func_within() {}
+  Create_func_within()
+  {
+  }
+  virtual ~Create_func_within()
+  {
+  }
 };
 
 class Create_func_x : public Create_func_arg1
@@ -3768,8 +4668,12 @@ class Create_func_x : public Create_func_arg1
   static Create_func_x s_singleton;
 
  protected:
-  Create_func_x() {}
-  virtual ~Create_func_x() {}
+  Create_func_x()
+  {
+  }
+  virtual ~Create_func_x()
+  {
+  }
 };
 
 class Create_func_x_deprecated : public Create_func_x
@@ -3793,8 +4697,12 @@ class Create_func_xml_extractvalue : public Create_func_arg2
   static Create_func_xml_extractvalue s_singleton;
 
  protected:
-  Create_func_xml_extractvalue() {}
-  virtual ~Create_func_xml_extractvalue() {}
+  Create_func_xml_extractvalue()
+  {
+  }
+  virtual ~Create_func_xml_extractvalue()
+  {
+  }
 };
 
 class Create_func_xml_update : public Create_func_arg3
@@ -3805,8 +4713,12 @@ class Create_func_xml_update : public Create_func_arg3
   static Create_func_xml_update s_singleton;
 
  protected:
-  Create_func_xml_update() {}
-  virtual ~Create_func_xml_update() {}
+  Create_func_xml_update()
+  {
+  }
+  virtual ~Create_func_xml_update()
+  {
+  }
 };
 
 class Create_func_y : public Create_func_arg1
@@ -3817,8 +4729,12 @@ class Create_func_y : public Create_func_arg1
   static Create_func_y s_singleton;
 
  protected:
-  Create_func_y() {}
-  virtual ~Create_func_y() {}
+  Create_func_y()
+  {
+  }
+  virtual ~Create_func_y()
+  {
+  }
 };
 
 class Create_func_y_deprecated : public Create_func_y
@@ -3842,8 +4758,12 @@ class Create_func_year_week : public Create_native_func
   static Create_func_year_week s_singleton;
 
  protected:
-  Create_func_year_week() {}
-  virtual ~Create_func_year_week() {}
+  Create_func_year_week()
+  {
+  }
+  virtual ~Create_func_year_week()
+  {
+  }
 };
 
 /*
@@ -3992,11 +4912,17 @@ Item *Create_func_arg3::create_func(THD *thd, LEX_STRING name, PT_item_list *ite
 
 Create_func_abs Create_func_abs::s_singleton;
 
-Item *Create_func_abs::create(THD *thd, Item *arg1) { return new (thd->mem_root) Item_func_abs(POS(), arg1); }
+Item *Create_func_abs::create(THD *thd, Item *arg1)
+{
+  return new (thd->mem_root) Item_func_abs(POS(), arg1);
+}
 
 Create_func_acos Create_func_acos::s_singleton;
 
-Item *Create_func_acos::create(THD *thd, Item *arg1) { return new (thd->mem_root) Item_func_acos(POS(), arg1); }
+Item *Create_func_acos::create(THD *thd, Item *arg1)
+{
+  return new (thd->mem_root) Item_func_acos(POS(), arg1);
+}
 
 Create_func_addtime Create_func_addtime::s_singleton;
 
@@ -4015,7 +4941,10 @@ Create_func_any_value Create_func_any_value::s_singleton;
 
 Create_func_area Create_func_area::s_singleton;
 
-Item *Create_func_area::create(THD *thd, Item *arg1) { return new (thd->mem_root) Item_func_area(POS(), arg1); }
+Item *Create_func_area::create(THD *thd, Item *arg1)
+{
+  return new (thd->mem_root) Item_func_area(POS(), arg1);
+}
 
 Create_func_as_geojson Create_func_as_geojson::s_singleton;
 
@@ -4062,15 +4991,24 @@ Item *Create_func_as_geojson::create_native(THD *thd, LEX_STRING name, PT_item_l
 
 Create_func_as_wkb Create_func_as_wkb::s_singleton;
 
-Item *Create_func_as_wkb::create(THD *thd, Item *arg1) { return new (thd->mem_root) Item_func_as_wkb(POS(), arg1); }
+Item *Create_func_as_wkb::create(THD *thd, Item *arg1)
+{
+  return new (thd->mem_root) Item_func_as_wkb(POS(), arg1);
+}
 
 Create_func_as_wkt Create_func_as_wkt::s_singleton;
 
-Item *Create_func_as_wkt::create(THD *thd, Item *arg1) { return new (thd->mem_root) Item_func_as_wkt(POS(), arg1); }
+Item *Create_func_as_wkt::create(THD *thd, Item *arg1)
+{
+  return new (thd->mem_root) Item_func_as_wkt(POS(), arg1);
+}
 
 Create_func_asin Create_func_asin::s_singleton;
 
-Item *Create_func_asin::create(THD *thd, Item *arg1) { return new (thd->mem_root) Item_func_asin(POS(), arg1); }
+Item *Create_func_asin::create(THD *thd, Item *arg1)
+{
+  return new (thd->mem_root) Item_func_asin(POS(), arg1);
+}
 
 Create_func_atan Create_func_atan::s_singleton;
 
@@ -4158,11 +5096,17 @@ Item *Create_func_buffer_strategy::create_native(THD *thd, LEX_STRING name, PT_i
 
 Create_func_ceiling Create_func_ceiling::s_singleton;
 
-Item *Create_func_ceiling::create(THD *thd, Item *arg1) { return new (thd->mem_root) Item_func_ceiling(POS(), arg1); }
+Item *Create_func_ceiling::create(THD *thd, Item *arg1)
+{
+  return new (thd->mem_root) Item_func_ceiling(POS(), arg1);
+}
 
 Create_func_centroid Create_func_centroid::s_singleton;
 
-Item *Create_func_centroid::create(THD *thd, Item *arg1) { return new (thd->mem_root) Item_func_centroid(POS(), arg1); }
+Item *Create_func_centroid::create(THD *thd, Item *arg1)
+{
+  return new (thd->mem_root) Item_func_centroid(POS(), arg1);
+}
 
 Create_func_convex_hull Create_func_convex_hull::s_singleton;
 
@@ -4224,11 +5168,17 @@ Item *Create_func_concat_ws::create_native(THD *thd, LEX_STRING name, PT_item_li
 
 Create_func_compress Create_func_compress::s_singleton;
 
-Item *Create_func_compress::create(THD *thd, Item *arg1) { return new (thd->mem_root) Item_func_compress(POS(), arg1); }
+Item *Create_func_compress::create(THD *thd, Item *arg1)
+{
+  return new (thd->mem_root) Item_func_compress(POS(), arg1);
+}
 
 Create_func_connection_id Create_func_connection_id::s_singleton;
 
-Item *Create_func_connection_id::create(THD *thd) { return new (thd->mem_root) Item_func_connection_id(POS()); }
+Item *Create_func_connection_id::create(THD *thd)
+{
+  return new (thd->mem_root) Item_func_connection_id(POS());
+}
 
 Create_func_mbr_covered_by Create_func_mbr_covered_by::s_singleton;
 
@@ -4274,15 +5224,24 @@ Item *Create_func_convert_tz::create(THD *thd, Item *arg1, Item *arg2, Item *arg
 
 Create_func_cos Create_func_cos::s_singleton;
 
-Item *Create_func_cos::create(THD *thd, Item *arg1) { return new (thd->mem_root) Item_func_cos(POS(), arg1); }
+Item *Create_func_cos::create(THD *thd, Item *arg1)
+{
+  return new (thd->mem_root) Item_func_cos(POS(), arg1);
+}
 
 Create_func_cot Create_func_cot::s_singleton;
 
-Item *Create_func_cot::create(THD *thd, Item *arg1) { return new (thd->mem_root) Item_func_cot(POS(), arg1); }
+Item *Create_func_cot::create(THD *thd, Item *arg1)
+{
+  return new (thd->mem_root) Item_func_cot(POS(), arg1);
+}
 
 Create_func_crc32 Create_func_crc32::s_singleton;
 
-Item *Create_func_crc32::create(THD *thd, Item *arg1) { return new (thd->mem_root) Item_func_crc32(POS(), arg1); }
+Item *Create_func_crc32::create(THD *thd, Item *arg1)
+{
+  return new (thd->mem_root) Item_func_crc32(POS(), arg1);
+}
 
 Create_func_crosses Create_func_crosses::s_singleton;
 
@@ -4310,7 +5269,10 @@ Item *Create_func_datediff::create(THD *thd, Item *arg1, Item *arg2)
 
 Create_func_dayname Create_func_dayname::s_singleton;
 
-Item *Create_func_dayname::create(THD *thd, Item *arg1) { return new (thd->mem_root) Item_func_dayname(POS(), arg1); }
+Item *Create_func_dayname::create(THD *thd, Item *arg1)
+{
+  return new (thd->mem_root) Item_func_dayname(POS(), arg1);
+}
 
 Create_func_dayofmonth Create_func_dayofmonth::s_singleton;
 
@@ -4561,7 +5523,10 @@ Item *Create_func_endpoint::create(THD *thd, Item *arg1)
 
 Create_func_envelope Create_func_envelope::s_singleton;
 
-Item *Create_func_envelope::create(THD *thd, Item *arg1) { return new (thd->mem_root) Item_func_envelope(POS(), arg1); }
+Item *Create_func_envelope::create(THD *thd, Item *arg1)
+{
+  return new (thd->mem_root) Item_func_envelope(POS(), arg1);
+}
 
 Create_func_mbr_equals Create_func_mbr_equals::s_singleton;
 
@@ -4579,7 +5544,10 @@ Item *Create_func_equals::create(THD *thd, Item *arg1, Item *arg2)
 
 Create_func_exp Create_func_exp::s_singleton;
 
-Item *Create_func_exp::create(THD *thd, Item *arg1) { return new (thd->mem_root) Item_func_exp(POS(), arg1); }
+Item *Create_func_exp::create(THD *thd, Item *arg1)
+{
+  return new (thd->mem_root) Item_func_exp(POS(), arg1);
+}
 
 Create_func_export_set Create_func_export_set::s_singleton;
 
@@ -4665,11 +5633,17 @@ Item *Create_func_find_in_set::create(THD *thd, Item *arg1, Item *arg2)
 
 Create_func_floor Create_func_floor::s_singleton;
 
-Item *Create_func_floor::create(THD *thd, Item *arg1) { return new (thd->mem_root) Item_func_floor(POS(), arg1); }
+Item *Create_func_floor::create(THD *thd, Item *arg1)
+{
+  return new (thd->mem_root) Item_func_floor(POS(), arg1);
+}
 
 Create_func_found_rows Create_func_found_rows::s_singleton;
 
-Item *Create_func_found_rows::create(THD *thd) { return new (thd->mem_root) Item_func_found_rows(POS()); }
+Item *Create_func_found_rows::create(THD *thd)
+{
+  return new (thd->mem_root) Item_func_found_rows(POS());
+}
 
 Create_func_from_base64 Create_func_from_base64::s_singleton;
 
@@ -4897,7 +5871,10 @@ Item *Create_func_get_lock::create(THD *thd, Item *arg1, Item *arg2)
 
 Create_func_glength Create_func_glength::s_singleton;
 
-Item *Create_func_glength::create(THD *thd, Item *arg1) { return new (thd->mem_root) Item_func_glength(POS(), arg1); }
+Item *Create_func_glength::create(THD *thd, Item *arg1)
+{
+  return new (thd->mem_root) Item_func_glength(POS(), arg1);
+}
 
 Create_func_greatest Create_func_greatest::s_singleton;
 
@@ -4933,7 +5910,10 @@ Item *Create_func_gtid_subset::create(THD *thd, Item *arg1, Item *arg2)
 
 Create_func_hex Create_func_hex::s_singleton;
 
-Item *Create_func_hex::create(THD *thd, Item *arg1) { return new (thd->mem_root) Item_func_hex(POS(), arg1); }
+Item *Create_func_hex::create(THD *thd, Item *arg1)
+{
+  return new (thd->mem_root) Item_func_hex(POS(), arg1);
+}
 
 Create_func_ifnull Create_func_ifnull::s_singleton;
 
@@ -4972,11 +5952,17 @@ Item *Create_func_inet_aton::create(THD *thd, Item *arg1)
 
 Create_func_is_ipv4 Create_func_is_ipv4::s_singleton;
 
-Item *Create_func_is_ipv4::create(THD *thd, Item *arg1) { return new (thd->mem_root) Item_func_is_ipv4(POS(), arg1); }
+Item *Create_func_is_ipv4::create(THD *thd, Item *arg1)
+{
+  return new (thd->mem_root) Item_func_is_ipv4(POS(), arg1);
+}
 
 Create_func_is_ipv6 Create_func_is_ipv6::s_singleton;
 
-Item *Create_func_is_ipv6::create(THD *thd, Item *arg1) { return new (thd->mem_root) Item_func_is_ipv6(POS(), arg1); }
+Item *Create_func_is_ipv6::create(THD *thd, Item *arg1)
+{
+  return new (thd->mem_root) Item_func_is_ipv6(POS(), arg1);
+}
 
 Create_func_is_ipv4_compat Create_func_is_ipv4_compat::s_singleton;
 
@@ -5083,19 +6069,31 @@ Item *Create_func_is_used_lock::create(THD *thd, Item *arg1)
 
 Create_func_isclosed Create_func_isclosed::s_singleton;
 
-Item *Create_func_isclosed::create(THD *thd, Item *arg1) { return new (thd->mem_root) Item_func_isclosed(POS(), arg1); }
+Item *Create_func_isclosed::create(THD *thd, Item *arg1)
+{
+  return new (thd->mem_root) Item_func_isclosed(POS(), arg1);
+}
 
 Create_func_isempty Create_func_isempty::s_singleton;
 
-Item *Create_func_isempty::create(THD *thd, Item *arg1) { return new (thd->mem_root) Item_func_isempty(POS(), arg1); }
+Item *Create_func_isempty::create(THD *thd, Item *arg1)
+{
+  return new (thd->mem_root) Item_func_isempty(POS(), arg1);
+}
 
 Create_func_isnull Create_func_isnull::s_singleton;
 
-Item *Create_func_isnull::create(THD *thd, Item *arg1) { return new (thd->mem_root) Item_func_isnull(POS(), arg1); }
+Item *Create_func_isnull::create(THD *thd, Item *arg1)
+{
+  return new (thd->mem_root) Item_func_isnull(POS(), arg1);
+}
 
 Create_func_issimple Create_func_issimple::s_singleton;
 
-Item *Create_func_issimple::create(THD *thd, Item *arg1) { return new (thd->mem_root) Item_func_issimple(POS(), arg1); }
+Item *Create_func_issimple::create(THD *thd, Item *arg1)
+{
+  return new (thd->mem_root) Item_func_issimple(POS(), arg1);
+}
 
 Create_func_json_valid Create_func_json_valid::s_singleton;
 
@@ -5484,11 +6482,17 @@ Item *Create_func_json_remove::create_native(THD *thd, LEX_STRING name, PT_item_
 
 Create_func_isvalid Create_func_isvalid::s_singleton;
 
-Item *Create_func_isvalid::create(THD *thd, Item *arg1) { return new (thd->mem_root) Item_func_isvalid(POS(), arg1); }
+Item *Create_func_isvalid::create(THD *thd, Item *arg1)
+{
+  return new (thd->mem_root) Item_func_isvalid(POS(), arg1);
+}
 
 Create_func_validate Create_func_validate::s_singleton;
 
-Item *Create_func_validate::create(THD *thd, Item *arg1) { return new (thd->mem_root) Item_func_validate(POS(), arg1); }
+Item *Create_func_validate::create(THD *thd, Item *arg1)
+{
+  return new (thd->mem_root) Item_func_validate(POS(), arg1);
+}
 
 Item *Create_func_json_merge_patch::create_native(THD *thd, LEX_STRING name, PT_item_list *item_list)
 {
@@ -5570,7 +6574,10 @@ Item *Create_func_json_unquote::create_native(THD *thd, LEX_STRING name, PT_item
 
 Create_func_last_day Create_func_last_day::s_singleton;
 
-Item *Create_func_last_day::create(THD *thd, Item *arg1) { return new (thd->mem_root) Item_func_last_day(POS(), arg1); }
+Item *Create_func_last_day::create(THD *thd, Item *arg1)
+{
+  return new (thd->mem_root) Item_func_last_day(POS(), arg1);
+}
 
 Create_func_latfromgeohash Create_func_latfromgeohash::s_singleton;
 
@@ -5615,7 +6622,10 @@ Item *Create_func_last_insert_id::create_native(THD *thd, LEX_STRING name, PT_it
 
 Create_func_lower Create_func_lower::s_singleton;
 
-Item *Create_func_lower::create(THD *thd, Item *arg1) { return new (thd->mem_root) Item_func_lower(POS(), arg1); }
+Item *Create_func_lower::create(THD *thd, Item *arg1)
+{
+  return new (thd->mem_root) Item_func_lower(POS(), arg1);
+}
 
 Create_func_least Create_func_least::s_singleton;
 
@@ -5637,7 +6647,10 @@ Item *Create_func_least::create_native(THD *thd, LEX_STRING name, PT_item_list *
 
 Create_func_length Create_func_length::s_singleton;
 
-Item *Create_func_length::create(THD *thd, Item *arg1) { return new (thd->mem_root) Item_func_length(POS(), arg1); }
+Item *Create_func_length::create(THD *thd, Item *arg1)
+{
+  return new (thd->mem_root) Item_func_length(POS(), arg1);
+}
 
 #ifndef NDEBUG
 Create_func_like_range_min Create_func_like_range_min::s_singleton;
@@ -5657,11 +6670,17 @@ Item *Create_func_like_range_max::create(THD *thd, Item *arg1, Item *arg2)
 
 Create_func_ln Create_func_ln::s_singleton;
 
-Item *Create_func_ln::create(THD *thd, Item *arg1) { return new (thd->mem_root) Item_func_ln(POS(), arg1); }
+Item *Create_func_ln::create(THD *thd, Item *arg1)
+{
+  return new (thd->mem_root) Item_func_ln(POS(), arg1);
+}
 
 Create_func_load_file Create_func_load_file::s_singleton;
 
-Item *Create_func_load_file::create(THD *thd, Item *arg1) { return new (thd->mem_root) Item_load_file(POS(), arg1); }
+Item *Create_func_load_file::create(THD *thd, Item *arg1)
+{
+  return new (thd->mem_root) Item_load_file(POS(), arg1);
+}
 
 Create_func_locate Create_func_locate::s_singleton;
 
@@ -5740,11 +6759,17 @@ Item *Create_func_log::create_native(THD *thd, LEX_STRING name, PT_item_list *it
 
 Create_func_log10 Create_func_log10::s_singleton;
 
-Item *Create_func_log10::create(THD *thd, Item *arg1) { return new (thd->mem_root) Item_func_log10(POS(), arg1); }
+Item *Create_func_log10::create(THD *thd, Item *arg1)
+{
+  return new (thd->mem_root) Item_func_log10(POS(), arg1);
+}
 
 Create_func_log2 Create_func_log2::s_singleton;
 
-Item *Create_func_log2::create(THD *thd, Item *arg1) { return new (thd->mem_root) Item_func_log2(POS(), arg1); }
+Item *Create_func_log2::create(THD *thd, Item *arg1)
+{
+  return new (thd->mem_root) Item_func_log2(POS(), arg1);
+}
 
 Create_func_longfromgeohash Create_func_longfromgeohash::s_singleton;
 
@@ -5939,7 +6964,10 @@ Item *Create_func_executed_gtid_set_wait::create_native(THD *thd, LEX_STRING nam
 
 Create_func_md5 Create_func_md5::s_singleton;
 
-Item *Create_func_md5::create(THD *thd, Item *arg1) { return new (thd->mem_root) Item_func_md5(POS(), arg1); }
+Item *Create_func_md5::create(THD *thd, Item *arg1)
+{
+  return new (thd->mem_root) Item_func_md5(POS(), arg1);
+}
 
 Create_func_monthname Create_func_monthname::s_singleton;
 
@@ -5994,7 +7022,10 @@ Item *Create_func_oct::create(THD *thd, Item *arg1)
 
 Create_func_ord Create_func_ord::s_singleton;
 
-Item *Create_func_ord::create(THD *thd, Item *arg1) { return new (thd->mem_root) Item_func_ord(POS(), arg1); }
+Item *Create_func_ord::create(THD *thd, Item *arg1)
+{
+  return new (thd->mem_root) Item_func_ord(POS(), arg1);
+}
 
 Create_func_mbr_overlaps Create_func_mbr_overlaps::s_singleton;
 
@@ -6054,7 +7085,10 @@ Item *Create_func_pow::create(THD *thd, Item *arg1, Item *arg2)
 
 Create_func_quote Create_func_quote::s_singleton;
 
-Item *Create_func_quote::create(THD *thd, Item *arg1) { return new (thd->mem_root) Item_func_quote(POS(), arg1); }
+Item *Create_func_quote::create(THD *thd, Item *arg1)
+{
+  return new (thd->mem_root) Item_func_quote(POS(), arg1);
+}
 
 Create_func_radians Create_func_radians::s_singleton;
 
@@ -6098,7 +7132,10 @@ Item *Create_func_rand::create_native(THD *thd, LEX_STRING name, PT_item_list *i
 
 Create_func_release_all_locks Create_func_release_all_locks::s_singleton;
 
-Item *Create_func_release_all_locks::create(THD *thd) { return new (thd->mem_root) Item_func_release_all_locks(POS()); }
+Item *Create_func_release_all_locks::create(THD *thd)
+{
+  return new (thd->mem_root) Item_func_release_all_locks(POS());
+}
 
 Create_func_release_lock Create_func_release_lock::s_singleton;
 
@@ -6109,7 +7146,10 @@ Item *Create_func_release_lock::create(THD *thd, Item *arg1)
 
 Create_func_reverse Create_func_reverse::s_singleton;
 
-Item *Create_func_reverse::create(THD *thd, Item *arg1) { return new (thd->mem_root) Item_func_reverse(POS(), arg1); }
+Item *Create_func_reverse::create(THD *thd, Item *arg1)
+{
+  return new (thd->mem_root) Item_func_reverse(POS(), arg1);
+}
 
 Create_func_round Create_func_round::s_singleton;
 
@@ -6170,7 +7210,10 @@ Item *Create_func_sec_to_time::create(THD *thd, Item *arg1)
 
 Create_func_sha Create_func_sha::s_singleton;
 
-Item *Create_func_sha::create(THD *thd, Item *arg1) { return new (thd->mem_root) Item_func_sha(POS(), arg1); }
+Item *Create_func_sha::create(THD *thd, Item *arg1)
+{
+  return new (thd->mem_root) Item_func_sha(POS(), arg1);
+}
 
 Create_func_sha2 Create_func_sha2::s_singleton;
 
@@ -6181,7 +7224,10 @@ Item *Create_func_sha2::create(THD *thd, Item *arg1, Item *arg2)
 
 Create_func_sign Create_func_sign::s_singleton;
 
-Item *Create_func_sign::create(THD *thd, Item *arg1) { return new (thd->mem_root) Item_func_sign(POS(), arg1); }
+Item *Create_func_sign::create(THD *thd, Item *arg1)
+{
+  return new (thd->mem_root) Item_func_sign(POS(), arg1);
+}
 
 Create_func_simplify Create_func_simplify::s_singleton;
 
@@ -6192,27 +7238,45 @@ Item *Create_func_simplify::create(THD *thd, Item *arg1, Item *arg2)
 
 Create_func_sin Create_func_sin::s_singleton;
 
-Item *Create_func_sin::create(THD *thd, Item *arg1) { return new (thd->mem_root) Item_func_sin(POS(), arg1); }
+Item *Create_func_sin::create(THD *thd, Item *arg1)
+{
+  return new (thd->mem_root) Item_func_sin(POS(), arg1);
+}
 
 Create_func_sleep Create_func_sleep::s_singleton;
 
-Item *Create_func_sleep::create(THD *thd, Item *arg1) { return new (thd->mem_root) Item_func_sleep(POS(), arg1); }
+Item *Create_func_sleep::create(THD *thd, Item *arg1)
+{
+  return new (thd->mem_root) Item_func_sleep(POS(), arg1);
+}
 
 Create_func_soundex Create_func_soundex::s_singleton;
 
-Item *Create_func_soundex::create(THD *thd, Item *arg1) { return new (thd->mem_root) Item_func_soundex(POS(), arg1); }
+Item *Create_func_soundex::create(THD *thd, Item *arg1)
+{
+  return new (thd->mem_root) Item_func_soundex(POS(), arg1);
+}
 
 Create_func_space Create_func_space::s_singleton;
 
-Item *Create_func_space::create(THD *thd, Item *arg1) { return new (thd->mem_root) Item_func_space(POS(), arg1); }
+Item *Create_func_space::create(THD *thd, Item *arg1)
+{
+  return new (thd->mem_root) Item_func_space(POS(), arg1);
+}
 
 Create_func_sqrt Create_func_sqrt::s_singleton;
 
-Item *Create_func_sqrt::create(THD *thd, Item *arg1) { return new (thd->mem_root) Item_func_sqrt(POS(), arg1); }
+Item *Create_func_sqrt::create(THD *thd, Item *arg1)
+{
+  return new (thd->mem_root) Item_func_sqrt(POS(), arg1);
+}
 
 Create_func_srid Create_func_srid::s_singleton;
 
-Item *Create_func_srid::create(THD *thd, Item *arg1) { return new (thd->mem_root) Item_func_srid(POS(), arg1); }
+Item *Create_func_srid::create(THD *thd, Item *arg1)
+{
+  return new (thd->mem_root) Item_func_srid(POS(), arg1);
+}
 
 Create_func_startpoint Create_func_startpoint::s_singleton;
 
@@ -6251,7 +7315,10 @@ Item *Create_func_subtime::create(THD *thd, Item *arg1, Item *arg2)
 
 Create_func_tan Create_func_tan::s_singleton;
 
-Item *Create_func_tan::create(THD *thd, Item *arg1) { return new (thd->mem_root) Item_func_tan(POS(), arg1); }
+Item *Create_func_tan::create(THD *thd, Item *arg1)
+{
+  return new (thd->mem_root) Item_func_tan(POS(), arg1);
+}
 
 Create_func_time_format Create_func_time_format::s_singleton;
 
@@ -6283,7 +7350,10 @@ Item *Create_func_to_base64::create(THD *thd, Item *arg1)
 
 Create_func_to_days Create_func_to_days::s_singleton;
 
-Item *Create_func_to_days::create(THD *thd, Item *arg1) { return new (thd->mem_root) Item_func_to_days(POS(), arg1); }
+Item *Create_func_to_days::create(THD *thd, Item *arg1)
+{
+  return new (thd->mem_root) Item_func_to_days(POS(), arg1);
+}
 
 Create_func_to_seconds Create_func_to_seconds::s_singleton;
 
@@ -6308,7 +7378,10 @@ Item *Create_func_touches::create(THD *thd, Item *arg1, Item *arg2)
 
 Create_func_upper Create_func_upper::s_singleton;
 
-Item *Create_func_upper::create(THD *thd, Item *arg1) { return new (thd->mem_root) Item_func_upper(POS(), arg1); }
+Item *Create_func_upper::create(THD *thd, Item *arg1)
+{
+  return new (thd->mem_root) Item_func_upper(POS(), arg1);
+}
 
 Create_func_uncompress Create_func_uncompress::s_singleton;
 
@@ -6326,7 +7399,10 @@ Item *Create_func_uncompressed_length::create(THD *thd, Item *arg1)
 
 Create_func_unhex Create_func_unhex::s_singleton;
 
-Item *Create_func_unhex::create(THD *thd, Item *arg1) { return new (thd->mem_root) Item_func_unhex(POS(), arg1); }
+Item *Create_func_unhex::create(THD *thd, Item *arg1)
+{
+  return new (thd->mem_root) Item_func_unhex(POS(), arg1);
+}
 
 Create_func_unix_timestamp Create_func_unix_timestamp::s_singleton;
 
@@ -6363,11 +7439,17 @@ Item *Create_func_unix_timestamp::create_native(THD *thd, LEX_STRING name, PT_it
 
 Create_func_uuid Create_func_uuid::s_singleton;
 
-Item *Create_func_uuid::create(THD *thd) { return new (thd->mem_root) Item_func_uuid(POS()); }
+Item *Create_func_uuid::create(THD *thd)
+{
+  return new (thd->mem_root) Item_func_uuid(POS());
+}
 
 Create_func_uuid_short Create_func_uuid_short::s_singleton;
 
-Item *Create_func_uuid_short::create(THD *thd) { return new (thd->mem_root) Item_func_uuid_short(POS()); }
+Item *Create_func_uuid_short::create(THD *thd)
+{
+  return new (thd->mem_root) Item_func_uuid_short(POS());
+}
 
 Create_func_validate_password_strength Create_func_validate_password_strength::s_singleton;
 
@@ -6378,7 +7460,10 @@ Item *Create_func_validate_password_strength::create(THD *thd, Item *arg1)
 
 Create_func_version Create_func_version::s_singleton;
 
-Item *Create_func_version::create(THD *thd) { return new (thd->mem_root) Item_func_version(POS()); }
+Item *Create_func_version::create(THD *thd)
+{
+  return new (thd->mem_root) Item_func_version(POS());
+}
 
 Create_func_weekday Create_func_weekday::s_singleton;
 
@@ -6411,7 +7496,10 @@ Item *Create_func_within::create(THD *thd, Item *arg1, Item *arg2)
 
 Create_func_x Create_func_x::s_singleton;
 
-Item *Create_func_x::create(THD *thd, Item *arg1) { return new (thd->mem_root) Item_func_x(POS(), arg1); }
+Item *Create_func_x::create(THD *thd, Item *arg1)
+{
+  return new (thd->mem_root) Item_func_x(POS(), arg1);
+}
 
 Create_func_xml_extractvalue Create_func_xml_extractvalue::s_singleton;
 
@@ -6429,7 +7517,10 @@ Item *Create_func_xml_update::create(THD *thd, Item *arg1, Item *arg2, Item *arg
 
 Create_func_y Create_func_y::s_singleton;
 
-Item *Create_func_y::create(THD *thd, Item *arg1) { return new (thd->mem_root) Item_func_y(POS(), arg1); }
+Item *Create_func_y::create(THD *thd, Item *arg1)
+{
+  return new (thd->mem_root) Item_func_y(POS(), arg1);
+}
 
 Create_func_year_week Create_func_year_week::s_singleton;
 
@@ -6897,7 +7988,10 @@ Create_func *find_native_function_builder(THD *thd, LEX_STRING name)
   return builder;
 }
 
-Create_qfunc *find_qualified_function_builder(THD *thd) { return &Create_sp_func::s_singleton; }
+Create_qfunc *find_qualified_function_builder(THD *thd)
+{
+  return &Create_sp_func::s_singleton;
+}
 
 Item *create_func_cast(THD *thd, const POS &pos, Item *a, Cast_target cast_target, const CHARSET_INFO *cs)
 {

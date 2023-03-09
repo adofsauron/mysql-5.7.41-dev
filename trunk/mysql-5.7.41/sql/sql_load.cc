@@ -124,7 +124,10 @@ class READ_INFO
     Arg must be set from mysql_load() since constructor does not see
     either the table or THD value
   */
-  void set_io_cache_arg(void *arg) { cache.arg = arg; }
+  void set_io_cache_arg(void *arg)
+  {
+    cache.arg = arg;
+  }
 
   /**
     skip all data till the eof.
@@ -280,7 +283,8 @@ int mysql_load(THD *thd, sql_exchange *ex, TABLE_LIST *table_list, List< Item > 
 
   TABLE *const table = insert_table_ref->table;
 
-  for (Field **cur_field = table->field; *cur_field; ++cur_field) (*cur_field)->reset_warnings();
+  for (Field **cur_field = table->field; *cur_field; ++cur_field)
+    (*cur_field)->reset_warnings();
 
 #ifndef EMBEDDED_LIBRARY
   transactional_table = table->file->has_transactions();
@@ -1205,7 +1209,8 @@ static int read_xml_field(THD *thd, COPY_INFO &info, TABLE_LIST *table_list, Lis
       xmlit.rewind();
       tag = xmlit++;
 
-      while (tag && strcmp(tag->field.c_ptr(), item->item_name.ptr()) != 0) tag = xmlit++;
+      while (tag && strcmp(tag->field.c_ptr(), item->item_name.ptr()) != 0)
+        tag = xmlit++;
 
       item = item->real_item();
 
@@ -1438,7 +1443,8 @@ READ_INFO::~READ_INFO()
     my_free(buffer);
   List_iterator< XML_TAG > xmlit(taglist);
   XML_TAG *t;
-  while ((t = xmlit++)) delete (t);
+  while ((t = xmlit++))
+    delete (t);
 }
 
 /**
@@ -1481,7 +1487,8 @@ inline int READ_INFO::terminator(const uchar *ptr, size_t length)
   if (i == length)
     return 1;
   PUSH(chr);
-  while (i-- > 1) PUSH(*--ptr);
+  while (i-- > 1)
+    PUSH(*--ptr);
   return 0;
 }
 
@@ -1657,7 +1664,8 @@ int READ_INFO::read_field()
           escaped_mb = false;
         if (my_ismbchar(read_charset, (const char *)p, (const char *)to))
           continue;
-        for (uint i = 0; i < ml; i++) PUSH(*--to);
+        for (uint i = 0; i < ml; i++)
+          PUSH(*--to);
         chr = GET;
       }
       else if (ml > 1)
@@ -1777,7 +1785,8 @@ int READ_INFO::next_line()
     GET_MBCHARLEN(read_charset, chr, ml);
     if (ml > 1)
     {
-      for (uint i = 1; chr != my_b_EOF && i < ml; i++) chr = GET;
+      for (uint i = 1; chr != my_b_EOF && i < ml; i++)
+        chr = GET;
       if (chr == escape_char)
         continue;
     }
@@ -1886,7 +1895,10 @@ static int my_xml_entity_to_char(const char *name, size_t length)
            line feeds or tabs are considered as spaces.
            Convert all of them to space (#x20) for parsing simplicity.
 */
-static int my_tospace(int chr) { return (chr == '\t' || chr == '\r' || chr == '\n') ? ' ' : chr; }
+static int my_tospace(int chr)
+{
+  return (chr == '\t' || chr == '\r' || chr == '\n') ? ' ' : chr;
+}
 
 /*
   Read an xml value: handle multibyte and xml escape

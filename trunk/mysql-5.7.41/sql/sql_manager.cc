@@ -68,7 +68,8 @@ extern "C" void *handle_manager(void *arg MY_ATTRIBUTE((unused)))
     }
     else
     {
-      while ((!error || error == EINTR) && !abort_manager) error = mysql_cond_wait(&COND_manager, &LOCK_manager);
+      while ((!error || error == EINTR) && !abort_manager)
+        error = mysql_cond_wait(&COND_manager, &LOCK_manager);
     }
     mysql_mutex_unlock(&LOCK_manager);
 

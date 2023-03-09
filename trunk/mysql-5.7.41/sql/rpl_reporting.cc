@@ -163,4 +163,7 @@ void Slave_reporting_capability::va_report(loglevel level, int err_code, const c
 #endif
 }
 
-Slave_reporting_capability::~Slave_reporting_capability() { mysql_mutex_destroy(&err_lock); }
+Slave_reporting_capability::~Slave_reporting_capability()
+{
+  mysql_mutex_destroy(&err_lock);
+}

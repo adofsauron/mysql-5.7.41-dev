@@ -61,7 +61,9 @@
     }                                                                                                  \
   } while (0)
 
-Item_func_spatial_operation::~Item_func_spatial_operation() {}
+Item_func_spatial_operation::~Item_func_spatial_operation()
+{
+}
 
 /*
   Write an empty geometry collection's wkb encoding into str, and create a
@@ -99,7 +101,10 @@ class BG_setop_wrapper
   // Some computation in this class may rely on functions in
   // Item_func_spatial_operation, after each call of its functions, copy its
   // null_value, we don't want to miss errors.
-  void copy_ifso_state() { null_value = m_ifso->null_value; }
+  void copy_ifso_state()
+  {
+    null_value = m_ifso->null_value;
+  }
 
  public:
   typedef typename Geom_types::Point Point;
@@ -122,7 +127,10 @@ class BG_setop_wrapper
     null_value = 0;
   }
 
-  my_bool get_null_value() const { return null_value; }
+  my_bool get_null_value() const
+  {
+    return null_value;
+  }
 
   /**
     Do point insersection point operation.
@@ -2602,7 +2610,10 @@ class Singleton_extractor : public WKB_scanner_event_handler
     return t == Geometry::wkb_point || t == Geometry::wkb_linestring || t == Geometry::wkb_polygon;
   }
 
-  bool has_single_component() const { return ntrees == 1; }
+  bool has_single_component() const
+  {
+    return ntrees == 1;
+  }
 
   // Functions to get singleton information.
 
@@ -2611,16 +2622,25 @@ class Singleton_extractor : public WKB_scanner_event_handler
     is returned instead of the multi-geometry, otherwise the multi-geometry
     is returned.
    */
-  const char *get_start() const { return nsubtrees == 1 ? bg_start : start; }
+  const char *get_start() const
+  {
+    return nsubtrees == 1 ? bg_start : start;
+  }
 
   /*
     Returns the end of the singleton geometry. For a singleton,
     its end is always also the end of the root geometry, so this function
     is correct only when the root geometry really contains a singleton.
    */
-  const char *get_end() const { return end; }
+  const char *get_end() const
+  {
+    return end;
+  }
 
-  Geometry::wkbType get_type() const { return nsubtrees == 1 ? bg_type : gtype; }
+  Geometry::wkbType get_type() const
+  {
+    return nsubtrees == 1 ? bg_type : gtype;
+  }
 
   virtual void on_wkb_start(Geometry::wkbByteOrder bo, Geometry::wkbType geotype, const void *wkb, uint32 len,
                             bool has_hdr)

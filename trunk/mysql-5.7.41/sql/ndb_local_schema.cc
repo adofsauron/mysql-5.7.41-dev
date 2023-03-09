@@ -76,7 +76,10 @@ bool Ndb_local_schema::Base::mdl_try_lock(void) const
   return true;
 }
 
-void Ndb_local_schema::Base::mdl_unlock(void) { m_thd->mdl_context.release_transactional_locks(); }
+void Ndb_local_schema::Base::mdl_unlock(void)
+{
+  m_thd->mdl_context.release_transactional_locks();
+}
 
 void Ndb_local_schema::Base::log_warning(const char *fmt, ...) const
 {

@@ -151,7 +151,9 @@ static bool gsl_initialized = false;
 class Thd_proc_info_guard
 {
  public:
-  Thd_proc_info_guard(THD *thd) : m_thd(thd), m_proc_info(NULL) {}
+  Thd_proc_info_guard(THD *thd) : m_thd(thd), m_proc_info(NULL)
+  {
+  }
   void set(const char *message)
   {
     const char *old = thd_proc_info(m_thd, message);
@@ -410,7 +412,9 @@ bool Thd_ndb::has_required_global_schema_lock(const char *func)
 
 #include "ndb_global_schema_lock_guard.h"
 
-Ndb_global_schema_lock_guard::Ndb_global_schema_lock_guard(THD *thd) : m_thd(thd), m_locked(false) {}
+Ndb_global_schema_lock_guard::Ndb_global_schema_lock_guard(THD *thd) : m_thd(thd), m_locked(false)
+{
+}
 
 Ndb_global_schema_lock_guard::~Ndb_global_schema_lock_guard()
 {

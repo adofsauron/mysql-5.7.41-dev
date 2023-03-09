@@ -298,9 +298,15 @@ end:
 }
 #else
 
-int check_for_max_user_connections(THD *thd, const USER_CONN *uc) { return 0; }
+int check_for_max_user_connections(THD *thd, const USER_CONN *uc)
+{
+  return 0;
+}
 
-void decrease_user_connections(USER_CONN *uc) { return; }
+void decrease_user_connections(USER_CONN *uc)
+{
+  return;
+}
 
 void release_user_connection(THD *thd)
 {
@@ -328,7 +334,10 @@ extern "C" uchar *get_key_conn(user_conn *buff, size_t *length, my_bool not_used
   return (uchar *)buff->user;
 }
 
-extern "C" void free_user(struct user_conn *uc) { my_free(uc); }
+extern "C" void free_user(struct user_conn *uc)
+{
+  my_free(uc);
+}
 
 void init_max_user_conn(void)
 {

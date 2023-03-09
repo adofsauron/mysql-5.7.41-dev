@@ -53,7 +53,10 @@ class Materialized_cursor : public Server_side_cursor
   Materialized_cursor(Query_result *result, TABLE *table);
 
   int send_result_set_metadata(THD *thd, List< Item > &send_result_set_metadata);
-  virtual bool is_open() const { return table != 0; }
+  virtual bool is_open() const
+  {
+    return table != 0;
+  }
   virtual int open(JOIN *join MY_ATTRIBUTE((unused)));
   virtual bool fetch(ulong num_rows);
   virtual void close();
@@ -74,7 +77,9 @@ class Query_result_materialize : public Query_result_union
   Query_result *result; /**< the result object of the caller (PS or SP) */
  public:
   Materialized_cursor *materialized_cursor;
-  Query_result_materialize(Query_result *result_arg) : result(result_arg), materialized_cursor(0) {}
+  Query_result_materialize(Query_result *result_arg) : result(result_arg), materialized_cursor(0)
+  {
+  }
   virtual bool send_result_set_metadata(List< Item > &list, uint flags);
 };
 
@@ -179,7 +184,9 @@ end:
   Server_side_cursor
 ****************************************************************************/
 
-Server_side_cursor::~Server_side_cursor() {}
+Server_side_cursor::~Server_side_cursor()
+{
+}
 
 void Server_side_cursor::operator delete(void *ptr, size_t size)
 {
@@ -412,7 +419,8 @@ bool Query_result_materialize::send_result_set_metadata(List< Item > &list, uint
     will close all tables except the cursor temporary table. Hence set the
     orig_table in the field definition to NULL.
   */
-  for (Field **fld = this->table->field; *fld; fld++) (*fld)->orig_table = NULL;
+  for (Field **fld = this->table->field; *fld; fld++)
+    (*fld)->orig_table = NULL;
 
   return FALSE;
 }

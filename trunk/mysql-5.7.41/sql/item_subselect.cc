@@ -386,7 +386,10 @@ void Item_in_subselect::cleanup()
   DBUG_VOID_RETURN;
 }
 
-Item_subselect::~Item_subselect() { delete engine; }
+Item_subselect::~Item_subselect()
+{
+  delete engine;
+}
 
 bool Item_subselect::fix_fields(THD *thd, Item **ref)
 {
@@ -634,7 +637,8 @@ void Item_subselect::fix_after_pullout(st_select_lex *parent_select, st_select_l
 
     List_iterator< Item > li(sel->item_list);
     Item *item;
-    while ((item = li++)) item->fix_after_pullout(parent_select, removed_select);
+    while ((item = li++))
+      item->fix_after_pullout(parent_select, removed_select);
 
     /*
       No need to call fix_after_pullout() for outer-join conditions, as these
@@ -709,11 +713,20 @@ bool Item_in_subselect::exec()
   DBUG_RETURN(retval);
 }
 
-Item::Type Item_subselect::type() const { return SUBSELECT_ITEM; }
+Item::Type Item_subselect::type() const
+{
+  return SUBSELECT_ITEM;
+}
 
-void Item_subselect::fix_length_and_dec() { engine->fix_length_and_dec(0); }
+void Item_subselect::fix_length_and_dec()
+{
+  engine->fix_length_and_dec(0);
+}
 
-table_map Item_subselect::used_tables() const { return (engine->uncacheable() ? used_tables_cache : 0ULL); }
+table_map Item_subselect::used_tables() const
+{
+  return (engine->uncacheable() ? used_tables_cache : 0ULL);
+}
 
 bool Item_subselect::const_item() const
 {
@@ -758,7 +771,9 @@ void Item_subselect::print(String *str, enum_query_type query_type)
 class Query_result_scalar_subquery : public Query_result_subquery
 {
  public:
-  Query_result_scalar_subquery(Item_subselect *item_arg) : Query_result_subquery(item_arg) {}
+  Query_result_scalar_subquery(Item_subselect *item_arg) : Query_result_subquery(item_arg)
+  {
+  }
   bool send_data(List< Item > &items);
 };
 
@@ -778,7 +793,8 @@ bool Query_result_scalar_subquery::send_data(List< Item > &items)
   }
   List_iterator_fast< Item > li(items);
   Item *val_item;
-  for (uint i = 0; (val_item = li++); i++) it->store(i, val_item);
+  for (uint i = 0; (val_item = li++); i++)
+    it->store(i, val_item);
   if (thd->is_error())
     DBUG_RETURN(true);
 
@@ -1095,13 +1111,19 @@ void Item_singlerow_subselect::store(uint i, Item *item)
   row[i]->cache_value();
 }
 
-enum Item_result Item_singlerow_subselect::result_type() const { return engine->type(); }
+enum Item_result Item_singlerow_subselect::result_type() const
+{
+  return engine->type();
+}
 
 /*
  Don't rely on the result type to calculate field type.
  Ask the engine instead.
 */
-enum_field_types Item_singlerow_subselect::field_type() const { return engine->field_type(); }
+enum_field_types Item_singlerow_subselect::field_type() const
+{
+  return engine->field_type();
+}
 
 void Item_singlerow_subselect::fix_length_and_dec()
 {
@@ -1136,7 +1158,10 @@ void Item_singlerow_subselect::no_rows_in_result()
     no_rows = true;
 }
 
-uint Item_singlerow_subselect::cols() { return engine->cols(); }
+uint Item_singlerow_subselect::cols()
+{
+  return engine->cols();
+}
 
 bool Item_singlerow_subselect::check_cols(uint c)
 {
@@ -1284,7 +1309,9 @@ bool Item_singlerow_subselect::val_bool()
 class Query_result_exists_subquery : public Query_result_subquery
 {
  public:
-  Query_result_exists_subquery(Item_subselect *item_arg) : Query_result_subquery(item_arg) {}
+  Query_result_exists_subquery(Item_subselect *item_arg) : Query_result_subquery(item_arg)
+  {
+  }
   bool send_data(List< Item > &items);
 };
 
@@ -2130,7 +2157,8 @@ Item_subselect::trans_res Item_in_subselect::row_value_transformer(SELECT_LEX *s
     {
       if (!(pushed_cond_guards = (bool *)thd->alloc(sizeof(bool) * left_expr->cols())))
         DBUG_RETURN(RES_ERROR);
-      for (uint i = 0; i < cols_num; i++) pushed_cond_guards[i] = TRUE;
+      for (uint i = 0; i < cols_num; i++)
+        pushed_cond_guards[i] = TRUE;
     }
   }
 
@@ -2387,7 +2415,8 @@ Item_subselect::trans_res Item_in_subselect::select_in_like_transformer(SELECT_L
     it, ORDER BY becomes meaningless and should already have been
     removed in resolve_subquery()
   */
-  for (SELECT_LEX *sl = unit->first_select(); sl; sl = sl->next_select()) assert(!sl->order_list.first);
+  for (SELECT_LEX *sl = unit->first_select(); sl; sl = sl->next_select())
+    assert(!sl->order_list.first);
 #endif
 
   if (changed)
@@ -2646,7 +2675,8 @@ bool Item_subselect::clean_up_after_removal(uchar *arg)
     1) sl == root: unit is a descendant of the starting point, or
     2) sl == NULL: unit is not a descendant of the starting point
   */
-  while (sl != root && sl != NULL) sl = sl->outer_select();
+  while (sl != root && sl != NULL)
+    sl = sl->outer_select();
   if (sl == root)
     unit->exclude_tree();
   return false;
@@ -2661,7 +2691,10 @@ Item_subselect::trans_res Item_allany_subselect::select_transformer(SELECT_LEX *
   DBUG_RETURN(retval);
 }
 
-bool Item_subselect::is_evaluated() const { return unit->is_executed(); }
+bool Item_subselect::is_evaluated() const
+{
+  return unit->is_executed();
+}
 
 void Item_allany_subselect::print(String *str, enum_query_type query_type)
 {
@@ -3323,7 +3356,10 @@ bool subselect_indexsubquery_engine::exec()
   DBUG_RETURN(error != 0);
 }
 
-uint subselect_single_select_engine::cols() const { return select_lex->item_list.elements; }
+uint subselect_single_select_engine::cols() const
+{
+  return select_lex->item_list.elements;
+}
 
 uint subselect_union_engine::cols() const
 {
@@ -3331,13 +3367,25 @@ uint subselect_union_engine::cols() const
   return unit->types.elements;
 }
 
-uint8 subselect_single_select_engine::uncacheable() const { return select_lex->uncacheable; }
+uint8 subselect_single_select_engine::uncacheable() const
+{
+  return select_lex->uncacheable;
+}
 
-uint8 subselect_union_engine::uncacheable() const { return unit->uncacheable; }
+uint8 subselect_union_engine::uncacheable() const
+{
+  return unit->uncacheable;
+}
 
-void subselect_single_select_engine::exclude() { select_lex->master_unit()->exclude_level(); }
+void subselect_single_select_engine::exclude()
+{
+  select_lex->master_unit()->exclude_level();
+}
 
-void subselect_union_engine::exclude() { unit->exclude_level(); }
+void subselect_union_engine::exclude()
+{
+  unit->exclude_level();
+}
 
 void subselect_indexsubquery_engine::exclude()
 {
@@ -3372,7 +3420,10 @@ void subselect_single_select_engine::print(String *str, enum_query_type query_ty
   select_lex->print(item->unit->thd, str, query_type);
 }
 
-void subselect_union_engine::print(String *str, enum_query_type query_type) { unit->print(str, query_type); }
+void subselect_union_engine::print(String *str, enum_query_type query_type)
+{
+  unit->print(str, query_type);
+}
 
 /*
 TODO:

@@ -47,7 +47,10 @@ class Multisource_info_guard
   Multisource_info_guard &operator=(const Multisource_info_guard &);
 
  public:
-  Multisource_info_guard() { channel_map.rdlock(); }
+  Multisource_info_guard()
+  {
+    channel_map.rdlock();
+  }
 
   // Return the default channels Master_info*
   Master_info *get_default_mi() const

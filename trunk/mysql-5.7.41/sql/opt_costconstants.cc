@@ -207,7 +207,8 @@ void SE_cost_constants::update_cost_value(double *cost_constant, bool *cost_cons
 
 Cost_model_se_info::Cost_model_se_info()
 {
-  for (uint i = 0; i < MAX_STORAGE_CLASSES; ++i) m_se_cost_constants[i] = NULL;
+  for (uint i = 0; i < MAX_STORAGE_CLASSES; ++i)
+    m_se_cost_constants[i] = NULL;
 }
 
 Cost_model_se_info::~Cost_model_se_info()
@@ -259,7 +260,10 @@ Cost_model_constants::Cost_model_constants() : m_ref_counter(0)
   }
 }
 
-Cost_model_constants::~Cost_model_constants() { assert(m_ref_counter == 0); }
+Cost_model_constants::~Cost_model_constants()
+{
+  assert(m_ref_counter == 0);
+}
 
 const SE_cost_constants *Cost_model_constants::get_se_cost_constants(const TABLE *table) const
 {

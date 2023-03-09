@@ -153,7 +153,8 @@ bool partition_info::add_named_partition(const char *part_name, size_t length)
       /* Mark all subpartitions in the partition */
       uint j, start = part_def->part_id;
       uint end = start + num_subparts;
-      for (j = start; j < end; j++) bitmap_set_bit(&read_partitions, j);
+      for (j = start; j < end; j++)
+        bitmap_set_bit(&read_partitions, j);
     }
     else
       bitmap_set_bit(&read_partitions, part_def->part_id);
@@ -1282,7 +1283,10 @@ extern "C" int partition_info_list_part_cmp(const void *a, const void *b)
     return 0;
 }
 
-int partition_info::list_part_cmp(const void *a, const void *b) { return partition_info_list_part_cmp(a, b); }
+int partition_info::list_part_cmp(const void *a, const void *b)
+{
+  return partition_info_list_part_cmp(a, b);
+}
 
 /*
   Compare two lists of column values in RANGE/LIST partitioning
@@ -1404,7 +1408,8 @@ bool partition_info::check_list_constants(THD *thd)
       found_null = TRUE;
     }
     List_iterator< part_elem_value > list_val_it1(part_def->list_val_list);
-    while (list_val_it1++) num_list_values++;
+    while (list_val_it1++)
+      num_list_values++;
   } while (++i < num_parts);
   list_func_it.rewind();
   num_column_values = part_field_list.elements;
@@ -1861,11 +1866,13 @@ bool partition_info::check_partition_field_length()
   uint i;
   DBUG_ENTER("partition_info::check_partition_field_length");
 
-  for (i = 0; i < num_part_fields; i++) store_length += get_partition_field_store_length(part_field_array[i]);
+  for (i = 0; i < num_part_fields; i++)
+    store_length += get_partition_field_store_length(part_field_array[i]);
   if (store_length > MAX_KEY_LENGTH)
     DBUG_RETURN(TRUE);
   store_length = 0;
-  for (i = 0; i < num_subpart_fields; i++) store_length += get_partition_field_store_length(subpart_field_array[i]);
+  for (i = 0; i < num_subpart_fields; i++)
+    store_length += get_partition_field_store_length(subpart_field_array[i]);
   if (store_length > MAX_KEY_LENGTH)
     DBUG_RETURN(TRUE);
   DBUG_RETURN(FALSE);

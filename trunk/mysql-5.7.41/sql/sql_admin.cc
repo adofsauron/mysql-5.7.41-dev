@@ -287,7 +287,8 @@ static bool mysql_admin_table(THD *thd, TABLE_LIST *tables, HA_CHECK_OPT *check_
     privilege checking. Clear all references to closed tables.
   */
   close_thread_tables(thd);
-  for (table = tables; table; table = table->next_local) table->table = NULL;
+  for (table = tables; table; table = table->next_local)
+    table->table = NULL;
 
   /*
     This statement will be written to the binary log even if it fails.
@@ -1030,7 +1031,8 @@ static bool mysql_admin_table(THD *thd, TABLE_LIST *tables, HA_CHECK_OPT *check_
       @todo: have a method to reset a prelocking context, or use separate
       contexts for each open.
     */
-    for (Sroutine_hash_entry *rt = thd->lex->sroutines_list.first; rt; rt = rt->next) rt->mdl_request.ticket = NULL;
+    for (Sroutine_hash_entry *rt = thd->lex->sroutines_list.first; rt; rt = rt->next)
+      rt->mdl_request.ticket = NULL;
 
     if (protocol->end_row())
       goto err;

@@ -149,7 +149,8 @@ static double get_merge_buffers_cost(Unique::Imerge_cost_buf_type buff_elems, ui
                                      const Cost_model_table *cost_model)
 {
   uint total_buf_elems = 0;
-  for (uint pbuf = first; pbuf <= last; pbuf++) total_buf_elems += buff_elems[pbuf];
+  for (uint pbuf = first; pbuf <= last; pbuf++)
+    total_buf_elems += buff_elems[pbuf];
   buff_elems[last] = total_buf_elems;
 
   const size_t n_buffers = last - first + 1;
@@ -200,7 +201,8 @@ static double get_merge_many_buffs_cost(Unique::Imerge_cost_buf_type buffer, uin
     Set initial state: first maxbuffer sequences contain max_n_elems elements
     each, last sequence contains last_n_elems elements.
   */
-  for (i = 0; i < (int)maxbuffer; i++) buff_elems[i] = max_n_elems;
+  for (i = 0; i < (int)maxbuffer; i++)
+    buff_elems[i] = max_n_elems;
   buff_elems[maxbuffer] = last_n_elems;
 
   /*
@@ -383,7 +385,9 @@ namespace
 
 struct Merge_chunk_less
 {
-  Merge_chunk_less(const Merge_chunk_compare_context context) : m_context(context) {}
+  Merge_chunk_less(const Merge_chunk_compare_context context) : m_context(context)
+  {
+  }
   bool operator()(Merge_chunk *a, Merge_chunk *b)
   {
     return m_context.key_compare(m_context.key_compare_arg, a->current_key(), b->current_key()) > 0;

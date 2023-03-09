@@ -78,7 +78,10 @@ bool Query_result_union::send_data(List< Item > &values)
   return false;
 }
 
-bool Query_result_union::send_eof() { return false; }
+bool Query_result_union::send_eof()
+{
+  return false;
+}
 
 bool Query_result_union::flush()
 {
@@ -206,17 +209,28 @@ class Query_result_union_direct : public Query_result_union
   bool send_result_set_metadata(List< Item > &list, uint flags);
   bool send_data(List< Item > &items);
   bool initialize_tables(JOIN *join = NULL);
-  void send_error(uint errcode, const char *err) { result->send_error(errcode, err); /* purecov: inspected */ }
+  void send_error(uint errcode, const char *err)
+  {
+    result->send_error(errcode, err); /* purecov: inspected */
+  }
   bool send_eof();
-  bool flush() { return false; }
+  bool flush()
+  {
+    return false;
+  }
   bool check_simple_select() const
   {
     // Only called for top-level Query_results, usually Query_result_send
     assert(false); /* purecov: inspected */
     return false;  /* purecov: inspected */
   }
-  void abort_result_set() { result->abort_result_set(); /* purecov: inspected */ }
-  void cleanup() {}
+  void abort_result_set()
+  {
+    result->abort_result_set(); /* purecov: inspected */
+  }
+  void cleanup()
+  {
+  }
   void set_thd(THD *thd_arg)
   {
     /*
@@ -365,7 +379,8 @@ bool st_select_lex_unit::prepare_fake_select_lex(THD *thd_arg)
       fake_select_lex->get_table_list();
   if (!fake_select_lex->first_execution)
   {
-    for (ORDER *order = fake_select_lex->order_list.first; order; order = order->next) order->item = &order->item_ptr;
+    for (ORDER *order = fake_select_lex->order_list.first; order; order = order->next)
+      order->item = &order->item_ptr;
   }
   for (ORDER *order = fake_select_lex->order_list.first; order; order = order->next)
   {
@@ -425,7 +440,8 @@ bool st_select_lex_unit::prepare(THD *thd_arg, Query_result *sel_result, ulonglo
   bool instantiate_tmp_table = false;
 
   SELECT_LEX *last_select = first_select();
-  while (last_select->next_select()) last_select = last_select->next_select();
+  while (last_select->next_select())
+    last_select = last_select->next_select();
 
   set_query_result(sel_result);
 
@@ -863,7 +879,8 @@ bool st_select_lex_unit::cleanup(bool full)
   cleaned = (full ? UC_CLEAN : UC_PART_CLEAN);
 
   bool error = false;
-  for (SELECT_LEX *sl = first_select(); sl; sl = sl->next_select()) error |= sl->cleanup(full);
+  for (SELECT_LEX *sl = first_select(); sl; sl = sl->next_select())
+    error |= sl->cleanup(full);
 
   if (fake_select_lex)
     error |= fake_select_lex->cleanup(full);
@@ -1033,6 +1050,7 @@ void st_select_lex::cleanup_all_joins()
 
   for (SELECT_LEX_UNIT *unit = first_inner_unit(); unit; unit = unit->next_unit())
   {
-    for (SELECT_LEX *sl = unit->first_select(); sl; sl = sl->next_select()) sl->cleanup_all_joins();
+    for (SELECT_LEX *sl = unit->first_select(); sl; sl = sl->next_select())
+      sl->cleanup_all_joins();
   }
 }

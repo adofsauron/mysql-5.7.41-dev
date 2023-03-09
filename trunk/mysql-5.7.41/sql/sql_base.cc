@@ -271,7 +271,9 @@ bool Partition_in_shared_ts_error_handler::handle_condition(THD *thd, uint sql_e
 class Repair_mrg_table_error_handler : public Internal_error_handler
 {
  public:
-  Repair_mrg_table_error_handler() : m_handled_errors(false), m_unhandled_errors(false) {}
+  Repair_mrg_table_error_handler() : m_handled_errors(false), m_unhandled_errors(false)
+  {
+  }
 
   virtual bool handle_condition(THD *thd, uint sql_errno, const char *sqlstate,
                                 Sql_condition::enum_severity_level *level, const char *msg)
@@ -585,7 +587,10 @@ void table_def_free(void)
   DBUG_VOID_RETURN;
 }
 
-uint cached_table_definitions(void) { return table_def_cache.records; }
+uint cached_table_definitions(void)
+{
+  return table_def_cache.records;
+}
 
 /**
   Get the TABLE_SHARE for a table.
@@ -1030,7 +1035,8 @@ OPEN_TABLE_LIST *list_open_tables(THD *thd, const char *db, const char *wild)
               share->table_name.str);
     (*start_list)->in_use = 0;
     Table_cache_iterator it(share);
-    while (it++) ++(*start_list)->in_use;
+    while (it++)
+      ++(*start_list)->in_use;
     (*start_list)->locked = 0; /* Obsolete. */
     start_list = &(*start_list)->next;
     *start_list = 0;
@@ -1119,7 +1125,8 @@ bool close_cached_tables(THD *thd, TABLE_LIST *tables, bool wait_for_refresh, ul
     */
     table_cache_manager.free_all_unused_tables();
     /* Free table shares which were not freed implicitly by loop above. */
-    while (oldest_unused_share->next) (void)my_hash_delete(&table_def_cache, (uchar *)oldest_unused_share);
+    while (oldest_unused_share->next)
+      (void)my_hash_delete(&table_def_cache, (uchar *)oldest_unused_share);
   }
   else
   {
@@ -1249,7 +1256,8 @@ err_with_reopen:
       metadata lock it is much simpler to go through all open tables rather
       than picking only those tables that were flushed.
     */
-    for (TABLE *tab = thd->open_tables; tab; tab = tab->next) tab->mdl_ticket->downgrade_lock(MDL_SHARED_NO_READ_WRITE);
+    for (TABLE *tab = thd->open_tables; tab; tab = tab->next)
+      tab->mdl_ticket->downgrade_lock(MDL_SHARED_NO_READ_WRITE);
   }
   DBUG_RETURN(result);
 }
@@ -1368,7 +1376,8 @@ static void close_open_tables(THD *thd)
 
   DBUG_PRINT("info", ("thd->open_tables: 0x%lx", (long)thd->open_tables));
 
-  while (thd->open_tables) close_thread_table(thd, &thd->open_tables);
+  while (thd->open_tables)
+    close_thread_table(thd, &thd->open_tables);
 }
 
 /**
@@ -2528,7 +2537,9 @@ end:
 class MDL_deadlock_handler : public Internal_error_handler
 {
  public:
-  MDL_deadlock_handler(Open_table_context *ot_ctx_arg) : m_ot_ctx(ot_ctx_arg), m_is_active(FALSE) {}
+  MDL_deadlock_handler(Open_table_context *ot_ctx_arg) : m_ot_ctx(ot_ctx_arg), m_is_active(FALSE)
+  {
+  }
 
   virtual bool handle_condition(THD *thd, uint sql_errno, const char *sqlstate,
                                 Sql_condition::enum_severity_level *level, const char *msg)
@@ -6499,7 +6510,8 @@ void close_tables_for_reopen(THD *thd, TABLE_LIST **tables, const MDL_savepoint 
     *tables = 0;
   thd->lex->chop_off_not_own_tables();
   /* Reset MDL tickets for procedures/functions */
-  for (Sroutine_hash_entry *rt = thd->lex->sroutines_list.first; rt; rt = rt->next) rt->mdl_request.ticket = NULL;
+  for (Sroutine_hash_entry *rt = thd->lex->sroutines_list.first; rt; rt = rt->next)
+    rt->mdl_request.ticket = NULL;
   sp_remove_not_own_routines(thd->lex);
   for (tmp = *tables; tmp; tmp = tmp->next_global)
   {
@@ -8471,7 +8483,8 @@ bool setup_fields(THD *thd, Ref_ptr_array ref_pointer_array, List< Item > &field
   */
   List_iterator< Item_func_set_user_var > li(thd->lex->set_var_list);
   Item_func_set_user_var *var;
-  while ((var = li++)) var->set_entry(thd, FALSE);
+  while ((var = li++))
+    var->set_entry(thd, FALSE);
 
   Ref_ptr_array ref = ref_pointer_array;
 
@@ -9563,7 +9576,8 @@ bool open_trans_system_tables_for_read(THD *thd, TABLE_LIST *table_list)
 
   // Mark the table columns for use.
 
-  for (TABLE_LIST *tables = table_list; tables; tables = tables->next_global) tables->table->use_all_columns();
+  for (TABLE_LIST *tables = table_list; tables; tables = tables->next_global)
+    tables->table->use_all_columns();
 
   DBUG_RETURN(false);
 }
@@ -9600,7 +9614,10 @@ void close_nontrans_system_tables(THD *thd, Open_tables_backup *backup)
   @param thd        Thread context.
 */
 
-void close_trans_system_tables(THD *thd) { thd->end_attachable_transaction(); }
+void close_trans_system_tables(THD *thd)
+{
+  thd->end_attachable_transaction();
+}
 
 /**
   A helper function to close a mysql.* table opened
@@ -9706,7 +9723,10 @@ TABLE *open_log_table(THD *thd, TABLE_LIST *one_table, Open_tables_backup *backu
   @param thd The current thread
   @param backup [in] the context to restore.
 */
-void close_log_table(THD *thd, Open_tables_backup *backup) { close_nontrans_system_tables(thd, backup); }
+void close_log_table(THD *thd, Open_tables_backup *backup)
+{
+  close_nontrans_system_tables(thd, backup);
+}
 
 /**
   @} (end of group Data_Dictionary)

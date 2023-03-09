@@ -267,7 +267,8 @@ QUERY_PROFILE::QUERY_PROFILE(PROFILING *profiling_arg, const char *status_arg)
 
 QUERY_PROFILE::~QUERY_PROFILE()
 {
-  while (!entries.is_empty()) delete entries.pop();
+  while (!entries.is_empty())
+    delete entries.pop();
 
   my_free(m_query_source.str);
 }
@@ -306,16 +307,20 @@ void QUERY_PROFILE::new_status(const char *status_arg, const char *function_arg,
   entries.push_back(prof);
 
   /* Maintain the query history size. */
-  while (entries.elements > MAX_QUERY_HISTORY) delete entries.pop();
+  while (entries.elements > MAX_QUERY_HISTORY)
+    delete entries.pop();
 
   DBUG_VOID_RETURN;
 }
 
-PROFILING::PROFILING() : profile_id_counter(1), current(NULL), last(NULL) {}
+PROFILING::PROFILING() : profile_id_counter(1), current(NULL), last(NULL)
+{
+}
 
 PROFILING::~PROFILING()
 {
-  while (!history.is_empty()) delete history.pop();
+  while (!history.is_empty())
+    delete history.pop();
 
   if (current != NULL)
     delete current;
@@ -422,7 +427,8 @@ void PROFILING::finish_current_query()
   }
 
   /* Maintain the history size. */
-  while (history.elements > thd->variables.profiling_history_size) delete history.pop();
+  while (history.elements > thd->variables.profiling_history_size)
+    delete history.pop();
 
   DBUG_VOID_RETURN;
 }
@@ -683,7 +689,8 @@ int PROFILING::fill_statistics_info(THD *thd_arg, TABLE_LIST *tables, Item *cond
 */
 void PROFILING::cleanup()
 {
-  while (!history.is_empty()) delete history.pop();
+  while (!history.is_empty())
+    delete history.pop();
   delete current;
   current = NULL;
 }

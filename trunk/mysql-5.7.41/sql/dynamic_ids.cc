@@ -24,7 +24,9 @@
 
 #include "dynamic_ids.h"
 
-Server_ids::Server_ids() : dynamic_ids(PSI_NOT_INSTRUMENTED) {}
+Server_ids::Server_ids() : dynamic_ids(PSI_NOT_INSTRUMENTED)
+{
+}
 
 bool Server_ids::unpack_dynamic_ids(char *param_dynamic_ids)
 {

@@ -28,4 +28,6 @@
 #include "select_lex_visitor.h"
 
 /// Gcc demands an implementation for a virtual destructor.
-Select_lex_visitor::~Select_lex_visitor() {}
+Select_lex_visitor::~Select_lex_visitor()
+{
+}

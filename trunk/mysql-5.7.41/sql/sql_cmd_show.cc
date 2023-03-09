@@ -53,7 +53,10 @@ bool Sql_cmd_show::check_privileges(THD *thd)
   return check_table_access(thd, SELECT_ACL, lex->query_tables, false, UINT_MAX, false);
 }
 
-bool Sql_cmd_show::execute_inner(THD *thd) { return execute_sqlcom_select(thd, thd->lex->query_tables); }
+bool Sql_cmd_show::execute_inner(THD *thd)
+{
+  return execute_sqlcom_select(thd, thd->lex->query_tables);
+}
 
 bool Sql_cmd_show_processlist::check_privileges(THD *thd)
 {

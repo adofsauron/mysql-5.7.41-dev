@@ -85,7 +85,8 @@ int Delegate::add_observer(void *observer, st_plugin_int *plugin)
   write_lock();
   Observer_info_iterator iter(observer_info_list);
   Observer_info *info = iter++;
-  while (info && info->observer != observer) info = iter++;
+  while (info && info->observer != observer)
+    info = iter++;
   if (!info)
   {
     info = new Observer_info(observer, plugin);
@@ -108,7 +109,8 @@ int Delegate::remove_observer(void *observer, st_plugin_int *plugin)
   write_lock();
   Observer_info_iterator iter(observer_info_list);
   Observer_info *info = iter++;
-  while (info && info->observer != observer) info = iter++;
+  while (info && info->observer != observer)
+    info = iter++;
   if (info)
   {
     iter.remove();
@@ -120,7 +122,10 @@ int Delegate::remove_observer(void *observer, st_plugin_int *plugin)
   return ret;
 }
 
-Delegate::Observer_info_iterator Delegate::observer_info_iter() { return Observer_info_iterator(observer_info_list); }
+Delegate::Observer_info_iterator Delegate::observer_info_iter()
+{
+  return Observer_info_iterator(observer_info_list);
+}
 
 bool Delegate::is_empty()
 {
@@ -172,7 +177,10 @@ int Delegate::unlock()
   return result;
 }
 
-bool Delegate::is_inited() { return inited; }
+bool Delegate::is_inited()
+{
+  return inited;
+}
 
 void Delegate::update_lock_type()
 {
@@ -195,7 +203,8 @@ void Delegate::update_plugin_ref_count()
     for (std::map< plugin_ref, size_t >::iterator ref = m_acquired_references.begin();
          ref != m_acquired_references.end(); ++ref)
     {
-      for (size_t count = ref->second; count != 0; --count) plugin_unlock(NULL, ref->first);
+      for (size_t count = ref->second; count != 0; --count)
+        plugin_unlock(NULL, ref->first);
     }
     m_acquired_references.clear();
   }

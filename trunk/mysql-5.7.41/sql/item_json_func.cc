@@ -428,7 +428,9 @@ Json_path_cache::Json_path_cache(THD *thd, uint size)
   reset_cache();
 }
 
-Json_path_cache::~Json_path_cache() {}
+Json_path_cache::~Json_path_cache()
+{
+}
 
 bool Json_path_cache::parse_and_cache_path(Item **args, uint arg_idx, bool forbid_wildcards)
 {
@@ -552,22 +554,37 @@ class Array_comparator
   const Json_wrapper &m_wrapper;
 
  protected:
-  Array_comparator(const Json_wrapper &wrapper) : m_wrapper(wrapper) {}
-  int cmp(size_t idx1, size_t idx2) const { return m_wrapper[idx1].compare(m_wrapper[idx2]); }
+  Array_comparator(const Json_wrapper &wrapper) : m_wrapper(wrapper)
+  {
+  }
+  int cmp(size_t idx1, size_t idx2) const
+  {
+    return m_wrapper[idx1].compare(m_wrapper[idx2]);
+  }
 };
 
 /// Predicate that checks if one array element is less than another.
 struct Array_less : public Array_comparator
 {
-  Array_less(const Json_wrapper &wrapper) : Array_comparator(wrapper) {}
-  bool operator()(size_t idx1, size_t idx2) const { return cmp(idx1, idx2) < 0; }
+  Array_less(const Json_wrapper &wrapper) : Array_comparator(wrapper)
+  {
+  }
+  bool operator()(size_t idx1, size_t idx2) const
+  {
+    return cmp(idx1, idx2) < 0;
+  }
 };
 
 /// Predicate that checks if two array elements are equal.
 struct Array_equal : public Array_comparator
 {
-  Array_equal(const Json_wrapper &wrapper) : Array_comparator(wrapper) {}
-  bool operator()(size_t idx1, size_t idx2) const { return cmp(idx1, idx2) == 0; }
+  Array_equal(const Json_wrapper &wrapper) : Array_comparator(wrapper)
+  {
+  }
+  bool operator()(size_t idx1, size_t idx2) const
+  {
+    return cmp(idx1, idx2) == 0;
+  }
 };
 
 typedef Prealloced_array< size_t, 16 > Sorted_index_array;
@@ -585,7 +602,8 @@ static bool sort_array(const Json_wrapper &orig, Sorted_index_array *v)
   if (v->reserve(orig.length()))
     return true; /* purecov: inspected */
 
-  for (size_t i = 0; i < orig.length(); i++) v->push_back(i);
+  for (size_t i = 0; i < orig.length(); i++)
+    v->push_back(i);
 
   // Sort the array...
   std::sort(v->begin(), v->end(), Array_less(orig));
@@ -3038,7 +3056,9 @@ bool Item_func_json_search::val_json(Json_wrapper *wr)
   return false;
 }
 
-Item_func_json_remove::Item_func_json_remove(THD *thd, const POS &pos, PT_item_list *a) : Item_json_func(thd, pos, a) {}
+Item_func_json_remove::Item_func_json_remove(THD *thd, const POS &pos, PT_item_list *a) : Item_json_func(thd, pos, a)
+{
+}
 
 bool Item_func_json_remove::val_json(Json_wrapper *wr)
 {
@@ -3354,9 +3374,15 @@ String *Item_func_json_unquote::val_str(String *str)
   return str;
 }
 
-Json_scalar_holder *create_json_scalar_holder() { return new Json_scalar_holder(); }
+Json_scalar_holder *create_json_scalar_holder()
+{
+  return new Json_scalar_holder();
+}
 
-void delete_json_scalar_holder(Json_scalar_holder *holder) { delete holder; }
+void delete_json_scalar_holder(Json_scalar_holder *holder)
+{
+  delete holder;
+}
 
 Json_scalar *get_json_scalar_from_holder(Json_scalar_holder *holder)
 {

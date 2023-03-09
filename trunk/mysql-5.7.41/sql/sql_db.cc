@@ -110,7 +110,10 @@ static inline int write_to_binlog(THD *thd, char *query, size_t q_len, const cha
 
 extern "C" void free_dbopt(void *dbopt);
 
-void free_dbopt(void *dbopt) { my_free(dbopt); }
+void free_dbopt(void *dbopt)
+{
+  my_free(dbopt);
+}
 
 #ifdef HAVE_PSI_INTERFACE
 static PSI_rwlock_key key_rwlock_LOCK_dboptions;
@@ -363,7 +366,8 @@ bool load_db_opt(THD *thd, const char *path, HA_CREATE_INFO *create)
   {
     char *pos = buf + nbytes - 1;
     /* Remove end space and control characters */
-    while (pos > buf && !my_isgraph(&my_charset_latin1, pos[-1])) pos--;
+    while (pos > buf && !my_isgraph(&my_charset_latin1, pos[-1]))
+      pos--;
     *pos = 0;
     if ((pos = strchr(buf, '=')))
     {
@@ -1206,7 +1210,8 @@ long mysql_rm_arc_files(THD *thd, MY_DIR *dirp, const char *org_path)
       continue;
     }
     revision = extension + 5;
-    while (*revision && my_isdigit(system_charset_info, *revision)) revision++;
+    while (*revision && my_isdigit(system_charset_info, *revision))
+      revision++;
     if (*revision)
     {
       found_other_files++;

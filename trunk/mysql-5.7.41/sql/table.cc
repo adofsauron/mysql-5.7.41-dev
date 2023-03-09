@@ -519,7 +519,8 @@ void free_table_share(TABLE_SHARE *share)
     */
     mysql_mutex_assert_owner(&LOCK_open);
 
-    while ((ticket = it++)) (void)ticket->get_ctx()->m_wait.set_status(MDL_wait::GRANTED);
+    while ((ticket = it++))
+      (void)ticket->get_ctx()->m_wait.set_status(MDL_wait::GRANTED);
     /*
       If there are threads waiting for this share to be flushed,
       the last one to receive the notification will destroy the
@@ -575,7 +576,8 @@ inline bool is_system_table_name(const char *name, size_t length)
 
 static inline bool has_disabled_path_chars(const char *str)
 {
-  for (; *str; str++) switch (*str)
+  for (; *str; str++)
+    switch (*str)
     {
       case FN_EXTCHAR:
       case '/':
@@ -3158,7 +3160,8 @@ err:
     free_items(outparam->part_info->item_free_list);
   if (outparam->vfield)
   {
-    for (Field **vfield = outparam->vfield; *vfield; vfield++) free_items((*vfield)->gcol_info->item_free_list);
+    for (Field **vfield = outparam->vfield; *vfield; vfield++)
+      free_items((*vfield)->gcol_info->item_free_list);
   }
   outparam->file = 0;  // For easier error checking
   outparam->db_stat = 0;
@@ -4124,7 +4127,10 @@ bool Wait_for_flush::accept_visitor(MDL_wait_for_graph_visitor *gvisitor)
   return m_share->visit_subgraph(this, gvisitor);
 }
 
-uint Wait_for_flush::get_deadlock_weight() const { return m_deadlock_weight; }
+uint Wait_for_flush::get_deadlock_weight() const
+{
+  return m_deadlock_weight;
+}
 
 /**
   Traverse portion of wait-for graph which is reachable through this
@@ -4433,7 +4439,8 @@ bool TABLE::refix_gc_items(THD *thd)
 
           // Append the new items to the original item_free_list.
           Item *item = vfield->gcol_info->item_free_list;
-          while (item->next) item = item->next;
+          while (item->next)
+            item = item->next;
           item->next = gcol_arena.free_list;
 
           // Permanent changes to the item_tree are completed.
@@ -4458,7 +4465,8 @@ void TABLE::cleanup_gc_items()
   if (!has_gcol())
     return;
 
-  for (Field **vfield_ptr = vfield; *vfield_ptr; vfield_ptr++) cleanup_items((*vfield_ptr)->gcol_info->item_free_list);
+  for (Field **vfield_ptr = vfield; *vfield_ptr; vfield_ptr++)
+    cleanup_items((*vfield_ptr)->gcol_info->item_free_list);
 }
 
 /*
@@ -5033,7 +5041,8 @@ TABLE_LIST *TABLE_LIST::first_leaf_for_name_resolution()
     if (!(cur_table_ref->outer_join & JOIN_TYPE_RIGHT))
     {
       TABLE_LIST *next;
-      while ((next = it++)) cur_table_ref = next;
+      while ((next = it++))
+        cur_table_ref = next;
     }
     if (cur_table_ref->is_leaf_for_name_resolution())
       break;
@@ -5086,7 +5095,8 @@ TABLE_LIST *TABLE_LIST::last_leaf_for_name_resolution()
       List_iterator_fast< TABLE_LIST > it(cur_nested_join->join_list);
       TABLE_LIST *next;
       cur_table_ref = it++;
-      while ((next = it++)) cur_table_ref = next;
+      while ((next = it++))
+        cur_table_ref = next;
     }
     if (cur_table_ref->is_leaf_for_name_resolution())
       break;
@@ -5109,7 +5119,8 @@ void TABLE_LIST::set_want_privilege(ulong want_privilege)
   grant.want_privilege = want_privilege & ~grant.privilege;
   if (table)
     table->grant.want_privilege = want_privilege & ~table->grant.privilege;
-  for (TABLE_LIST *tbl = merge_underlying_list; tbl; tbl = tbl->next_local) tbl->set_want_privilege(want_privilege);
+  for (TABLE_LIST *tbl = merge_underlying_list; tbl; tbl = tbl->next_local)
+    tbl->set_want_privilege(want_privilege);
 #endif
 }
 
@@ -5255,7 +5266,8 @@ bool TABLE_LIST::prepare_security(THD *thd)
   }
   thd->set_security_context(save_security_ctx);
 #else
-  while ((tbl = tb++)) tbl->grant.privilege = ~NO_ACCESS;
+  while ((tbl = tb++))
+    tbl->grant.privilege = ~NO_ACCESS;
 #endif
   DBUG_RETURN(FALSE);
 }
@@ -5352,7 +5364,10 @@ void Field_iterator_view::set(TABLE_LIST *table)
   array_end = table->field_translation_end;
 }
 
-const char *Field_iterator_table::name() { return (*ptr)->field_name; }
+const char *Field_iterator_table::name()
+{
+  return (*ptr)->field_name;
+}
 
 Item *Field_iterator_table::create_item(THD *thd)
 {
@@ -5371,7 +5386,10 @@ Item *Field_iterator_table::create_item(THD *thd)
   return item;
 }
 
-const char *Field_iterator_view::name() { return ptr->name; }
+const char *Field_iterator_view::name()
+{
+  return ptr->name;
+}
 
 Item *Field_iterator_view::create_item(THD *thd)
 {
@@ -5867,7 +5885,8 @@ void TABLE::mark_columns_used_by_index_no_reset(uint index, MY_BITMAP *bitmap, u
 
   KEY_PART_INFO *key_part = key_info[index].key_part;
   KEY_PART_INFO *key_part_end = key_part + key_parts;
-  for (; key_part != key_part_end; key_part++) bitmap_set_bit(bitmap, key_part->fieldnr - 1);
+  for (; key_part != key_part_end; key_part++)
+    bitmap_set_bit(bitmap, key_part->fieldnr - 1);
 }
 
 /*
@@ -6545,7 +6564,10 @@ void TABLE_LIST::reinit_before_use(THD *thd)
   mdl_request.ticket = NULL;
 }
 
-uint TABLE_LIST::query_block_id() const { return derived ? derived->first_select()->select_number : 0; }
+uint TABLE_LIST::query_block_id() const
+{
+  return derived ? derived->first_select()->select_number : 0;
+}
 
 /*
   Compiles the tagged hints list and fills up the bitmasks.
@@ -6772,7 +6794,8 @@ uint TABLE_LIST::leaf_tables_count() const
     return 1;
 
   uint count = 0;
-  for (TABLE_LIST *tbl = merge_underlying_list; tbl; tbl = tbl->next_local) count += tbl->leaf_tables_count();
+  for (TABLE_LIST *tbl = merge_underlying_list; tbl; tbl = tbl->next_local)
+    count += tbl->leaf_tables_count();
 
   return count;
 }
@@ -7150,7 +7173,8 @@ void repoint_field_to_record(TABLE *table, uchar *old_rec, uchar *new_rec)
 {
   Field **fields = table->field;
   my_ptrdiff_t ptrdiff = new_rec - old_rec;
-  for (uint i = 0; i < table->s->fields; i++) fields[i]->move_field_offset(ptrdiff);
+  for (uint i = 0; i < table->s->fields; i++)
+    fields[i]->move_field_offset(ptrdiff);
 }
 
 /**
@@ -7382,6 +7406,12 @@ void TABLE::blobs_need_not_keep_old_value()
   }
 }
 
-void TABLE::set_binlog_drop_if_temp(bool should_binlog) { should_binlog_drop_if_temp_flag = should_binlog; }
+void TABLE::set_binlog_drop_if_temp(bool should_binlog)
+{
+  should_binlog_drop_if_temp_flag = should_binlog;
+}
 
-bool TABLE::should_binlog_drop_if_temp(void) const { return should_binlog_drop_if_temp_flag; }
+bool TABLE::should_binlog_drop_if_temp(void) const
+{
+  return should_binlog_drop_if_temp_flag;
+}

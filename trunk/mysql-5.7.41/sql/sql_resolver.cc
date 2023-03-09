@@ -1710,7 +1710,8 @@ static void fix_tables_after_pullout(st_select_lex *parent_select, st_select_lex
 
     List_iterator< TABLE_LIST > it(tr->nested_join->join_list);
     TABLE_LIST *child;
-    while ((child = it++)) fix_tables_after_pullout(parent_select, removed_select, child, table_adjust);
+    while ((child = it++))
+      fix_tables_after_pullout(parent_select, removed_select, child, table_adjust);
   }
 }
 
@@ -1954,7 +1955,8 @@ bool SELECT_LEX::convert_subquery_to_semijoin(Item_exists_subselect *subq_pred)
 
   // Walk through child's tables and adjust table map
   uint table_no = leaf_table_count;
-  for (tl = subq_select->leaf_tables; tl; tl = tl->next_leaf, table_no++) tl->set_tableno(table_no);
+  for (tl = subq_select->leaf_tables; tl; tl = tl->next_leaf, table_no++)
+    tl->set_tableno(table_no);
 
   // Adjust table and expression counts in parent query block:
   derived_table_count += subq_select->derived_table_count;
@@ -2640,7 +2642,8 @@ static void propagate_nullability(List< TABLE_LIST > *tables, bool nullable)
 void st_select_lex::propagate_unique_test_exclusion()
 {
   for (SELECT_LEX_UNIT *unit = first_inner_unit(); unit; unit = unit->next_unit())
-    for (SELECT_LEX *sl = unit->first_select(); sl; sl = sl->next_select()) sl->propagate_unique_test_exclusion();
+    for (SELECT_LEX *sl = unit->first_select(); sl; sl = sl->next_select())
+      sl->propagate_unique_test_exclusion();
 
   exclude_from_table_unique_test = true;
 }

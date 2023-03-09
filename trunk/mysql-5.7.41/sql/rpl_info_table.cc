@@ -73,9 +73,15 @@ Rpl_info_table::~Rpl_info_table()
   my_free(str_schema.str);
 }
 
-int Rpl_info_table::do_init_info() { return do_init_info(FIND_KEY, 0); }
+int Rpl_info_table::do_init_info()
+{
+  return do_init_info(FIND_KEY, 0);
+}
 
-int Rpl_info_table::do_init_info(uint instance) { return do_init_info(FIND_KEY, instance); }
+int Rpl_info_table::do_init_info(uint instance)
+{
+  return do_init_info(FIND_KEY, instance);
+}
 
 int Rpl_info_table::do_init_info(enum_find_method method, uint instance)
 {
@@ -245,7 +251,10 @@ end:
   DBUG_RETURN(error);
 }
 
-int Rpl_info_table::do_remove_info() { return do_clean_info(); }
+int Rpl_info_table::do_remove_info()
+{
+  return do_clean_info();
+}
 
 int Rpl_info_table::do_clean_info()
 {
@@ -562,7 +571,9 @@ end:
   DBUG_RETURN(error);
 }
 
-void Rpl_info_table::do_end_info() {}
+void Rpl_info_table::do_end_info()
+{
+}
 
 int Rpl_info_table::do_prepare_info_for_read()
 {
@@ -575,9 +586,15 @@ int Rpl_info_table::do_prepare_info_for_read()
   return FALSE;
 }
 
-int Rpl_info_table::do_prepare_info_for_write() { return (do_prepare_info_for_read()); }
+int Rpl_info_table::do_prepare_info_for_write()
+{
+  return (do_prepare_info_for_read());
+}
 
-uint Rpl_info_table::do_get_rpl_info_type() { return INFO_REPOSITORY_TABLE; }
+uint Rpl_info_table::do_get_rpl_info_type()
+{
+  return INFO_REPOSITORY_TABLE;
+}
 
 bool Rpl_info_table::do_set_info(const int pos, const char *value)
 {
@@ -690,9 +707,15 @@ bool Rpl_info_table::do_get_info(const int pos, Server_ids *value,
   return FALSE;
 }
 
-char *Rpl_info_table::do_get_description_info() { return description; }
+char *Rpl_info_table::do_get_description_info()
+{
+  return description;
+}
 
-bool Rpl_info_table::do_is_transactional() { return is_transactional; }
+bool Rpl_info_table::do_is_transactional()
+{
+  return is_transactional;
+}
 
 bool Rpl_info_table::do_update_is_transactional()
 {

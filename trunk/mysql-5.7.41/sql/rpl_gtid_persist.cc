@@ -52,7 +52,10 @@ const LEX_STRING Gtid_table_access_context::DB_NAME = {C_STRING_WITH_LEN("mysql"
 class THD::Attachable_trx_rw : public THD::Attachable_trx
 {
  public:
-  bool is_read_only() const { return false; }
+  bool is_read_only() const
+  {
+    return false;
+  }
   Attachable_trx_rw(THD *thd) : THD::Attachable_trx(thd)
   {
     m_thd->tx_read_only = false;
@@ -531,7 +534,8 @@ int Gtid_table_persistor::compress(THD *thd)
   int error = 0;
   bool is_complete = false;
 
-  while (!is_complete && !error) error = compress_in_single_transaction(thd, is_complete);
+  while (!is_complete && !error)
+    error = compress_in_single_transaction(thd, is_complete);
 
   m_count.atomic_set(0);
 

@@ -309,7 +309,9 @@ Event_queue_element::Event_queue_element()
   SYNOPSIS
     Event_queue_element::Event_queue_element()
 */
-Event_queue_element::~Event_queue_element() {}
+Event_queue_element::~Event_queue_element()
+{
+}
 
 /*
   Constructor
@@ -332,7 +334,9 @@ Event_timed::Event_timed() : created(0), modified(0), sql_mode(0)
     Event_timed::~Event_timed()
 */
 
-Event_timed::~Event_timed() {}
+Event_timed::~Event_timed()
+{
+}
 
 /*
   Constructor
@@ -341,7 +345,9 @@ Event_timed::~Event_timed() {}
     Event_job_data::Event_job_data()
 */
 
-Event_job_data::Event_job_data() : sql_mode(0) {}
+Event_job_data::Event_job_data() : sql_mode(0)
+{
+}
 
 /*
   Init all member variables

@@ -120,7 +120,10 @@ class Observe_transmission_guard
     Destructor for the sentry class. It will instantiate the guarded flag with
     the value prior to the creation of this object.
   */
-  ~Observe_transmission_guard() { m_to_set = m_saved; }
+  ~Observe_transmission_guard()
+  {
+    m_to_set = m_saved;
+  }
 
  private:
   /** The value of the guarded flag upon this object creation */
@@ -155,7 +158,10 @@ class Sender_context_guard
     Class destructor that will set the proper context of the guarded
     `Binlog_sender` object.
    */
-  virtual ~Sender_context_guard() { m_target.set_prev_event_type(m_event_type); }
+  virtual ~Sender_context_guard()
+  {
+    m_target.set_prev_event_type(m_event_type);
+  }
 
  private:
   /** The object to be guarded */
@@ -773,7 +779,10 @@ inline int Binlog_sender::wait_with_heartbeat(my_off_t log_pos)
   return ret ? 1 : 0;
 }
 
-inline int Binlog_sender::wait_without_heartbeat() { return mysql_bin_log.wait_for_update_bin_log(m_thd, NULL); }
+inline int Binlog_sender::wait_without_heartbeat()
+{
+  return mysql_bin_log.wait_for_update_bin_log(m_thd, NULL);
+}
 
 void Binlog_sender::init_heartbeat_period()
 {
@@ -1286,7 +1295,10 @@ inline int Binlog_sender::send_packet()
   DBUG_RETURN(ret);
 }
 
-inline int Binlog_sender::send_packet_and_flush() { return (send_packet() || flush_net()); }
+inline int Binlog_sender::send_packet_and_flush()
+{
+  return (send_packet() || flush_net());
+}
 
 inline int Binlog_sender::before_send_hook(const char *log_file, my_off_t log_pos)
 {

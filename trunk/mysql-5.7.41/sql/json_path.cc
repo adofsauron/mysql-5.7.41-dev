@@ -63,13 +63,25 @@ bool is_digit(unsigned codepoint);
 
 // Json_path_leg
 
-enum_json_path_leg_type Json_path_leg::get_type() const { return m_leg_type; }
+enum_json_path_leg_type Json_path_leg::get_type() const
+{
+  return m_leg_type;
+}
 
-size_t Json_path_leg::get_member_name_length() const { return m_member_name.size(); }
+size_t Json_path_leg::get_member_name_length() const
+{
+  return m_member_name.size();
+}
 
-const char *Json_path_leg::get_member_name() const { return m_member_name.data(); }
+const char *Json_path_leg::get_member_name() const
+{
+  return m_member_name.data();
+}
 
-size_t Json_path_leg::get_array_cell_index() const { return m_array_cell_index; }
+size_t Json_path_leg::get_array_cell_index() const
+{
+  return m_array_cell_index;
+}
 
 bool Json_path_leg::to_string(String *buf) const
 {
@@ -96,11 +108,19 @@ bool Json_path_leg::to_string(String *buf) const
 
 // Json_path_clone
 
-Json_path_clone::Json_path_clone() : m_path_legs(key_memory_JSON) {}
+Json_path_clone::Json_path_clone() : m_path_legs(key_memory_JSON)
+{
+}
 
-Json_path_clone::~Json_path_clone() { clear(); }
+Json_path_clone::~Json_path_clone()
+{
+  clear();
+}
 
-size_t Json_path_clone::leg_count() const { return m_path_legs.size(); }
+size_t Json_path_clone::leg_count() const
+{
+  return m_path_legs.size();
+}
 
 const Json_path_leg *Json_path_clone::get_leg_at(const size_t index) const
 {
@@ -112,7 +132,10 @@ const Json_path_leg *Json_path_clone::get_leg_at(const size_t index) const
   return m_path_legs.at(index);
 }
 
-bool Json_path_clone::append(const Json_path_leg *leg) { return m_path_legs.push_back(leg); }
+bool Json_path_clone::append(const Json_path_leg *leg)
+{
+  return m_path_legs.push_back(leg);
+}
 
 bool Json_path_clone::set(Json_seekable_path *source)
 {
@@ -139,7 +162,10 @@ const Json_path_leg *Json_path_clone::pop()
   return p;
 }
 
-void Json_path_clone::clear() { m_path_legs.clear(); }
+void Json_path_clone::clear()
+{
+  m_path_legs.clear();
+}
 
 bool Json_path_clone::contains_ellipsis() const
 {
@@ -155,11 +181,19 @@ bool Json_path_clone::contains_ellipsis() const
 
 // Json_path
 
-Json_path::Json_path() : m_path_legs(key_memory_JSON) {}
+Json_path::Json_path() : m_path_legs(key_memory_JSON)
+{
+}
 
-Json_path::~Json_path() { m_path_legs.clear(); }
+Json_path::~Json_path()
+{
+  m_path_legs.clear();
+}
 
-size_t Json_path::leg_count() const { return m_path_legs.size(); }
+size_t Json_path::leg_count() const
+{
+  return m_path_legs.size();
+}
 
 const Json_path_leg *Json_path::get_leg_at(const size_t index) const
 {
@@ -171,7 +205,10 @@ const Json_path_leg *Json_path::get_leg_at(const size_t index) const
   return &m_path_legs.at(index);
 }
 
-bool Json_path::append(const Json_path_leg &leg) { return m_path_legs.push_back(leg); }
+bool Json_path::append(const Json_path_leg &leg)
+{
+  return m_path_legs.push_back(leg);
+}
 
 Json_path_leg Json_path::pop()
 {
@@ -181,7 +218,10 @@ Json_path_leg Json_path::pop()
   return p;
 }
 
-void Json_path::clear() { m_path_legs.clear(); }
+void Json_path::clear()
+{
+  m_path_legs.clear();
+}
 
 bool Json_path::to_string(String *buf) const
 {
@@ -226,7 +266,10 @@ bool Json_path::contains_wildcard_or_ellipsis() const
   return std::find_if(m_path_legs.begin(), m_path_legs.end(), is_wildcard_or_ellipsis) != m_path_legs.end();
 }
 
-static inline bool is_ellipsis(const Json_path_leg &leg) { return leg.get_type() == jpl_ellipsis; }
+static inline bool is_ellipsis(const Json_path_leg &leg)
+{
+  return leg.get_type() == jpl_ellipsis;
+}
 
 bool Json_path::contains_ellipsis() const
 {
@@ -235,7 +278,10 @@ bool Json_path::contains_ellipsis() const
 
 // Json_path parsing
 
-void Json_path::initialize() { m_path_legs.clear(); }
+void Json_path::initialize()
+{
+  m_path_legs.clear();
+}
 
 /** Top level parsing factory method */
 bool parse_path(const bool begins_with_column_id, const size_t path_length, const char *path_expression,
@@ -263,7 +309,8 @@ bool parse_path(const bool begins_with_column_id, const size_t path_length, cons
 */
 static inline const char *purge_whitespace(const char *str, const char *end)
 {
-  while (str < end && my_isspace(&my_charset_utf8mb4_bin, *str)) ++str;
+  while (str < end && my_isspace(&my_charset_utf8mb4_bin, *str))
+    ++str;
   return str;
 }
 
@@ -581,7 +628,10 @@ const char *Json_path::parse_member_leg(const char *charptr, const char *endptr,
 
    @return True if the codepoint is a unicode combining mark.
 */
-inline bool unicode_combining_mark(unsigned codepoint) { return ((0x300 <= codepoint) && (codepoint <= 0x36F)); }
+inline bool unicode_combining_mark(unsigned codepoint)
+{
+  return ((0x300 <= codepoint) && (codepoint <= 0x36F));
+}
 
 /**
    Return true if the codepoint is a Unicode letter.
@@ -613,7 +663,10 @@ bool is_letter(unsigned codepoint)
    This was the best
    recommendation from the old-times about how to answer this question.
 */
-bool is_digit(unsigned codepoint) { return my_isdigit(&my_charset_utf8mb4_bin, codepoint); }
+bool is_digit(unsigned codepoint)
+{
+  return my_isdigit(&my_charset_utf8mb4_bin, codepoint);
+}
 
 /**
    Return true if the codepoint is Unicode connector punctuation.

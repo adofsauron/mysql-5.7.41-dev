@@ -67,7 +67,9 @@ Cached_item *new_Cached_item(THD *thd, Item *item, bool use_result_field)
   }
 }
 
-Cached_item::~Cached_item() {}
+Cached_item::~Cached_item()
+{
+}
 
 /**
   Compare with old value and replace value with new value.
@@ -114,9 +116,14 @@ Cached_item_str::~Cached_item_str()
   item = 0;  // Safety
 }
 
-Cached_item_json::Cached_item_json(Item *item) : m_item(item), m_value(new Json_wrapper()) {}
+Cached_item_json::Cached_item_json(Item *item) : m_item(item), m_value(new Json_wrapper())
+{
+}
 
-Cached_item_json::~Cached_item_json() { delete m_value; }
+Cached_item_json::~Cached_item_json()
+{
+  delete m_value;
+}
 
 /**
   Compare the new JSON value in m_item with the previous value.
@@ -238,7 +245,10 @@ bool Cached_item_field::cmp(void)
   DBUG_RETURN(different);
 }
 
-Cached_item_decimal::Cached_item_decimal(Item *it) : item(it) { my_decimal_set_zero(&value); }
+Cached_item_decimal::Cached_item_decimal(Item *it) : item(it)
+{
+  my_decimal_set_zero(&value);
+}
 
 bool Cached_item_decimal::cmp()
 {

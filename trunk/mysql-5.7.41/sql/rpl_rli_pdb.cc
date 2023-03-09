@@ -2064,7 +2064,8 @@ void Slave_worker::assign_partition_db(Log_event *ev)
   if (mts_dbs.num == OVER_MAX_DBS_IN_EVENT_MTS)
     ev->mts_assigned_partitions[0] = find_entry_from_db_map("", c_rli);
   else
-    for (i = 0; i < mts_dbs.num; i++) ev->mts_assigned_partitions[i] = find_entry_from_db_map(mts_dbs.name[i], c_rli);
+    for (i = 0; i < mts_dbs.num; i++)
+      ev->mts_assigned_partitions[i] = find_entry_from_db_map(mts_dbs.name[i], c_rli);
 }
 
 // returns the next available! (TODO: incompatible to circurla_buff method!!!)
@@ -2101,7 +2102,10 @@ Slave_worker::Retry_context_sentry::Retry_context_sentry(Slave_worker &parent)
 {
 }
 
-Slave_worker::Retry_context_sentry::~Retry_context_sentry() { this->clean(); }
+Slave_worker::Retry_context_sentry::~Retry_context_sentry()
+{
+  this->clean();
+}
 
 Slave_worker::Retry_context_sentry &Slave_worker::Retry_context_sentry::operator=(bool is_cleaned_up)
 {
@@ -2608,7 +2612,8 @@ int slave_worker_exec_job_group(Slave_worker *worker, Relay_log_info *rli)
   if (DBUG_EVALUATE_IF("check_slave_debug_group", 1, 0) && opt_mts_checkpoint_group == worker->groups_done)
   {
     DBUG_PRINT("mts", ("Putting worker %lu in busy wait.", worker->id));
-    while (true) my_sleep(6000000);
+    while (true)
+      my_sleep(6000000);
   }
 #endif
 
@@ -2628,8 +2633,17 @@ err:
   DBUG_RETURN(error);
 }
 
-const char *Slave_worker::get_for_channel_str(bool upper_case) const { return c_rli->get_for_channel_str(upper_case); }
+const char *Slave_worker::get_for_channel_str(bool upper_case) const
+{
+  return c_rli->get_for_channel_str(upper_case);
+}
 
-const uint *Slave_worker::get_table_pk_field_indexes() { return info_slave_worker_table_pk_field_indexes; }
+const uint *Slave_worker::get_table_pk_field_indexes()
+{
+  return info_slave_worker_table_pk_field_indexes;
+}
 
-uint Slave_worker::get_channel_field_index() { return LINE_FOR_CHANNEL; }
+uint Slave_worker::get_channel_field_index()
+{
+  return LINE_FOR_CHANNEL;
+}

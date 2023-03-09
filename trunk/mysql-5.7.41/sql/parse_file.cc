@@ -406,7 +406,8 @@ File_parser *sql_parse_prepare(const LEX_STRING *file_name, MEM_ROOT *mem_root, 
 
   // skip signature;
   parser->file_type.str = sign = buff + 5;
-  while (*sign >= 'A' && *sign <= 'Z' && sign < end) sign++;
+  while (*sign >= 'A' && *sign <= 'Z' && sign < end)
+    sign++;
   if (*sign != '\n')
     goto frm_error;
   parser->file_type.length = sign - parser->file_type.str;

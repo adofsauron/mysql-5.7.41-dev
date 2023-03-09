@@ -38,7 +38,8 @@ void SQL_CRYPT::init(ulong *rand_nr)
   uint i;
   randominit(&rand, rand_nr[0], rand_nr[1]);
 
-  for (i = 0; i <= 255; i++) decode_buff[i] = (char)i;
+  for (i = 0; i <= 255; i++)
+    decode_buff[i] = (char)i;
 
   for (i = 0; i <= 255; i++)
   {
@@ -47,7 +48,8 @@ void SQL_CRYPT::init(ulong *rand_nr)
     decode_buff[idx] = decode_buff[i];
     decode_buff[+i] = a;
   }
-  for (i = 0; i <= 255; i++) encode_buff[(uchar)decode_buff[i]] = i;
+  for (i = 0; i <= 255; i++)
+    encode_buff[(uchar)decode_buff[i]] = i;
   org_rand = rand;
   shift = 0;
 }

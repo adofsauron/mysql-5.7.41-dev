@@ -676,7 +676,8 @@ static bool has_no_cache_directive(const char *sql, uint offset, size_t query_le
     return false;
 
   // But can have several
-  while (i < query_length && my_isspace(system_charset_info, sql[i])) ++i;
+  while (i < query_length && my_isspace(system_charset_info, sql[i]))
+    ++i;
 
   // Check that we have enough chars left for SQL_NO_CACHE
   if (i + 12 >= query_length)
@@ -732,7 +733,10 @@ inline uint Query_cache_block::headers_len()
   return (ALIGN_SIZE(sizeof(Query_cache_block_table) * n_tables) + ALIGN_SIZE(sizeof(Query_cache_block)));
 }
 
-inline uchar *Query_cache_block::data(void) { return (uchar *)(((uchar *)this) + headers_len()); }
+inline uchar *Query_cache_block::data(void)
+{
+  return (uchar *)(((uchar *)this) + headers_len());
+}
 
 inline Query_cache_query *Query_cache_block::query()
 {
@@ -793,7 +797,10 @@ extern "C"
    Lock for read prevents only locking for write.
 */
 
-inline void Query_cache_query::lock_writing() { RW_WLOCK(&lock); }
+inline void Query_cache_query::lock_writing()
+{
+  RW_WLOCK(&lock);
+}
 
 /*
   Needed for finding queries, that we may delete from cache.
@@ -814,11 +821,20 @@ my_bool Query_cache_query::try_lock_writing()
   DBUG_RETURN(1);
 }
 
-inline void Query_cache_query::lock_reading() { RW_RLOCK(&lock); }
+inline void Query_cache_query::lock_reading()
+{
+  RW_RLOCK(&lock);
+}
 
-inline void Query_cache_query::unlock_writing() { RW_UNLOCK(&lock); }
+inline void Query_cache_query::unlock_writing()
+{
+  RW_UNLOCK(&lock);
+}
 
-inline void Query_cache_query::unlock_reading() { RW_UNLOCK(&lock); }
+inline void Query_cache_query::unlock_reading()
+{
+  RW_UNLOCK(&lock);
+}
 
 void Query_cache_query::init_n_lock()
 {
@@ -1518,7 +1534,8 @@ int Query_cache::send_result_to_client(THD *thd, const LEX_CSTRING &sql)
       Skip '(' characters in queries like following:
       (select a from t1) union (select a from t1);
     */
-    while (sql.str[i] == '(') i++;
+    while (sql.str[i] == '(')
+      i++;
 
     /*
       Test if the query is a SELECT
@@ -1863,7 +1880,8 @@ void Query_cache::invalidate(THD *thd, TABLE_LIST *tables_used, my_bool using_tr
     DBUG_VOID_RETURN;
 
   using_transactions = using_transactions && thd->in_multi_stmt_transaction_mode();
-  for (; tables_used; tables_used = tables_used->next_local) invalidate_single(thd, tables_used, using_transactions);
+  for (; tables_used; tables_used = tables_used->next_local)
+    invalidate_single(thd, tables_used, using_transactions);
 
   DEBUG_SYNC(thd, "wait_after_query_cache_invalidate");
 
@@ -2453,7 +2471,8 @@ void Query_cache::free_query_internal(Query_cache_block *query_block)
   double_linked_list_exclude(query_block, &queries_blocks);
   Query_cache_block_table *table = query_block->table(0);
 
-  for (TABLE_COUNTER_TYPE i = 0; i < query_block->n_tables; i++) unlink_table(table++);
+  for (TABLE_COUNTER_TYPE i = 0; i < query_block->n_tables; i++)
+    unlink_table(table++);
   Query_cache_block *result_block = query->result();
 
   /*
@@ -2679,7 +2698,10 @@ inline ulong Query_cache::get_min_first_result_data_size()
   return max(min_result_data_size, avg_result);
 }
 
-inline ulong Query_cache::get_min_append_result_data_size() { return min_result_data_size; }
+inline ulong Query_cache::get_min_append_result_data_size()
+{
+  return min_result_data_size;
+}
 
 /*
   Allocate one or more blocks to hold data
@@ -2929,7 +2951,8 @@ my_bool Query_cache::register_all_tables(Query_cache_block *block, TABLE_LIST *t
   if (n == 0)
   {
     /* Unlink the tables we allocated above */
-    for (Query_cache_block_table *tmp = block->table(0); tmp != block_table; tmp++) unlink_table(tmp);
+    for (Query_cache_block_table *tmp = block->table(0); tmp != block_table; tmp++)
+      unlink_table(tmp);
   }
   return MY_TEST(n);
 }
@@ -3138,7 +3161,8 @@ Query_cache_block *Query_cache::get_free_block(size_t len, my_bool not_less, siz
     DBUG_PRINT("qcache", ("Try bins with bigger block size"));
     // Try more big bins
     int i = start - 1;
-    while (i > 0 && bins[i].number == 0) i--;
+    while (i > 0 && bins[i].number == 0)
+      i--;
     if (bins[i].number > 0)
       block = bins[i].free_blocks;
   }
@@ -3346,7 +3370,8 @@ void Query_cache::insert_into_free_memory_sorted_list(Query_cache_block *new_blo
     else
     {
       /* Find right position in sorted list to put block */
-      while (point->next != *list && point->next->length < new_block->length) point = point->next;
+      while (point->next != *list && point->next->length < new_block->length)
+        point = point->next;
     }
     new_block->prev = point;
     new_block->next = point->next;
@@ -3715,7 +3740,8 @@ my_bool Query_cache::move_by_type(uchar **border, Query_cache_block **before, ul
         point to the new table object
       */
       Query_cache_table *new_block_table = new_block->table();
-      for (; tnext != nlist_root; tnext = tnext->next) tnext->parent = new_block_table;
+      for (; tnext != nlist_root; tnext = tnext->next)
+        tnext->parent = new_block_table;
       *border += len;
       *before = new_block;
       /* Fix pointer to table name */
@@ -3969,14 +3995,34 @@ size_t Query_cache::filename_2_table_key(char *key, const char *path, size_t *db
 
 #if defined(NDEBUG) || !defined(EXTRA_DEBUG)
 
-void Query_cache::wreck(uint line, const char *message) { query_cache_size = 0; }
-void Query_cache::bins_dump() {}
-void Query_cache::cache_dump() {}
-void Query_cache::queries_dump() {}
-void Query_cache::tables_dump() {}
-bool Query_cache::check_integrity(enum_qcci_lock_mode locking) { return false; }
-my_bool Query_cache::in_list(Query_cache_block *root, Query_cache_block *point, const char *name) { return 0; }
-my_bool Query_cache::in_blocks(Query_cache_block *point) { return 0; }
+void Query_cache::wreck(uint line, const char *message)
+{
+  query_cache_size = 0;
+}
+void Query_cache::bins_dump()
+{
+}
+void Query_cache::cache_dump()
+{
+}
+void Query_cache::queries_dump()
+{
+}
+void Query_cache::tables_dump()
+{
+}
+bool Query_cache::check_integrity(enum_qcci_lock_mode locking)
+{
+  return false;
+}
+my_bool Query_cache::in_list(Query_cache_block *root, Query_cache_block *point, const char *name)
+{
+  return 0;
+}
+my_bool Query_cache::in_blocks(Query_cache_block *point)
+{
+  return 0;
+}
 
 #else
 
@@ -4406,7 +4452,8 @@ my_bool Query_cache::in_blocks(Query_cache_block *point)
                            "0x%lx (check from 0x%lx)",
                            (ulong)block, (ulong)block->pprev, (ulong)block->pprev->pnext, (ulong)point));
       // back trace
-      for (; block != point; block = block->pnext) DBUG_PRINT("error", ("back trace 0x%lx", (ulong)block));
+      for (; block != point; block = block->pnext)
+        DBUG_PRINT("error", ("back trace 0x%lx", (ulong)block));
       result = 1;
       goto err1;
     }
@@ -4430,7 +4477,8 @@ err1:
                            "0x%lx (check from 0x%lx)",
                            (ulong)block, (ulong)block->pnext, (ulong)block->pnext->pprev, (ulong)point));
       // back trace
-      for (; block != point; block = block->pprev) DBUG_PRINT("error", ("back trace 0x%lx", (ulong)block));
+      for (; block != point; block = block->pprev)
+        DBUG_PRINT("error", ("back trace 0x%lx", (ulong)block));
       result = 1;
       goto err2;
     }
@@ -4454,7 +4502,8 @@ my_bool Query_cache::in_list(Query_cache_block *root, Query_cache_block *point, 
                   "(check from 0x%lx)",
                   (ulong)block, name, (ulong)root, (ulong)block->prev, (ulong)block->prev->next, (ulong)point));
       // back trace
-      for (; block != point; block = block->next) DBUG_PRINT("error", ("back trace 0x%lx", (ulong)block));
+      for (; block != point; block = block->next)
+        DBUG_PRINT("error", ("back trace 0x%lx", (ulong)block));
       result = 1;
       goto err1;
     }
@@ -4478,7 +4527,8 @@ err1:
                   "(check from 0x%lx)",
                   (ulong)block, name, (ulong)root, (ulong)block->next, (ulong)block->next->prev, (ulong)point));
       // back trace
-      for (; block != point; block = block->prev) DBUG_PRINT("error", ("back trace 0x%lx", (ulong)block));
+      for (; block != point; block = block->prev)
+        DBUG_PRINT("error", ("back trace 0x%lx", (ulong)block));
       result = 1;
       goto err2;
     }

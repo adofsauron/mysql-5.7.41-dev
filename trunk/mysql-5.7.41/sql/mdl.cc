@@ -132,7 +132,10 @@ class MDL_map
   /**
     Decrement unused MDL_lock objects counter.
   */
-  void lock_object_used() { my_atomic_add32(&m_unused_lock_objects, -1); }
+  void lock_object_used()
+  {
+    my_atomic_add32(&m_unused_lock_objects, -1);
+  }
 
   /**
     Increment unused MDL_lock objects counter. If number of such objects
@@ -188,13 +191,19 @@ class MDL_map
           memory reordering/ensure that thread calling this method have
           up-to-date view on the memory. @sa m_unused_lock_objects.
   */
-  int32 get_unused_locks_count() const { return m_unused_lock_objects; }
+  int32 get_unused_locks_count() const
+  {
+    return m_unused_lock_objects;
+  }
 
   /**
     Allocate pins which are necessary for MDL_context/thread to be able
     to work with MDL_map container.
   */
-  LF_PINS *get_pins() { return lf_hash_get_pins(&m_locks); }
+  LF_PINS *get_pins()
+  {
+    return lf_hash_get_pins(&m_locks);
+  }
 
   /**
     Check if MDL_lock object corresponding to the key is going to be
@@ -258,7 +267,10 @@ class Deadlock_detection_visitor : public MDL_wait_for_graph_visitor
 
   virtual bool inspect_edge(MDL_context *dest);
 
-  MDL_context *get_victim() const { return m_victim; }
+  MDL_context *get_victim() const
+  {
+    return m_victim;
+  }
 
  private:
   /**
@@ -400,13 +412,24 @@ class MDL_lock
     typedef I_P_List< MDL_ticket, I_P_List_adapter< MDL_ticket, &MDL_ticket::next_in_lock, &MDL_ticket::prev_in_lock >,
                       I_P_List_null_counter, I_P_List_fast_push_back< MDL_ticket > >
         List;
-    operator const List &() const { return m_list; }
-    Ticket_list() : m_bitmap(0) {}
+    operator const List &() const
+    {
+      return m_list;
+    }
+    Ticket_list() : m_bitmap(0)
+    {
+    }
 
     void add_ticket(MDL_ticket *ticket);
     void remove_ticket(MDL_ticket *ticket);
-    bool is_empty() const { return m_list.is_empty(); }
-    bitmap_t bitmap() const { return m_bitmap; }
+    bool is_empty() const
+    {
+      return m_list.is_empty();
+    }
+    bitmap_t bitmap() const
+    {
+      return m_bitmap;
+    }
 
    private:
     void clear_bit_if_not_in_list(enum_mdl_type type);
@@ -526,7 +549,10 @@ class MDL_lock
   */
   mysql_prlock_t m_rwlock;
 
-  const bitmap_t *incompatible_granted_types_bitmap() const { return m_strategy->m_granted_incompatible; }
+  const bitmap_t *incompatible_granted_types_bitmap() const
+  {
+    return m_strategy->m_granted_incompatible;
+  }
 
   const bitmap_t *incompatible_waiting_types_bitmap() const
   {
@@ -605,7 +631,10 @@ class MDL_lock
 
   inline static bool needs_hton_notification(MDL_key::enum_mdl_namespace mdl_namespace);
 
-  bool is_affected_by_max_write_lock_count() const { return m_strategy->m_is_affected_by_max_write_lock_count; }
+  bool is_affected_by_max_write_lock_count() const
+  {
+    return m_strategy->m_is_affected_by_max_write_lock_count;
+  }
 
   /**
     If we just have granted a lock of "piglet" or "hog" type and there are
@@ -696,7 +725,10 @@ class MDL_lock
 
     @sa MDL_lock::get_unobtrusive_lock_increment() description.
   */
-  bool is_obtrusive_lock(enum_mdl_type type) const { return get_unobtrusive_lock_increment(type) == 0; }
+  bool is_obtrusive_lock(enum_mdl_type type) const
+  {
+    return get_unobtrusive_lock_increment(type) == 0;
+  }
 
   /**
     Return set of types of lock requests which were granted using
@@ -710,7 +742,10 @@ class MDL_lock
     Since can_grant_lock() is called only when MDL_lock::m_rwlock is held,
     it is safe to do an ordinary read of m_fast_path_state here.
   */
-  bitmap_t fast_path_granted_bitmap() const { return m_strategy->m_fast_path_granted_bitmap(*this); }
+  bitmap_t fast_path_granted_bitmap() const
+  {
+    return m_strategy->m_fast_path_granted_bitmap(*this);
+  }
 
   /** List of granted tickets for this lock. */
   Ticket_list m_granted;
@@ -744,11 +779,17 @@ class MDL_lock
     returned to it earlier. "Full" initialization happens later by calling
     MDL_lock::reinit(). So @sa MDL_lock::reiniti()
   */
-  MDL_lock() : m_obtrusive_locks_granted_waiting_count(0) { mysql_prlock_init(key_MDL_lock_rwlock, &m_rwlock); }
+  MDL_lock() : m_obtrusive_locks_granted_waiting_count(0)
+  {
+    mysql_prlock_init(key_MDL_lock_rwlock, &m_rwlock);
+  }
 
   inline void reinit(const MDL_key *mdl_key);
 
-  ~MDL_lock() { mysql_prlock_destroy(&m_rwlock); }
+  ~MDL_lock()
+  {
+    mysql_prlock_destroy(&m_rwlock);
+  }
 
   inline static MDL_lock *create(const MDL_key *key);
   inline static void destroy(MDL_lock *lock);
@@ -930,7 +971,10 @@ class MDL_lock
 
     @sa MDL_lock::object_lock_notify_conflicting_locks.
   */
-  static bool object_lock_needs_notification(const MDL_ticket *ticket) { return (ticket->get_type() == MDL_EXCLUSIVE); }
+  static bool object_lock_needs_notification(const MDL_ticket *ticket)
+  {
+    return (ticket->get_type() == MDL_EXCLUSIVE);
+  }
   static void object_lock_notify_conflicting_locks(MDL_context *ctx, MDL_lock *lock);
   /**
     Get bitmap of "unobtrusive" locks granted using "fast path" algorithm
@@ -1033,11 +1077,17 @@ void mdl_destroy()
   Mostly needed for unit-testing.
 */
 
-int32 mdl_get_unused_locks_count() { return mdl_locks.get_unused_locks_count(); }
+int32 mdl_get_unused_locks_count()
+{
+  return mdl_locks.get_unused_locks_count();
+}
 
 extern "C"
 {
-  static void mdl_lock_cons(uchar *arg) { new (arg + LF_HASH_OVERHEAD) MDL_lock(); }
+  static void mdl_lock_cons(uchar *arg)
+  {
+    new (arg + LF_HASH_OVERHEAD) MDL_lock();
+  }
 
   static void mdl_lock_dtor(uchar *arg)
   {
@@ -1056,7 +1106,10 @@ extern "C"
     Adapter function which allows to use murmur3 with LF_HASH implementation.
   */
 
-  static uint murmur3_adapter(const LF_HASH *, const uchar *key, size_t length) { return murmur3_32(key, length, 0); }
+  static uint murmur3_adapter(const LF_HASH *, const uchar *key, size_t length)
+  {
+    return murmur3_32(key, length, 0);
+  }
 
 } /* extern "C" */
 
@@ -1466,7 +1519,10 @@ inline MDL_lock *MDL_lock::create(const MDL_key *mdl_key)
   return result;
 }
 
-void MDL_lock::destroy(MDL_lock *lock) { delete lock; }
+void MDL_lock::destroy(MDL_lock *lock)
+{
+  delete lock;
+}
 
 /**
   Finalize initialization or re-initialize MDL_lock returned from
@@ -2493,9 +2549,13 @@ bool MDL_lock::has_pending_conflicting_lock(enum_mdl_type type)
   return result;
 }
 
-MDL_wait_for_graph_visitor::~MDL_wait_for_graph_visitor() {}
+MDL_wait_for_graph_visitor::~MDL_wait_for_graph_visitor()
+{
+}
 
-MDL_wait_for_subgraph::~MDL_wait_for_subgraph() {}
+MDL_wait_for_subgraph::~MDL_wait_for_subgraph()
+{
+}
 
 /**
   Check if ticket represents metadata lock of "stronger" or equal type
@@ -3883,7 +3943,10 @@ end:
   @retval FALSE
 */
 
-bool MDL_ticket::accept_visitor(MDL_wait_for_graph_visitor *gvisitor) { return m_lock->visit_subgraph(this, gvisitor); }
+bool MDL_ticket::accept_visitor(MDL_wait_for_graph_visitor *gvisitor)
+{
+  return m_lock->visit_subgraph(this, gvisitor);
+}
 
 /**
   A fragment of recursive traversal of the wait-for graph of
@@ -4349,11 +4412,17 @@ retry:
   @return TRUE if there is a conflicting lock request, FALSE otherwise.
 */
 
-bool MDL_ticket::has_pending_conflicting_lock() const { return m_lock->has_pending_conflicting_lock(m_type); }
+bool MDL_ticket::has_pending_conflicting_lock() const
+{
+  return m_lock->has_pending_conflicting_lock(m_type);
+}
 
 /** Return a key identifying this lock. */
 
-const MDL_key *MDL_ticket::get_key() const { return &m_lock->key; }
+const MDL_key *MDL_ticket::get_key() const
+{
+  return &m_lock->key;
+}
 
 /**
   Releases metadata locks that were acquired after a specific savepoint.
@@ -4544,7 +4613,8 @@ void MDL_context::set_explicit_duration_for_all_locks()
 #ifndef NDEBUG
   Ticket_iterator exp_it(m_tickets[MDL_EXPLICIT]);
 
-  while ((ticket = exp_it++)) ticket->m_duration = MDL_EXPLICIT;
+  while ((ticket = exp_it++))
+    ticket->m_duration = MDL_EXPLICIT;
 #endif
 }
 
@@ -4580,6 +4650,7 @@ void MDL_context::set_transaction_duration_for_all_locks()
 #ifndef NDEBUG
   Ticket_iterator trans_it(m_tickets[MDL_TRANSACTION]);
 
-  while ((ticket = trans_it++)) ticket->m_duration = MDL_TRANSACTION;
+  while ((ticket = trans_it++))
+    ticket->m_duration = MDL_TRANSACTION;
 #endif
 }

@@ -189,7 +189,8 @@ enum_field_types agg_field_type(Item **items, uint nitems)
   if (!nitems || items[0]->result_type() == ROW_RESULT)
     return (enum_field_types)-1;
   enum_field_types res = items[0]->field_type();
-  for (i = 1; i < nitems; i++) res = Field::field_type_merge(res, items[i]->field_type());
+  for (i = 1; i < nitems; i++)
+    res = Field::field_type_merge(res, items[i]->field_type());
   return real_type_to_type(res);
 }
 
@@ -269,7 +270,8 @@ Item_bool_func *Linear_comp_creator::create(Item *a, Item *b) const
     }
     assert(a->cols() > 1);
     List< Item > list;
-    for (uint i = 0; i < a->cols(); ++i) list.push_back(create(a->element_index(i), b->element_index(i)));
+    for (uint i = 0; i < a->cols(); ++i)
+      list.push_back(create(a->element_index(i), b->element_index(i)));
     return combine(list);
   }
   return create_scalar_predicate(a, b);
@@ -281,7 +283,10 @@ Item_bool_func *Eq_creator::create_scalar_predicate(Item *a, Item *b) const
   return new Item_func_eq(a, b);
 }
 
-Item_bool_func *Eq_creator::combine(List< Item > list) const { return new Item_cond_and(list); }
+Item_bool_func *Eq_creator::combine(List< Item > list) const
+{
+  return new Item_cond_and(list);
+}
 
 Item_bool_func *Equal_creator::create_scalar_predicate(Item *a, Item *b) const
 {
@@ -289,7 +294,10 @@ Item_bool_func *Equal_creator::create_scalar_predicate(Item *a, Item *b) const
   return new Item_func_equal(a, b);
 }
 
-Item_bool_func *Equal_creator::combine(List< Item > list) const { return new Item_cond_and(list); }
+Item_bool_func *Equal_creator::combine(List< Item > list) const
+{
+  return new Item_cond_and(list);
+}
 
 Item_bool_func *Ne_creator::create_scalar_predicate(Item *a, Item *b) const
 {
@@ -297,15 +305,30 @@ Item_bool_func *Ne_creator::create_scalar_predicate(Item *a, Item *b) const
   return new Item_func_ne(a, b);
 }
 
-Item_bool_func *Ne_creator::combine(List< Item > list) const { return new Item_cond_or(list); }
+Item_bool_func *Ne_creator::combine(List< Item > list) const
+{
+  return new Item_cond_or(list);
+}
 
-Item_bool_func *Gt_creator::create(Item *a, Item *b) const { return new Item_func_gt(a, b); }
+Item_bool_func *Gt_creator::create(Item *a, Item *b) const
+{
+  return new Item_func_gt(a, b);
+}
 
-Item_bool_func *Lt_creator::create(Item *a, Item *b) const { return new Item_func_lt(a, b); }
+Item_bool_func *Lt_creator::create(Item *a, Item *b) const
+{
+  return new Item_func_lt(a, b);
+}
 
-Item_bool_func *Ge_creator::create(Item *a, Item *b) const { return new Item_func_ge(a, b); }
+Item_bool_func *Ge_creator::create(Item *a, Item *b) const
+{
+  return new Item_func_ge(a, b);
+}
 
-Item_bool_func *Le_creator::create(Item *a, Item *b) const { return new Item_func_le(a, b); }
+Item_bool_func *Le_creator::create(Item *a, Item *b) const
+{
+  return new Item_func_le(a, b);
+}
 
 float Item_func_not::get_filtering_effect(table_map filter_for_table, table_map read_tables,
                                           const MY_BITMAP *fields_to_ignore, double rows_in_table)
@@ -1989,7 +2012,10 @@ bool Item_func_truth::val_bool()
   return (val != value);
 }
 
-longlong Item_func_truth::val_int() { return (val_bool() ? 1 : 0); }
+longlong Item_func_truth::val_int()
+{
+  return (val_bool() ? 1 : 0);
+}
 
 bool Item_in_optimizer::fix_left(THD *thd, Item **ref)
 {
@@ -2230,7 +2256,8 @@ longlong Item_in_optimizer::val_int()
       }
 
       /* Turn all predicates back on */
-      for (uint i = 0; i < ncols; i++) item_subs->set_cond_guard_var(i, TRUE);
+      for (uint i = 0; i < ncols; i++)
+        item_subs->set_cond_guard_var(i, TRUE);
     }
     return 0;
   }
@@ -3124,7 +3151,10 @@ uint Item_func_ifnull::decimal_precision() const
   return min< uint >(precision, DECIMAL_MAX_PRECISION);
 }
 
-Field *Item_func_ifnull::tmp_table_field(TABLE *table) { return tmp_table_field_from_field_type(table, 0); }
+Field *Item_func_ifnull::tmp_table_field(TABLE *table)
+{
+  return tmp_table_field_from_field_type(table, 0);
+}
 
 double Item_func_ifnull::real_op()
 {
@@ -3494,7 +3524,10 @@ my_decimal *Item_func_nullif::val_decimal(my_decimal *decimal_value)
   return res;
 }
 
-bool Item_func_nullif::is_null() { return (null_value = (!cmp.compare() ? 1 : args[0]->null_value)); }
+bool Item_func_nullif::is_null()
+{
+  return (null_value = (!cmp.compare() ? 1 : args[0]->null_value));
+}
 
 /**
     Find and return matching items for CASE or ELSE item if all compares
@@ -3758,14 +3791,16 @@ void Item_func_case::fix_length_and_dec()
 
   maybe_null = else_expr_num == -1 || args[else_expr_num]->maybe_null;
 
-  for (Item **arg = args + 1; arg < args + arg_count; arg += 2) maybe_null |= (*arg)->maybe_null;
+  for (Item **arg = args + 1; arg < args + arg_count; arg += 2)
+    maybe_null |= (*arg)->maybe_null;
 
   /*
     Aggregate all THEN and ELSE expression types
     and collations when string result
   */
 
-  for (nagg = 0; nagg < ncases / 2; nagg++) agg[nagg] = args[nagg * 2 + 1];
+  for (nagg = 0; nagg < ncases / 2; nagg++)
+    agg[nagg] = args[nagg * 2 + 1];
 
   if (else_expr_num != -1)
     agg[nagg++] = args[else_expr_num];
@@ -3781,7 +3816,8 @@ void Item_func_case::fix_length_and_dec()
       Copy all THEN and ELSE items back to args[] array.
       Some of the items might have been changed to Item_func_conv_charset.
     */
-    for (nagg = 0; nagg < ncases / 2; nagg++) change_item_tree_if_needed(thd, &args[nagg * 2 + 1], agg[nagg]);
+    for (nagg = 0; nagg < ncases / 2; nagg++)
+      change_item_tree_if_needed(thd, &args[nagg * 2 + 1], agg[nagg]);
 
     if (else_expr_num != -1)
       change_item_tree_if_needed(thd, &args[else_expr_num], agg[nagg++]);
@@ -3808,7 +3844,8 @@ void Item_func_case::fix_length_and_dec()
       extract the first expression and all WHEN expressions into
       a temporary array, to process them easier.
     */
-    for (nagg = 0; nagg < ncases / 2; nagg++) agg[nagg + 1] = args[nagg * 2];
+    for (nagg = 0; nagg < ncases / 2; nagg++)
+      agg[nagg + 1] = args[nagg * 2];
     nagg++;
     if (!(found_types = collect_cmp_types(agg, nagg)))
       return;
@@ -3847,7 +3884,8 @@ void Item_func_case::fix_length_and_dec()
       */
       change_item_tree_if_needed(thd, &args[first_expr_num], agg[0]);
 
-      for (nagg = 0; nagg < ncases / 2; nagg++) change_item_tree_if_needed(thd, &args[nagg * 2], agg[nagg + 1]);
+      for (nagg = 0; nagg < ncases / 2; nagg++)
+        change_item_tree_if_needed(thd, &args[nagg * 2], agg[nagg + 1]);
     }
     for (i = 0; i <= (uint)DECIMAL_RESULT; i++)
     {
@@ -3864,14 +3902,16 @@ void Item_func_case::fix_length_and_dec()
       zerofill argument into a string constant. Such a change would
       require rebuilding cmp_items.
     */
-    for (i = 0; i < ncases; i += 2) args[i]->cmp_context = item_cmp_type(left_result_type, args[i]->result_type());
+    for (i = 0; i < ncases; i += 2)
+      args[i]->cmp_context = item_cmp_type(left_result_type, args[i]->result_type());
   }
 }
 
 uint Item_func_case::decimal_precision() const
 {
   int max_int_part = 0;
-  for (uint i = 0; i < ncases; i += 2) set_if_bigger(max_int_part, args[i + 1]->decimal_int_part());
+  for (uint i = 0; i < ncases; i += 2)
+    set_if_bigger(max_int_part, args[i + 1]->decimal_int_part());
 
   if (else_expr_num != -1)
     set_if_bigger(max_int_part, args[else_expr_num]->decimal_int_part());
@@ -3925,7 +3965,9 @@ void Item_func_case::cleanup()
   Coalesce - return first not NULL argument.
 */
 
-Item_func_coalesce::Item_func_coalesce(const POS &pos, PT_item_list *list) : Item_func_numhybrid(pos, list) {}
+Item_func_coalesce::Item_func_coalesce(const POS &pos, PT_item_list *list) : Item_func_numhybrid(pos, list)
+{
+}
 
 String *Item_func_coalesce::str_op(String *str)
 {
@@ -4054,7 +4096,10 @@ void Item_func_coalesce::fix_length_and_dec()
     0           left argument is equal to the right argument.
     1           left argument is greater than the right argument.
 */
-static inline int cmp_longs(longlong a_val, longlong b_val) { return a_val < b_val ? -1 : a_val == b_val ? 0 : 1; }
+static inline int cmp_longs(longlong a_val, longlong b_val)
+{
+  return a_val < b_val ? -1 : a_val == b_val ? 0 : 1;
+}
 
 /*
   Determine which of the unsigned longlong arguments is bigger
@@ -4074,7 +4119,10 @@ static inline int cmp_longs(longlong a_val, longlong b_val) { return a_val < b_v
     0           left argument is equal to the right argument.
     1           left argument is greater than the right argument.
 */
-static inline int cmp_ulongs(ulonglong a_val, ulonglong b_val) { return a_val < b_val ? -1 : a_val == b_val ? 0 : 1; }
+static inline int cmp_ulongs(ulonglong a_val, ulonglong b_val)
+{
+  return a_val < b_val ? -1 : a_val == b_val ? 0 : 1;
+}
 
 /*
   Compare two integers in IN value list format (packed_longlong)
@@ -4131,7 +4179,10 @@ class Cmp_longlong
   }
 };
 
-void in_longlong::sort() { std::sort(base.begin(), base.end(), Cmp_longlong()); }
+void in_longlong::sort()
+{
+  std::sort(base.begin(), base.end(), Cmp_longlong());
+}
 
 bool in_longlong::find_value(const void *value) const
 {
@@ -4140,15 +4191,24 @@ bool in_longlong::find_value(const void *value) const
   return std::binary_search(base.begin(), base.end(), *val, Cmp_longlong());
 }
 
-bool in_longlong::compare_elems(uint pos1, uint pos2) const { return cmp_longlong(&base[pos1], &base[pos2]) != 0; }
+bool in_longlong::compare_elems(uint pos1, uint pos2) const
+{
+  return cmp_longlong(&base[pos1], &base[pos2]) != 0;
+}
 
 class Cmp_row : public std::binary_function< const cmp_item_row *, const cmp_item_row *, bool >
 {
  public:
-  bool operator()(const cmp_item_row *a, const cmp_item_row *b) { return a->compare(b) < 0; }
+  bool operator()(const cmp_item_row *a, const cmp_item_row *b)
+  {
+    return a->compare(b) < 0;
+  }
 };
 
-void in_row::sort() { std::sort(base_pointers.begin(), base_pointers.end(), Cmp_row()); }
+void in_row::sort()
+{
+  std::sort(base_pointers.begin(), base_pointers.end(), Cmp_row());
+}
 
 bool in_row::find_value(const void *value) const
 {
@@ -4213,13 +4273,21 @@ void in_string::set(uint pos, Item *item)
   }
 }
 
-uchar *in_string::get_value(Item *item) { return (uchar *)item->val_str(&tmp); }
+uchar *in_string::get_value(Item *item)
+{
+  return (uchar *)item->val_str(&tmp);
+}
 
 class Cmp_string : public std::binary_function< const String *, const String *, bool >
 {
  public:
-  Cmp_string(qsort2_cmp cmp_func, const CHARSET_INFO *cs) : compare(cmp_func), collation(cs) {}
-  bool operator()(const String *a, const String *b) { return compare(collation, a, b) < 0; }
+  Cmp_string(qsort2_cmp cmp_func, const CHARSET_INFO *cs) : compare(cmp_func), collation(cs)
+  {
+  }
+  bool operator()(const String *a, const String *b)
+  {
+    return compare(collation, a, b) < 0;
+  }
 
  private:
   qsort2_cmp compare;
@@ -4227,7 +4295,10 @@ class Cmp_string : public std::binary_function< const String *, const String *, 
 };
 
 // Our String objects have strange copy semantics, sort pointers instead.
-void in_string::sort() { std::sort(base_pointers.begin(), base_pointers.end(), Cmp_string(compare, collation)); }
+void in_string::sort()
+{
+  std::sort(base_pointers.begin(), base_pointers.end(), Cmp_string(compare, collation));
+}
 
 bool in_string::find_value(const void *value) const
 {
@@ -4249,7 +4320,10 @@ in_row::in_row(THD *thd, uint elements, Item *item)
   }
 }
 
-in_row::~in_row() { delete_container_pointers(base_pointers); }
+in_row::~in_row()
+{
+  delete_container_pointers(base_pointers);
+}
 
 uchar *in_row::get_value(Item *item)
 {
@@ -4267,7 +4341,9 @@ void in_row::set(uint pos, Item *item)
   DBUG_VOID_RETURN;
 }
 
-in_longlong::in_longlong(THD *thd, uint elements) : in_vector(elements), base(thd->mem_root, elements) {}
+in_longlong::in_longlong(THD *thd, uint elements) : in_vector(elements), base(thd->mem_root, elements)
+{
+}
 
 void in_longlong::set(uint pos, Item *item)
 {
@@ -4339,9 +4415,14 @@ uchar *in_datetime::get_value(Item *item)
   return (uchar *)&tmp;
 }
 
-in_double::in_double(THD *thd, uint elements) : in_vector(elements), base(thd->mem_root, elements) {}
+in_double::in_double(THD *thd, uint elements) : in_vector(elements), base(thd->mem_root, elements)
+{
+}
 
-void in_double::set(uint pos, Item *item) { base[pos] = item->val_real(); }
+void in_double::set(uint pos, Item *item)
+{
+  base[pos] = item->val_real();
+}
 
 uchar *in_double::get_value(Item *item)
 {
@@ -4351,7 +4432,10 @@ uchar *in_double::get_value(Item *item)
   return (uchar *)&tmp;
 }
 
-void in_double::sort() { std::sort(base.begin(), base.end()); }
+void in_double::sort()
+{
+  std::sort(base.begin(), base.end());
+}
 
 bool in_double::find_value(const void *value) const
 {
@@ -4359,9 +4443,14 @@ bool in_double::find_value(const void *value) const
   return std::binary_search(base.begin(), base.end(), *dbl);
 }
 
-bool in_double::compare_elems(uint pos1, uint pos2) const { return base[pos1] != base[pos2]; }
+bool in_double::compare_elems(uint pos1, uint pos2) const
+{
+  return base[pos1] != base[pos2];
+}
 
-in_decimal::in_decimal(THD *thd, uint elements) : in_vector(elements), base(thd->mem_root, elements) {}
+in_decimal::in_decimal(THD *thd, uint elements) : in_vector(elements), base(thd->mem_root, elements)
+{
+}
 
 void in_decimal::set(uint pos, Item *item)
 {
@@ -4381,7 +4470,10 @@ uchar *in_decimal::get_value(Item *item)
   return (uchar *)result;
 }
 
-void in_decimal::sort() { std::sort(base.begin(), base.end()); }
+void in_decimal::sort()
+{
+  std::sort(base.begin(), base.end());
+}
 
 bool in_decimal::find_value(const void *value) const
 {
@@ -4389,7 +4481,10 @@ bool in_decimal::find_value(const void *value) const
   return std::binary_search(base.begin(), base.end(), *dec);
 }
 
-bool in_decimal::compare_elems(uint pos1, uint pos2) const { return base[pos1] != base[pos2]; }
+bool in_decimal::compare_elems(uint pos1, uint pos2) const
+{
+  return base[pos1] != base[pos2];
+}
 
 cmp_item *cmp_item::get_comparator(Item_result result_type, const Item *item, const CHARSET_INFO *cs)
 {
@@ -4419,13 +4514,25 @@ cmp_item *cmp_item::get_comparator(Item_result result_type, const Item *item, co
   return 0;  // to satisfy compiler :)
 }
 
-cmp_item *cmp_item_string::make_same() { return new cmp_item_string(cmp_charset); }
+cmp_item *cmp_item_string::make_same()
+{
+  return new cmp_item_string(cmp_charset);
+}
 
-cmp_item *cmp_item_int::make_same() { return new cmp_item_int(); }
+cmp_item *cmp_item_int::make_same()
+{
+  return new cmp_item_int();
+}
 
-cmp_item *cmp_item_real::make_same() { return new cmp_item_real(); }
+cmp_item *cmp_item_real::make_same()
+{
+  return new cmp_item_real();
+}
 
-cmp_item *cmp_item_row::make_same() { return new cmp_item_row(); }
+cmp_item *cmp_item_row::make_same()
+{
+  return new cmp_item_row();
+}
 
 cmp_item_row::~cmp_item_row()
 {
@@ -4563,7 +4670,10 @@ int cmp_item_decimal::compare(const cmp_item *arg) const
   return my_decimal_cmp(&value, &l_cmp->value);
 }
 
-cmp_item *cmp_item_decimal::make_same() { return new cmp_item_decimal(); }
+cmp_item *cmp_item_decimal::make_same()
+{
+  return new cmp_item_decimal();
+}
 
 cmp_item_datetime::cmp_item_datetime(const Item *warn_item_arg)
     : warn_item(warn_item_arg), lval_cache(0), has_date(warn_item_arg->is_temporal_with_date())
@@ -4601,7 +4711,10 @@ int cmp_item_datetime::compare(const cmp_item *ci) const
   return (value < l_cmp->value) ? -1 : ((value == l_cmp->value) ? 0 : 1);
 }
 
-cmp_item *cmp_item_datetime::make_same() { return new cmp_item_datetime(warn_item); }
+cmp_item *cmp_item_datetime::make_same()
+{
+  return new cmp_item_datetime(warn_item);
+}
 
 float Item_func_in::get_single_col_filtering_effect(Item_ident *fieldref, table_map filter_for_table,
                                                     const MY_BITMAP *fields_to_ignore, double rows_in_table)
@@ -4781,7 +4894,8 @@ bool Item_func_in::fix_fields(THD *thd, Item **ref)
   // not_null_tables_cache = union(T1(e),intersection(T1(ei)))
   not_null_tables_cache = ~(table_map)0;
   Item **arg_end = args + arg_count;
-  for (Item **arg = args + 1; arg != arg_end; arg++) not_null_tables_cache &= (*arg)->not_null_tables();
+  for (Item **arg = args + 1; arg != arg_end; arg++)
+    not_null_tables_cache &= (*arg)->not_null_tables();
   not_null_tables_cache |= (*args)->not_null_tables();
 
   return false;
@@ -4798,7 +4912,8 @@ void Item_func_in::fix_after_pullout(st_select_lex *parent_select, st_select_lex
   // not_null_tables_cache = union(T1(e),intersection(T1(ei)))
   not_null_tables_cache = ~(table_map)0;
   Item **arg_end = args + arg_count;
-  for (Item **arg = args + 1; arg != arg_end; arg++) not_null_tables_cache &= (*arg)->not_null_tables();
+  for (Item **arg = args + 1; arg != arg_end; arg++)
+    not_null_tables_cache &= (*arg)->not_null_tables();
   not_null_tables_cache |= (*args)->not_null_tables();
 }
 
@@ -5538,7 +5653,8 @@ void Item_cond::split_sum_func(THD *thd, Ref_ptr_array ref_pointer_array, List< 
 {
   List_iterator< Item > li(list);
   Item *item;
-  while ((item = li++)) item->split_sum_func2(thd, ref_pointer_array, fields, li.ref(), TRUE);
+  while ((item = li++))
+    item->split_sum_func2(thd, ref_pointer_array, fields, li.ref(), TRUE);
 }
 
 void Item_cond::update_used_tables()
@@ -6227,7 +6343,8 @@ void Item_func_like::bm_compute_suffixes(int *suff)
         if (i < g)
           g = i;  // g = min(i, g)
         f = i;
-        while (g >= 0 && pattern[g] == pattern[g + plm1 - f]) g--;
+        while (g >= 0 && pattern[g] == pattern[g + plm1 - f])
+          g--;
         suff[i] = f - g;
       }
     }
@@ -6245,7 +6362,8 @@ void Item_func_like::bm_compute_suffixes(int *suff)
         if (i < g)
           g = i;  // g = min(i, g)
         f = i;
-        while (g >= 0 && likeconv(cs, pattern[g]) == likeconv(cs, pattern[g + plm1 - f])) g--;
+        while (g >= 0 && likeconv(cs, pattern[g]) == likeconv(cs, pattern[g + plm1 - f]))
+          g--;
         suff[i] = f - g;
       }
     }
@@ -6262,7 +6380,8 @@ void Item_func_like::bm_compute_good_suffix_shifts(int *suff)
 
   int *end = bmGs + pattern_len;
   int *k;
-  for (k = bmGs; k < end; k++) *k = pattern_len;
+  for (k = bmGs; k < end; k++)
+    *k = pattern_len;
 
   int tmp;
   int i;
@@ -6290,7 +6409,8 @@ void Item_func_like::bm_compute_good_suffix_shifts(int *suff)
   }
 
   tmp2 = bmGs + plm1;
-  for (i = 0; i <= pattern_len - 2; i++) *(tmp2 - suff[i]) = plm1 - i;
+  for (i = 0; i <= pattern_len - 2; i++)
+    *(tmp2 - suff[i]) = plm1 - i;
 }
 
 /**
@@ -6305,15 +6425,18 @@ void Item_func_like::bm_compute_bad_character_shifts()
   const int plm1 = pattern_len - 1;
   const CHARSET_INFO *cs = cmp.cmp_collation.collation;
 
-  for (i = bmBc; i < end; i++) *i = pattern_len;
+  for (i = bmBc; i < end; i++)
+    *i = pattern_len;
 
   if (!cs->sort_order)
   {
-    for (j = 0; j < plm1; j++) bmBc[(uchar)pattern[j]] = plm1 - j;
+    for (j = 0; j < plm1; j++)
+      bmBc[(uchar)pattern[j]] = plm1 - j;
   }
   else
   {
-    for (j = 0; j < plm1; j++) bmBc[likeconv(cs, pattern[j])] = plm1 - j;
+    for (j = 0; j < plm1; j++)
+      bmBc[likeconv(cs, pattern[j])] = plm1 - j;
   }
 }
 
@@ -6459,7 +6582,10 @@ longlong Item_func_xor::val_int()
     NULL if we cannot apply NOT transformation (see Item::neg_transformer()).
 */
 
-Item *Item_func_not::neg_transformer(THD *thd) /* NOT(x)  ->  x */ { return args[0]; }
+Item *Item_func_not::neg_transformer(THD *thd) /* NOT(x)  ->  x */
+{
+  return args[0];
+}
 
 Item *Item_bool_rowready_func2::neg_transformer(THD *thd)
 {
@@ -6550,17 +6676,35 @@ Item *Item_func_not_all::neg_transformer(THD *thd)
   return new_item;
 }
 
-Item *Item_func_eq::negated_item() /* a = b  ->  a != b */ { return new Item_func_ne(args[0], args[1]); }
+Item *Item_func_eq::negated_item() /* a = b  ->  a != b */
+{
+  return new Item_func_ne(args[0], args[1]);
+}
 
-Item *Item_func_ne::negated_item() /* a != b  ->  a = b */ { return new Item_func_eq(args[0], args[1]); }
+Item *Item_func_ne::negated_item() /* a != b  ->  a = b */
+{
+  return new Item_func_eq(args[0], args[1]);
+}
 
-Item *Item_func_lt::negated_item() /* a < b  ->  a >= b */ { return new Item_func_ge(args[0], args[1]); }
+Item *Item_func_lt::negated_item() /* a < b  ->  a >= b */
+{
+  return new Item_func_ge(args[0], args[1]);
+}
 
-Item *Item_func_ge::negated_item() /* a >= b  ->  a < b */ { return new Item_func_lt(args[0], args[1]); }
+Item *Item_func_ge::negated_item() /* a >= b  ->  a < b */
+{
+  return new Item_func_lt(args[0], args[1]);
+}
 
-Item *Item_func_gt::negated_item() /* a > b  ->  a <= b */ { return new Item_func_le(args[0], args[1]); }
+Item *Item_func_gt::negated_item() /* a > b  ->  a <= b */
+{
+  return new Item_func_le(args[0], args[1]);
+}
 
-Item *Item_func_le::negated_item() /* a <= b  ->  a > b */ { return new Item_func_gt(args[0], args[1]); }
+Item *Item_func_le::negated_item() /* a <= b  ->  a > b */
+{
+  return new Item_func_gt(args[0], args[1]);
+}
 
 /**
   just fake method, should never be called.
@@ -6651,9 +6795,15 @@ bool Item_equal::add(THD *thd, Item *c)
   return compare_const(thd, c);
 }
 
-void Item_equal::add(Item_field *f) { fields.push_back(f); }
+void Item_equal::add(Item_field *f)
+{
+  fields.push_back(f);
+}
 
-uint Item_equal::members() { return fields.elements; }
+uint Item_equal::members()
+{
+  return fields.elements;
+}
 
 /**
   Check whether a field is referred in the multiple equality.
@@ -6730,7 +6880,10 @@ bool Item_equal::merge(THD *thd, Item_equal *item)
   @param arg          context extra parameter for the cmp function
 */
 
-void Item_equal::sort(Item_field_cmpfunc compare, void *arg) { fields.sort((Node_cmp_func)compare, arg); }
+void Item_equal::sort(Item_field_cmpfunc compare, void *arg)
+{
+  fields.sort((Node_cmp_func)compare, arg);
+}
 
 /**
   Check appearance of new constant items in the multiple equality object.

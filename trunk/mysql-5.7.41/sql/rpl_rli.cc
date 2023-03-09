@@ -203,7 +203,10 @@ void Relay_log_info::init_workers(ulong n_workers)
 /**
    The method to invoke at slave threads stop
 */
-void Relay_log_info::deinit_workers() { workers.clear(); }
+void Relay_log_info::deinit_workers()
+{
+  workers.clear();
+}
 
 Relay_log_info::~Relay_log_info()
 {
@@ -217,7 +220,8 @@ Relay_log_info::~Relay_log_info()
 
     if (workers_copy_pfs.size())
     {
-      for (int i = static_cast< int >(workers_copy_pfs.size()) - 1; i >= 0; i--) delete workers_copy_pfs[i];
+      for (int i = static_cast< int >(workers_copy_pfs.size()) - 1; i >= 0; i--)
+        delete workers_copy_pfs[i];
       workers_copy_pfs.clear();
     }
 
@@ -2354,7 +2358,10 @@ int Relay_log_info::flush_current_log()
   DBUG_RETURN(0);
 }
 
-void Relay_log_info::set_master_info(Master_info *info) { mi = info; }
+void Relay_log_info::set_master_info(Master_info *info)
+{
+  mi = info;
+}
 
 /**
   Stores the file and position where the execute-slave thread are in the
@@ -2441,7 +2448,10 @@ err:
   DBUG_RETURN(1);
 }
 
-size_t Relay_log_info::get_number_info_rli_fields() { return sizeof(info_rli_fields) / sizeof(info_rli_fields[0]); }
+size_t Relay_log_info::get_number_info_rli_fields()
+{
+  return sizeof(info_rli_fields) / sizeof(info_rli_fields[0]);
+}
 
 bool Relay_log_info::read_info(Rpl_info_handler *from)
 {
@@ -2620,7 +2630,8 @@ void Relay_log_info::set_rli_description_event(Format_description_log_event *fe)
           will see notification through scheduling of a first event of
           a new post-new-FD.
         */
-        for (Slave_worker **it = workers.begin(); it != workers.end(); ++it) (*it)->fd_change_notified = false;
+        for (Slave_worker **it = workers.begin(); it != workers.end(); ++it)
+          (*it)->fd_change_notified = false;
       }
     }
   }
@@ -2861,7 +2872,10 @@ void Relay_log_info::relay_log_number_to_name(uint number, char name[FN_REFLEN +
   sprintf(str, "%06u", number);
 }
 
-uint Relay_log_info::relay_log_name_to_number(const char *name) { return static_cast< uint >(atoi(fn_ext(name) + 1)); }
+uint Relay_log_info::relay_log_name_to_number(const char *name)
+{
+  return static_cast< uint >(atoi(fn_ext(name) + 1));
+}
 
 bool is_mts_db_partitioned(Relay_log_info *rli)
 {

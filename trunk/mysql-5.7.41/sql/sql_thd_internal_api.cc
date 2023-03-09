@@ -84,7 +84,10 @@ void destroy_thd(THD *thd)
   delete thd;
 }
 
-void thd_set_thread_stack(THD *thd, const char *stack_start) { thd->thread_stack = stack_start; }
+void thd_set_thread_stack(THD *thd, const char *stack_start)
+{
+  thd->thread_stack = stack_start;
+}
 
 bool is_mysql_datadir_path(const char *path)
 {

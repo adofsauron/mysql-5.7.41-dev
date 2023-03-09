@@ -656,7 +656,8 @@ bool mysqld_help(THD *thd, const char *mask)
   memcpy((char *)used_fields, (char *)init_used_fields, sizeof(used_fields));
   if (init_fields(thd, tables, used_fields, array_elements(used_fields)))
     goto error;
-  for (i = 0; i < sizeof(tables) / sizeof(TABLE_LIST); i++) tables[i].table->file->init_table_handle_for_HANDLER();
+  for (i = 0; i < sizeof(tables) / sizeof(TABLE_LIST); i++)
+    tables[i].table->file->init_table_handle_for_HANDLER();
 
   {
     QEP_TAB_standalone qep_tab_st;

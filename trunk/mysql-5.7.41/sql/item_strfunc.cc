@@ -519,7 +519,9 @@ class iv_argument
   String tmp_iv_value;
 
  public:
-  iv_argument() : tmp_iv_value(iv_buff, sizeof(iv_buff), system_charset_info) {}
+  iv_argument() : tmp_iv_value(iv_buff, sizeof(iv_buff), system_charset_info)
+  {
+  }
 
   /**
     Validate the arguments and retrieve the IV value.
@@ -919,7 +921,8 @@ void Item_func_concat::fix_length_and_dec()
   if (agg_arg_charsets_for_string_result(collation, args, arg_count))
     return;
 
-  for (uint i = 0; i < arg_count; i++) char_length += args[i]->max_char_length();
+  for (uint i = 0; i < arg_count; i++)
+    char_length += args[i]->max_char_length();
 
   fix_char_length_ulonglong(char_length);
 }
@@ -1166,7 +1169,8 @@ void Item_func_concat_ws::fix_length_and_dec()
      so, (arg_count - 2) is safe here.
   */
   char_length = (ulonglong)args[0]->max_char_length() * (arg_count - 2);
-  for (uint i = 1; i < arg_count; i++) char_length += args[i]->max_char_length();
+  for (uint i = 1; i < arg_count; i++)
+    char_length += args[i]->max_char_length();
 
   fix_char_length_ulonglong(char_length);
 }
@@ -1210,7 +1214,8 @@ String *Item_func_reverse::val_str(String *str)
   }
   else
   {
-    while (ptr < end) *--tmp = *ptr++;
+    while (ptr < end)
+      *--tmp = *ptr++;
   }
   return &tmp_value;
 }
@@ -1900,11 +1905,13 @@ String *Item_func_trim::val_str(String *str)
   {
     if (m_trim_leading)
     {
-      while (ptr + remove_length <= end && !memcmp(ptr, r_ptr, remove_length)) ptr += remove_length;
+      while (ptr + remove_length <= end && !memcmp(ptr, r_ptr, remove_length))
+        ptr += remove_length;
     }
     if (m_trim_trailing)
     {
-      while (ptr + remove_length <= end && !memcmp(end - remove_length, r_ptr, remove_length)) end -= remove_length;
+      while (ptr + remove_length <= end && !memcmp(end - remove_length, r_ptr, remove_length))
+        end -= remove_length;
     }
   }
   if (ptr == res->ptr() && end == ptr + res->length())
@@ -2346,7 +2353,10 @@ void Item_func_soundex::fix_length_and_dec()
   else return 0
 */
 
-static int soundex_toupper(int ch) { return (ch >= 'a' && ch <= 'z') ? ch - 'a' + 'A' : ch; }
+static int soundex_toupper(int ch)
+{
+  return (ch >= 'a' && ch <= 'z') ? ch - 'a' + 'A' : ch;
+}
 
 static char get_scode(int wc)
 {
@@ -3125,7 +3135,8 @@ void Item_func_make_set::fix_length_and_dec()
   if (agg_arg_charsets_for_string_result(collation, args, arg_count))
     return;
 
-  for (uint i = 0; i < arg_count; i++) char_length += args[i]->max_char_length();
+  for (uint i = 0; i < arg_count; i++)
+    char_length += args[i]->max_char_length();
   fix_char_length(char_length);
   used_tables_cache |= item->used_tables();
   not_null_tables_cache &= item->not_null_tables();
@@ -4849,7 +4860,8 @@ String *Item_func_uuid::val_str(String *str)
         randominit() here
       */
       randominit(&uuid_rand, tmp + (ulong)thd, tmp + (ulong)global_query_id);
-      for (i = 0; i < (int)sizeof(mac); i++) mac[i] = (uchar)(my_rnd(&uuid_rand) * 255);
+      for (i = 0; i < (int)sizeof(mac); i++)
+        mac[i] = (uchar)(my_rnd(&uuid_rand) * 255);
       /* purecov: end */
     }
     s = clock_seq_and_node_str + sizeof(clock_seq_and_node_str) - 1;

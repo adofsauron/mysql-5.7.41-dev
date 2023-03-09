@@ -40,7 +40,9 @@ static int bootstrap_error = 0;
 class Query_command_iterator : public Command_iterator
 {
  public:
-  Query_command_iterator(const char *query) : m_query(query), m_is_read(false) {}
+  Query_command_iterator(const char *query) : m_query(query), m_is_read(false)
+  {
+  }
   virtual int next(std::string &query, int *read_error, int *query_source)
   {
     if (m_is_read)
@@ -88,7 +90,10 @@ File_command_iterator::File_command_iterator(const char *file_name)
   is_allocated = true;
 }
 
-File_command_iterator::~File_command_iterator() { end(); }
+File_command_iterator::~File_command_iterator()
+{
+  end();
+}
 
 void File_command_iterator::end(void)
 {

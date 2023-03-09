@@ -157,8 +157,13 @@ bool Explain_format_traditional::push_select_type(List< Item > *items)
 class Buffer_cleanup
 {
  public:
-  explicit Buffer_cleanup(qep_row *row) : m_row(row) {}
-  ~Buffer_cleanup() { m_row->cleanup(); }
+  explicit Buffer_cleanup(qep_row *row) : m_row(row)
+  {
+  }
+  ~Buffer_cleanup()
+  {
+    m_row->cleanup();
+  }
 
  private:
   qep_row *m_row;

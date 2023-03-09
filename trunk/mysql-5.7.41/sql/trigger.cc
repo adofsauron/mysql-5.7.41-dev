@@ -51,7 +51,9 @@ class Deprecated_trigger_syntax_handler : public Internal_error_handler
   LEX_STRING *m_trigger_name;
 
  public:
-  Deprecated_trigger_syntax_handler() : m_trigger_name(NULL) {}
+  Deprecated_trigger_syntax_handler() : m_trigger_name(NULL)
+  {
+  }
 
   virtual bool handle_condition(THD *thd, uint sql_errno, const char *sqlstate,
                                 Sql_condition::enum_severity_level *level, const char *message)
@@ -69,8 +71,14 @@ class Deprecated_trigger_syntax_handler : public Internal_error_handler
     return false;
   }
 
-  LEX_STRING *get_trigger_name() { return m_trigger_name; }
-  const char *get_error_message() { return m_message; }
+  LEX_STRING *get_trigger_name()
+  {
+    return m_trigger_name;
+  }
+  const char *get_error_message()
+  {
+    return m_message;
+  }
 };
 
 ///////////////////////////////////////////////////////////////////////////
@@ -364,7 +372,10 @@ Trigger::Trigger(MEM_ROOT *mem_root, const LEX_CSTRING &db_name, const LEX_CSTRI
 /**
   Destroy associated SP (if any).
 */
-Trigger::~Trigger() { delete m_sp; }
+Trigger::~Trigger()
+{
+  delete m_sp;
+}
 
 /**
   Execute trigger's body.

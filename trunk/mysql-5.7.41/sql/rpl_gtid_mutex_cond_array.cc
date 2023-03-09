@@ -88,4 +88,7 @@ error:
   RETURN_REPORTED_ERROR;
 }
 
-bool Mutex_cond_array::is_thd_killed(const THD *thd) const { return thd->killed; }
+bool Mutex_cond_array::is_thd_killed(const THD *thd) const
+{
+  return thd->killed;
+}

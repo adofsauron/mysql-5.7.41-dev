@@ -58,7 +58,8 @@ int read_bootstrap_query(char *query, size_t *query_length, fgets_input_t input,
      which is sufficient for the kind of queries found
      in the bootstrap scripts.
     */
-    while (len && (isspace(line[len - 1]))) len--;
+    while (len && (isspace(line[len - 1])))
+      len--;
     /*
       Cleanly end the string, so we don't have to test len > x
       all the time before reading line[x], in the code below.

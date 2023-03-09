@@ -1548,7 +1548,8 @@ void add_slave_skip_errors(const char *arg)
   if (!use_slave_mask)
     init_slave_skip_errors();
 
-  for (; my_isspace(system_charset_info, *arg); ++arg) /* empty */;
+  for (; my_isspace(system_charset_info, *arg); ++arg)
+    /* empty */;
   if (!my_strnncoll(system_charset_info, (uchar *)arg, SIZE_SKIP_ALL, SKIP_ALL, SIZE_SKIP_ALL))
   {
     bitmap_set_all(&slave_error_mask);
@@ -1579,7 +1580,8 @@ void add_slave_skip_errors(const char *arg)
       break;
     if (err_code < MAX_SLAVE_ERROR)
       bitmap_set_bit(&slave_error_mask, (uint)err_code);
-    while (!my_isdigit(system_charset_info, *p) && *p) p++;
+    while (!my_isdigit(system_charset_info, *p) && *p)
+      p++;
   }
   DBUG_VOID_RETURN;
 }
@@ -6628,7 +6630,8 @@ end:
     the table performance_schema.table_replication_applier_status_by_worker
     between stop slave and next start slave.
   */
-  for (int i = static_cast< int >(rli->workers_copy_pfs.size()) - 1; i >= 0; i--) delete rli->workers_copy_pfs[i];
+  for (int i = static_cast< int >(rli->workers_copy_pfs.size()) - 1; i >= 0; i--)
+    delete rli->workers_copy_pfs[i];
   rli->workers_copy_pfs.clear();
 
   // Effective end of the recovery right now when there is no gaps
@@ -6777,7 +6780,8 @@ end:
   rli->least_occupied_workers.clear();
 
   // Destroy buffered events of the current group prior to exit.
-  for (uint i = 0; i < rli->curr_group_da.size(); i++) delete rli->curr_group_da[i].data;
+  for (uint i = 0; i < rli->curr_group_da.size(); i++)
+    delete rli->curr_group_da[i].data;
   rli->curr_group_da.clear();  // GCDA
 
   rli->curr_group_assigned_parts.clear();  // GCAP

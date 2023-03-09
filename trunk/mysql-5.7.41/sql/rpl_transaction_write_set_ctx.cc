@@ -135,9 +135,15 @@ bool Rpl_transaction_write_set_ctx::get_has_related_foreign_keys()
   DBUG_RETURN(m_has_related_foreign_keys);
 }
 
-bool Rpl_transaction_write_set_ctx::was_write_set_limit_reached() { return m_local_has_reached_write_set_limit; }
+bool Rpl_transaction_write_set_ctx::was_write_set_limit_reached()
+{
+  return m_local_has_reached_write_set_limit;
+}
 
-size_t Rpl_transaction_write_set_ctx::write_set_memory_size() { return sizeof(uint64) * write_set.size(); }
+size_t Rpl_transaction_write_set_ctx::write_set_memory_size()
+{
+  return sizeof(uint64) * write_set.size();
+}
 
 void Rpl_transaction_write_set_ctx::set_global_require_full_write_set(bool requires_ws)
 {

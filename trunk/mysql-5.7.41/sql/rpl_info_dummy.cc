@@ -22,11 +22,19 @@
 
 #include "rpl_info_dummy.h"
 
-Rpl_info_dummy::Rpl_info_dummy(const int nparam) : Rpl_info_handler(nparam) {}
+Rpl_info_dummy::Rpl_info_dummy(const int nparam) : Rpl_info_handler(nparam)
+{
+}
 
-int Rpl_info_dummy::do_init_info(uint instance MY_ATTRIBUTE((unused))) { return 0; }
+int Rpl_info_dummy::do_init_info(uint instance MY_ATTRIBUTE((unused)))
+{
+  return 0;
+}
 
-int Rpl_info_dummy::do_init_info() { return 0; }
+int Rpl_info_dummy::do_init_info()
+{
+  return 0;
+}
 
 int Rpl_info_dummy::do_prepare_info_for_read()
 {
@@ -60,7 +68,10 @@ int Rpl_info_dummy::do_flush_info(const bool force MY_ATTRIBUTE((unused)))
   return 0;
 }
 
-void Rpl_info_dummy::do_end_info() { return; }
+void Rpl_info_dummy::do_end_info()
+{
+  return;
+}
 
 int Rpl_info_dummy::do_remove_info()
 {
@@ -74,7 +85,10 @@ int Rpl_info_dummy::do_clean_info()
   return 0;
 }
 
-uint Rpl_info_dummy::do_get_rpl_info_type() { return INFO_REPOSITORY_DUMMY; }
+uint Rpl_info_dummy::do_get_rpl_info_type()
+{
+  return INFO_REPOSITORY_DUMMY;
+}
 
 bool Rpl_info_dummy::do_set_info(const int pos MY_ATTRIBUTE((unused)), const char *value MY_ATTRIBUTE((unused)))
 {

@@ -158,7 +158,8 @@ sp_pcontext::sp_pcontext(THD *thd, sp_pcontext *prev, sp_pcontext::enum_scope sc
 
 sp_pcontext::~sp_pcontext()
 {
-  for (size_t i = 0; i < m_children.size(); ++i) delete m_children.at(i);
+  for (size_t i = 0; i < m_children.size(); ++i)
+    delete m_children.at(i);
 }
 
 sp_pcontext *sp_pcontext::push_context(THD *thd, sp_pcontext::enum_scope scope)
@@ -440,7 +441,8 @@ sp_handler *sp_pcontext::find_handler(const char *sql_state, uint sql_errno,
 
   const sp_pcontext *p = this;
 
-  while (p && p->m_scope == HANDLER_SCOPE) p = p->m_parent;
+  while (p && p->m_scope == HANDLER_SCOPE)
+    p = p->m_parent;
 
   if (!p || !p->m_parent)
     return NULL;
@@ -487,7 +489,8 @@ void sp_pcontext::retrieve_field_definitions(List< Create_field > *field_def_lst
 
   /* Put the fields of the enclosed contexts in the result list. */
 
-  for (size_t i = 0; i < m_children.size(); ++i) m_children.at(i)->retrieve_field_definitions(field_def_lst);
+  for (size_t i = 0; i < m_children.size(); ++i)
+    m_children.at(i)->retrieve_field_definitions(field_def_lst);
 }
 
 const LEX_STRING *sp_pcontext::find_cursor(uint offset) const

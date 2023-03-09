@@ -319,7 +319,8 @@ void ndb_get_connection_stats(Uint64 *statsArr)
   {
     g_pool[i]->collect_client_stats(connectionStats, Ndb::NumClientStatistics);
 
-    for (Uint32 s = 0; s < Ndb::NumClientStatistics; s++) statsArr[s] += connectionStats[s];
+    for (Uint32 s = 0; s < Ndb::NumClientStatistics; s++)
+      statsArr[s] += connectionStats[s];
   }
 }
 

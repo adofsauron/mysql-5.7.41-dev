@@ -211,9 +211,15 @@ struct Ndb_db_guard
     strcpy(save_db, ndb->getDatabaseName());
   }
 
-  void restore() { ndb->setDatabaseName(save_db); }
+  void restore()
+  {
+    ndb->setDatabaseName(save_db);
+  }
 
-  ~Ndb_db_guard() { ndb->setDatabaseName(save_db); }
+  ~Ndb_db_guard()
+  {
+    ndb->setDatabaseName(save_db);
+  }
 
  private:
   Ndb *ndb;
@@ -233,11 +239,20 @@ static inline const char *lex2str(const LEX_STRING &str, char buf[], size_t len)
   return buf;
 }
 
-static inline const char *lex2str(const char *str, char buf[], size_t len) { return str; }
+static inline const char *lex2str(const char *str, char buf[], size_t len)
+{
+  return str;
+}
 
-static inline bool isnull(const LEX_STRING &str) { return str.str == 0 || str.length == 0; }
+static inline bool isnull(const LEX_STRING &str)
+{
+  return str.str == 0 || str.length == 0;
+}
 
-static inline bool isnull(const char *str) { return str == 0; }
+static inline bool isnull(const char *str)
+{
+  return str == 0;
+}
 
 // copied from unused table_case_convert() in mysqld.h
 static void ndb_fk_casedn(char *name)
@@ -635,7 +650,9 @@ class Fk_util
   }
 
  public:
-  Fk_util(THD *thd) : m_thd(thd) {}
+  Fk_util(THD *thd) : m_thd(thd)
+  {
+  }
 
   static bool split_mock_name(const char *name, unsigned *child_id_ptr = NULL, unsigned *child_index_ptr = NULL,
                               const char **parent_name = NULL)
@@ -674,7 +691,10 @@ class Fk_util
     return true;
   }
 
-  static bool is_mock_name(const char *name) { return split_mock_name(name); }
+  static bool is_mock_name(const char *name)
+  {
+    return split_mock_name(name);
+  }
 
   static const char *format_name(char buf[], size_t buf_size, int child_id, uint fk_index, const char *parent_name)
   {
@@ -1061,7 +1081,10 @@ bool ndb_fk_util_drop_table(THD *thd, Ndb *ndb, NdbDictionary::Dictionary *dict,
   return fk_util.drop(ndb, dict, table);
 }
 
-bool ndb_fk_util_is_mock_name(const char *table_name) { return Fk_util::is_mock_name(table_name); }
+bool ndb_fk_util_is_mock_name(const char *table_name)
+{
+  return Fk_util::is_mock_name(table_name);
+}
 
 void ndb_fk_util_resolve_mock_tables(THD *thd, NdbDictionary::Dictionary *dict, const char *new_parent_db,
                                      const char *new_parent_name)
@@ -1496,7 +1519,10 @@ struct Ndb_mem_root_guard
     old_root = *root_ptr;
     *root_ptr = new_root;
   }
-  ~Ndb_mem_root_guard() { *root_ptr = old_root; }
+  ~Ndb_mem_root_guard()
+  {
+    *root_ptr = old_root;
+  }
 
  private:
   MEM_ROOT **root_ptr;

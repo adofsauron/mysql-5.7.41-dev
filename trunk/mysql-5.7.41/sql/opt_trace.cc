@@ -49,16 +49,36 @@ class Buffer
   String string_buf;
 
  public:
-  Buffer() : allowed_mem_size(0), missing_bytes(0) {}
+  Buffer() : allowed_mem_size(0), missing_bytes(0)
+  {
+  }
 
-  size_t alloced_length() const { return string_buf.alloced_length(); }
-  size_t length() const { return string_buf.length(); }
+  size_t alloced_length() const
+  {
+    return string_buf.alloced_length();
+  }
+  size_t length() const
+  {
+    return string_buf.length();
+  }
   void prealloc();  ///< pro-actively extend buffer if soon short of space
-  char *c_ptr_safe() { return string_buf.c_ptr_safe(); }
-  const char *ptr() const { return string_buf.ptr(); }
+  char *c_ptr_safe()
+  {
+    return string_buf.c_ptr_safe();
+  }
+  const char *ptr() const
+  {
+    return string_buf.ptr();
+  }
 
-  const CHARSET_INFO *charset() const { return string_buf.charset(); }
-  void set_charset(const CHARSET_INFO *charset) { string_buf.set_charset(charset); }
+  const CHARSET_INFO *charset() const
+  {
+    return string_buf.charset();
+  }
+  void set_charset(const CHARSET_INFO *charset)
+  {
+    string_buf.set_charset(charset);
+  }
 
   /**
     Like @c String::append()
@@ -66,7 +86,10 @@ class Buffer
     @param  length  length of string
   */
   void append(const char *str, size_t length);
-  void append(const char *str) { return append(str, strlen(str)); }
+  void append(const char *str)
+  {
+    return append(str, strlen(str));
+  }
   /**
     Like @c append() but escapes certain characters for string values to
     be JSON-compliant.
@@ -76,10 +99,19 @@ class Buffer
   void append_escaped(const char *str, size_t length);
   void append(char chr);
 
-  size_t get_allowed_mem_size() const { return allowed_mem_size; }
-  size_t get_missing_bytes() const { return missing_bytes; }
+  size_t get_allowed_mem_size() const
+  {
+    return allowed_mem_size;
+  }
+  size_t get_missing_bytes() const
+  {
+    return missing_bytes;
+  }
 
-  void set_allowed_mem_size(size_t a) { allowed_mem_size = a; }
+  void set_allowed_mem_size(size_t a)
+  {
+    allowed_mem_size = a;
+  }
 };
 
 }  // namespace random_name_to_avoid_gcc_bug_29365
@@ -110,7 +142,10 @@ class Opt_trace_stmt
   void end();
 
   /// @returns whether @c end() has been called on this instance.
-  bool has_ended() const { return ended; }
+  bool has_ended() const
+  {
+    return ended;
+  }
 
   /// Sets the quantity of allowed memory for this trace.
   void set_allowed_mem_size(size_t size);
@@ -171,23 +206,38 @@ class Opt_trace_stmt
   const char *trace_buffer_tail(size_t size);
 
   /// @returns total memory used by this trace
-  size_t alloced_length() const { return trace_buffer.alloced_length() + query_buffer.alloced_length(); }
+  size_t alloced_length() const
+  {
+    return trace_buffer.alloced_length() + query_buffer.alloced_length();
+  }
 
-  void assert_current_struct(const Opt_trace_struct *s) const { assert(current_struct == s); }
+  void assert_current_struct(const Opt_trace_struct *s) const
+  {
+    assert(current_struct == s);
+  }
 
   /// @see Opt_trace_context::missing_privilege()
   void missing_privilege();
 
-  bool support_I_S() const { return I_S_disabled == 0; }
+  bool support_I_S() const
+  {
+    return I_S_disabled == 0;
+  }
 
   /// Temporarily disables I_S output for this statement.
-  void disable_I_S() { ++I_S_disabled; }
+  void disable_I_S()
+  {
+    ++I_S_disabled;
+  }
 
   /**
      Restores I_S support to what it was before the previous call
      to disable_I_S().
   */
-  void restore_I_S() { --I_S_disabled; }
+  void restore_I_S()
+  {
+    --I_S_disabled;
+  }
 
   /**
      Generate a dummy unique key, and return pointer to it. The pointed data
@@ -240,8 +290,14 @@ namespace
 {
 /// opening and closing symbols for arrays ([])and objects ({})
 const char brackets[] = {'[', '{', ']', '}'};
-inline char opening_bracket(bool requires_key) { return brackets[requires_key]; }
-inline char closing_bracket(bool requires_key) { return brackets[requires_key + 2]; }
+inline char opening_bracket(bool requires_key)
+{
+  return brackets[requires_key];
+}
+inline char closing_bracket(bool requires_key)
+{
+  return brackets[requires_key + 2];
+}
 }  // namespace
 
 void Opt_trace_struct::do_construct(Opt_trace_context *ctx, bool requires_key_arg, const char *key,
@@ -466,7 +522,10 @@ void Opt_trace_stmt::end()
     ctx->restore_I_S();
 }
 
-void Opt_trace_stmt::set_allowed_mem_size(size_t size) { trace_buffer.set_allowed_mem_size(size); }
+void Opt_trace_stmt::set_allowed_mem_size(size_t size)
+{
+  trace_buffer.set_allowed_mem_size(size);
+}
 
 void Opt_trace_stmt::set_query(const char *query, size_t length, const CHARSET_INFO *charset)
 {
@@ -1240,10 +1299,19 @@ const Opt_trace_stmt *Opt_trace_context::get_next_stmt_for_I_S(long *got_so_far)
 
 // Implementation of class Opt_trace_iterator
 
-Opt_trace_iterator::Opt_trace_iterator(Opt_trace_context *ctx_arg) : ctx(ctx_arg), row_count(0) { next(); }
+Opt_trace_iterator::Opt_trace_iterator(Opt_trace_context *ctx_arg) : ctx(ctx_arg), row_count(0)
+{
+  next();
+}
 
-void Opt_trace_iterator::next() { cursor = ctx->get_next_stmt_for_I_S(&row_count); }
+void Opt_trace_iterator::next()
+{
+  cursor = ctx->get_next_stmt_for_I_S(&row_count);
+}
 
-void Opt_trace_iterator::get_value(Opt_trace_info *info) const { cursor->fill_info(info); }
+void Opt_trace_iterator::get_value(Opt_trace_info *info) const
+{
+  cursor->fill_info(info);
+}
 
 #endif  // OPTIMIZER_TRACE

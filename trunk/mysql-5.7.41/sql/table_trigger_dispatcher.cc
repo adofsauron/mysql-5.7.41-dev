@@ -103,13 +103,15 @@ Table_trigger_dispatcher::~Table_trigger_dispatcher()
 
   if (m_record1_field)
   {
-    for (Field **fld_ptr = m_record1_field; *fld_ptr; fld_ptr++) delete *fld_ptr;
+    for (Field **fld_ptr = m_record1_field; *fld_ptr; fld_ptr++)
+      delete *fld_ptr;
   }
 
   // Destroy trigger chains.
 
   for (int i = 0; i < (int)TRG_ACTION_MAX; ++i)
-    for (int j = 0; j < (int)TRG_ACTION_MAX; ++j) delete m_trigger_map[i][j];
+    for (int j = 0; j < (int)TRG_ACTION_MAX; ++j)
+      delete m_trigger_map[i][j];
 
   delete m_unparseable_triggers;
 
@@ -603,7 +605,8 @@ bool Table_trigger_dispatcher::rename_subject_table(THD *thd, const char *old_db
   List_iterator_fast< Trigger > it(m_triggers);
   Trigger *t;
 
-  while ((t = it++)) t->rename_subject_table(thd, new_table_name);
+  while ((t = it++))
+    t->rename_subject_table(thd, new_table_name);
 
   if (thd->is_fatal_error)
     return true; /* OOM */
@@ -811,7 +814,8 @@ void Table_trigger_dispatcher::disable_fields_temporary_nullability()
 {
   assert(m_subject_table);
 
-  for (Field **next_field = m_subject_table->field; *next_field; ++next_field) (*next_field)->reset_tmp_nullable();
+  for (Field **next_field = m_subject_table->field; *next_field; ++next_field)
+    (*next_field)->reset_tmp_nullable();
 }
 
 /**
@@ -827,7 +831,8 @@ void Table_trigger_dispatcher::print_upgrade_warnings(THD *thd)
   List_iterator_fast< Trigger > it(m_triggers);
   Trigger *t;
 
-  while ((t = it++)) t->print_upgrade_warning(thd);
+  while ((t = it++))
+    t->print_upgrade_warning(thd);
 }
 
 /**

@@ -33,9 +33,15 @@ TC_LOG::enum_result TC_LOG_DUMMY::commit(THD *thd, bool all)
   return ha_commit_low(thd, all) ? RESULT_ABORTED : RESULT_SUCCESS;
 }
 
-int TC_LOG_DUMMY::rollback(THD *thd, bool all) { return ha_rollback_low(thd, all); }
+int TC_LOG_DUMMY::rollback(THD *thd, bool all)
+{
+  return ha_rollback_low(thd, all);
+}
 
-int TC_LOG_DUMMY::prepare(THD *thd, bool all) { return ha_prepare_low(thd, all); }
+int TC_LOG_DUMMY::prepare(THD *thd, bool all)
+{
+  return ha_prepare_low(thd, all);
+}
 
 /********* transaction coordinator log for 2pc - mmap() based solution *******/
 
@@ -291,9 +297,15 @@ TC_LOG::enum_result TC_LOG_MMAP::commit(THD *thd, bool all)
   DBUG_RETURN(RESULT_SUCCESS);
 }
 
-int TC_LOG_MMAP::rollback(THD *thd, bool all) { return ha_rollback_low(thd, all); }
+int TC_LOG_MMAP::rollback(THD *thd, bool all)
+{
+  return ha_rollback_low(thd, all);
+}
 
-int TC_LOG_MMAP::prepare(THD *thd, bool all) { return ha_prepare_low(thd, all); }
+int TC_LOG_MMAP::prepare(THD *thd, bool all)
+{
+  return ha_prepare_low(thd, all);
+}
 
 /**
   Record that transaction XID is committed on the persistent storage.
@@ -329,7 +341,8 @@ ulong TC_LOG_MMAP::log_xid(my_xid xid)
   while (true)
   {
     /* If active page is full - just wait... */
-    while (unlikely(active && active->free == 0)) mysql_cond_wait(&COND_active, &LOCK_tc);
+    while (unlikely(active && active->free == 0))
+      mysql_cond_wait(&COND_active, &LOCK_tc);
 
     /* no active page ? take one from the pool. */
     if (active == NULL)

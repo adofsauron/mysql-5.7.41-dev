@@ -273,9 +273,15 @@ bool Rpl_filter::db_ok_with_wild_table(const char *db)
   DBUG_RETURN(!wild_do_table_inited);
 }
 
-bool Rpl_filter::is_on() { return table_rules_on; }
+bool Rpl_filter::is_on()
+{
+  return table_rules_on;
+}
 
-bool Rpl_filter::is_rewrite_empty() { return rewrite_db.is_empty(); }
+bool Rpl_filter::is_rewrite_empty()
+{
+  return rewrite_db.is_empty();
+}
 
 int Rpl_filter::add_do_table_array(const char *table_spec)
 {
@@ -806,7 +812,10 @@ void Rpl_filter::table_rule_ent_dynamic_array_to_str(String *s, Table_rule_array
   }
 }
 
-void Rpl_filter::get_do_table(String *str) { table_rule_ent_hash_to_str(str, &do_table_hash, do_table_hash_inited); }
+void Rpl_filter::get_do_table(String *str)
+{
+  table_rule_ent_hash_to_str(str, &do_table_hash, do_table_hash_inited);
+}
 
 void Rpl_filter::get_ignore_table(String *str)
 {
@@ -867,9 +876,15 @@ const char *Rpl_filter::get_rewrite_db(const char *db, size_t *new_len)
   return db;
 }
 
-I_List< i_string > *Rpl_filter::get_do_db() { return &do_db; }
+I_List< i_string > *Rpl_filter::get_do_db()
+{
+  return &do_db;
+}
 
-I_List< i_string > *Rpl_filter::get_ignore_db() { return &ignore_db; }
+I_List< i_string > *Rpl_filter::get_ignore_db()
+{
+  return &ignore_db;
+}
 
 bool Sql_cmd_change_repl_filter::execute(THD *thd)
 {

@@ -161,7 +161,8 @@ void Trigger_chain::add_tables_and_routines(THD *thd, Query_tables_list *prelock
   List_iterator_fast< Trigger > it(m_triggers);
   Trigger *t;
 
-  while ((t = it++)) t->add_tables_and_routines(thd, prelocking_ctx, table_list);
+  while ((t = it++))
+    t->add_tables_and_routines(thd, prelocking_ctx, table_list);
 }
 
 /**
@@ -176,7 +177,8 @@ void Trigger_chain::mark_fields(TABLE *subject_table)
   List_iterator_fast< Trigger > it(m_triggers);
   Trigger *t;
 
-  while ((t = it++)) t->get_sp()->mark_used_trigger_fields(subject_table);
+  while ((t = it++))
+    t->get_sp()->mark_used_trigger_fields(subject_table);
 }
 
 /**

@@ -117,9 +117,15 @@ void set_mi_settings(Master_info *mi, Channel_creation_info *channel_info)
   mysql_mutex_unlock(&mi->data_lock);
 }
 
-bool init_thread_context() { return my_thread_init(); }
+bool init_thread_context()
+{
+  return my_thread_init();
+}
 
-void clean_thread_context() { my_thread_end(); }
+void clean_thread_context()
+{
+  my_thread_end();
+}
 
 THD *create_surrogate_thread()
 {
@@ -654,7 +660,8 @@ int channel_get_thread_id(const char *channel, enum_channel_thread_types thd_typ
           unsigned long *thread_id_pointer = *thread_id;
 
           // Set default values on thread_id array.
-          for (int i = 0; i < number_threads; i++, thread_id_pointer++) *thread_id_pointer = -1;
+          for (int i = 0; i < number_threads; i++, thread_id_pointer++)
+            *thread_id_pointer = -1;
           thread_id_pointer = *thread_id;
 
           // Coordinator thread id.
@@ -852,7 +859,8 @@ int channel_is_applier_waiting(const char *channel)
     waiting += channel_is_applier_thread_waiting(thread_ids[0]);
 
     // Check if workers are waiting.
-    for (int i = 1; i < number_appliers; i++) waiting += channel_is_applier_thread_waiting(thread_ids[i], true);
+    for (int i = 1; i < number_appliers; i++)
+      waiting += channel_is_applier_thread_waiting(thread_ids[i], true);
 
     // Check if all are waiting.
     if (waiting == number_appliers)

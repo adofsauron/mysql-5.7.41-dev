@@ -115,7 +115,10 @@ static const char *mysql_ha_hash_get_key(TABLE_LIST *tables, size_t *key_len_p, 
     Nothing
 */
 
-static void mysql_ha_hash_free(TABLE_LIST *tables) { my_free(tables); }
+static void mysql_ha_hash_free(TABLE_LIST *tables)
+{
+  my_free(tables);
+}
 
 /**
   Close a HANDLER table.

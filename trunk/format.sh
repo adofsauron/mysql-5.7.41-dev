@@ -3,8 +3,8 @@
 
 cd mysql-5.7.41
 
-# clang-format -style=file -i   ./dbug/*.c
 # clang-format -style=file -i   ./include/*.h
+clang-format -style=file -i   ./dbug/*.c
 
 # clang-format -style=file -i   ./sql/*.h
 clang-format -style=file -i   ./sql/*.cc

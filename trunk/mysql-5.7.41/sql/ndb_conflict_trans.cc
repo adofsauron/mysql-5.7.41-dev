@@ -50,15 +50,22 @@ st_row_event_key_info::st_row_event_key_info(const NdbDictionary::Table *_table,
 {
 }
 
-Uint64 st_row_event_key_info::getTransactionId() const { return transaction_id; }
+Uint64 st_row_event_key_info::getTransactionId() const
+{
+  return transaction_id;
+}
 
-void st_row_event_key_info::updateRowTransactionId(Uint64 mostRecentTransId) { transaction_id = mostRecentTransId; }
+void st_row_event_key_info::updateRowTransactionId(Uint64 mostRecentTransId)
+{
+  transaction_id = mostRecentTransId;
+}
 
 Uint32 st_row_event_key_info::hashValue() const
 {
   /* Include Table Object Id + primary key */
   Uint32 h = (17 * 37) + tableObj->getObjectId();
-  for (Uint32 i = 0; i < packed_key_len; i++) h = (37 * h) + packed_key[i];
+  for (Uint32 i = 0; i < packed_key_len; i++)
+    h = (37 * h) + packed_key[i];
   return h;
 }
 
@@ -69,9 +76,15 @@ bool st_row_event_key_info::equal(const st_row_event_key_info *other) const
           (memcmp(packed_key, other->packed_key, packed_key_len) == 0));
 };
 
-st_row_event_key_info *st_row_event_key_info::getNext() const { return hash_next; };
+st_row_event_key_info *st_row_event_key_info::getNext() const
+{
+  return hash_next;
+};
 
-void st_row_event_key_info::setNext(st_row_event_key_info *_next) { hash_next = _next; };
+void st_row_event_key_info::setNext(st_row_event_key_info *_next)
+{
+  hash_next = _next;
+};
 
 /* st_trans_dependency implementation */
 
@@ -82,11 +95,20 @@ st_trans_dependency::st_trans_dependency(st_transaction *_target_transaction, st
       next_entry(_next),
       hash_next(NULL){};
 
-st_transaction *st_trans_dependency::getTargetTransaction() const { return target_transaction; }
+st_transaction *st_trans_dependency::getTargetTransaction() const
+{
+  return target_transaction;
+}
 
-st_transaction *st_trans_dependency::getDependentTransaction() const { return dependent_transaction; }
+st_transaction *st_trans_dependency::getDependentTransaction() const
+{
+  return dependent_transaction;
+}
 
-const st_trans_dependency *st_trans_dependency::getNextDependency() const { return next_entry; }
+const st_trans_dependency *st_trans_dependency::getNextDependency() const
+{
+  return next_entry;
+}
 
 Uint32 st_trans_dependency::hashValue() const
 {
@@ -108,24 +130,45 @@ bool st_trans_dependency::equal(const st_trans_dependency *other) const
   return ((target_transaction == other->target_transaction) && (dependent_transaction == other->dependent_transaction));
 };
 
-st_trans_dependency *st_trans_dependency::getNext() const { return hash_next; };
+st_trans_dependency *st_trans_dependency::getNext() const
+{
+  return hash_next;
+};
 
-void st_trans_dependency::setNext(st_trans_dependency *_next) { hash_next = _next; };
+void st_trans_dependency::setNext(st_trans_dependency *_next)
+{
+  hash_next = _next;
+};
 
 /* st_transaction implementation */
 
 st_transaction::st_transaction(Uint64 _transaction_id)
     : transaction_id(_transaction_id), in_conflict(false), dependency_list_head(NULL), hash_next(NULL){};
 
-Uint64 st_transaction::getTransactionId() const { return transaction_id; }
+Uint64 st_transaction::getTransactionId() const
+{
+  return transaction_id;
+}
 
-bool st_transaction::getInConflict() const { return in_conflict; }
+bool st_transaction::getInConflict() const
+{
+  return in_conflict;
+}
 
-void st_transaction::setInConflict() { in_conflict = true; }
+void st_transaction::setInConflict()
+{
+  in_conflict = true;
+}
 
-const st_trans_dependency *st_transaction::getDependencyListHead() const { return dependency_list_head; }
+const st_trans_dependency *st_transaction::getDependencyListHead() const
+{
+  return dependency_list_head;
+}
 
-void st_transaction::setDependencyListHead(st_trans_dependency *head) { dependency_list_head = head; }
+void st_transaction::setDependencyListHead(st_trans_dependency *head)
+{
+  dependency_list_head = head;
+}
 
 /* Hash Api */
 Uint32 st_transaction::hashValue() const
@@ -133,11 +176,20 @@ Uint32 st_transaction::hashValue() const
   return 17 + (37 * ((transaction_id & 0xffffffff) ^ (transaction_id >> 32 & 0xffffffff)));
 };
 
-bool st_transaction::equal(const st_transaction *other) const { return transaction_id == other->transaction_id; };
+bool st_transaction::equal(const st_transaction *other) const
+{
+  return transaction_id == other->transaction_id;
+};
 
-st_transaction *st_transaction::getNext() const { return hash_next; };
+st_transaction *st_transaction::getNext() const
+{
+  return hash_next;
+};
 
-void st_transaction::setNext(st_transaction *_next) { hash_next = _next; };
+void st_transaction::setNext(st_transaction *_next)
+{
+  hash_next = _next;
+};
 
 /*
    Unique HashMap(Set) of st_row_event_key_info ptrs, with bucket storage
@@ -492,7 +544,10 @@ int DependencyTracker::add_dependency(Uint64 trans_id, Uint64 dependent_trans_id
   DBUG_RETURN(0);
 };
 
-void DependencyTracker::reset_dependency_iterator() { iteratorTodo.reset(); };
+void DependencyTracker::reset_dependency_iterator()
+{
+  iteratorTodo.reset();
+};
 
 st_transaction *DependencyTracker::get_next_dependency(const st_transaction *current,
                                                        bool include_dependents_of_current)
@@ -612,9 +667,15 @@ bool DependencyTracker::verify_graph()
   return true;
 }
 
-const char *DependencyTracker::get_error_text() const { return error_text; };
+const char *DependencyTracker::get_error_text() const
+{
+  return error_text;
+};
 
-Uint32 DependencyTracker::get_conflict_count() const { return conflicting_trans_count; }
+Uint32 DependencyTracker::get_conflict_count() const
+{
+  return conflicting_trans_count;
+}
 
 /* #ifdef HAVE_NDB_BINLOG */
 

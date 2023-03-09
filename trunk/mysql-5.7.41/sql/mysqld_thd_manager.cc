@@ -41,14 +41,19 @@ Global_THD_manager *Global_THD_manager::thd_manager = NULL;
 class Do_THD : public std::unary_function< THD *, void >
 {
  public:
-  explicit Do_THD(Do_THD_Impl *impl) : m_impl(impl) {}
+  explicit Do_THD(Do_THD_Impl *impl) : m_impl(impl)
+  {
+  }
 
   /**
     Users of this class will override operator() in the _Impl class.
 
     @param thd THD of one element in global thread list
   */
-  void operator()(THD *thd) { m_impl->operator()(thd); }
+  void operator()(THD *thd)
+  {
+    m_impl->operator()(thd);
+  }
 
  private:
   Do_THD_Impl *m_impl;
@@ -61,9 +66,14 @@ class Do_THD : public std::unary_function< THD *, void >
 class Find_THD : public std::unary_function< THD *, bool >
 {
  public:
-  explicit Find_THD(Find_THD_Impl *impl) : m_impl(impl) {}
+  explicit Find_THD(Find_THD_Impl *impl) : m_impl(impl)
+  {
+  }
 
-  bool operator()(THD *thd) { return m_impl->operator()(thd); }
+  bool operator()(THD *thd)
+  {
+    return m_impl->operator()(thd);
+  }
 
  private:
   Find_THD_Impl *m_impl;
@@ -265,9 +275,15 @@ THD *Global_THD_manager::find_thd(Find_THD_Impl *func)
   return ret;
 }
 
-void inc_thread_created() { Global_THD_manager::get_instance()->inc_thread_created(); }
+void inc_thread_created()
+{
+  Global_THD_manager::get_instance()->inc_thread_created();
+}
 
-void thd_lock_thread_count(THD *) { mysql_mutex_lock(&Global_THD_manager::get_instance()->LOCK_thd_list); }
+void thd_lock_thread_count(THD *)
+{
+  mysql_mutex_lock(&Global_THD_manager::get_instance()->LOCK_thd_list);
+}
 
 void thd_unlock_thread_count(THD *)
 {
@@ -282,9 +298,14 @@ class Run_free_function : public Do_THD_Impl
  public:
   typedef void(do_thd_impl)(THD *, T);
 
-  Run_free_function(do_thd_impl *f, T arg) : m_func(f), m_arg(arg) {}
+  Run_free_function(do_thd_impl *f, T arg) : m_func(f), m_arg(arg)
+  {
+  }
 
-  virtual void operator()(THD *thd) { (*m_func)(thd, m_arg); }
+  virtual void operator()(THD *thd)
+  {
+    (*m_func)(thd, m_arg);
+  }
 
  private:
   do_thd_impl *m_func;

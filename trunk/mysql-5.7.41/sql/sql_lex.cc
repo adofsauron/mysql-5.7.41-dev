@@ -298,7 +298,10 @@ void Lex_input_stream::body_utf8_append(const char *ptr, const char *end_ptr)
               of the chunk, which should be appended to the utf8 body.
 */
 
-void Lex_input_stream::body_utf8_append(const char *ptr) { body_utf8_append(ptr, ptr); }
+void Lex_input_stream::body_utf8_append(const char *ptr)
+{
+  body_utf8_append(ptr, ptr);
+}
 
 /**
   The operation converts the specified text literal to the utf8 and appends
@@ -992,7 +995,8 @@ static char *get_text(Lex_input_stream *lip, int pre_skip, int post_skip)
           int l;
           if (use_mb(cs) && (l = my_ismbchar(cs, str, end)))
           {
-            while (l--) *to++ = *str++;
+            while (l--)
+              *to++ = *str++;
             str--;
             continue;
           }
@@ -2503,7 +2507,10 @@ ha_rows st_select_lex::get_limit()
   return (ha_rows)val;
 }
 
-void st_select_lex::add_order_to_list(ORDER *order) { add_to_list(order_list, order); }
+void st_select_lex::add_order_to_list(ORDER *order)
+{
+  add_to_list(order_list, order);
+}
 
 bool st_select_lex::add_item_to_list(THD *thd, Item *item)
 {
@@ -2512,7 +2519,10 @@ bool st_select_lex::add_item_to_list(THD *thd, Item *item)
   DBUG_RETURN(item_list.push_back(item));
 }
 
-void st_select_lex::add_group_to_list(ORDER *order) { add_to_list(group_list, order); }
+void st_select_lex::add_group_to_list(ORDER *order)
+{
+  add_to_list(group_list, order);
+}
 
 bool st_select_lex::add_ftfunc_to_list(Item_func_match *func)
 {
@@ -3336,7 +3346,10 @@ void Query_tables_list::reset_query_tables_list(bool init)
     destroy_query_tables_list()
 */
 
-void Query_tables_list::destroy_query_tables_list() { my_hash_free(&sroutines); }
+void Query_tables_list::destroy_query_tables_list()
+{
+  my_hash_free(&sroutines);
+}
 
 /*
   Initialize LEX object.
@@ -3650,7 +3663,8 @@ bool st_select_lex_unit::is_mergeable() const
 
 void st_select_lex_unit::renumber_selects(LEX *lex)
 {
-  for (SELECT_LEX *select = first_select(); select; select = select->next_select()) select->renumber(lex);
+  for (SELECT_LEX *select = first_select(); select; select = select->next_select())
+    select->renumber(lex);
   if (fake_select_lex)
     fake_select_lex->renumber(lex);
 }
@@ -3951,7 +3965,8 @@ void LEX::cleanup_after_one_table_open()
   {
     derived_tables = 0;
     /* cleunup underlying units (units of VIEW) */
-    for (SELECT_LEX_UNIT *un = select_lex->first_inner_unit(); un; un = un->next_unit()) un->cleanup(true);
+    for (SELECT_LEX_UNIT *un = select_lex->first_inner_unit(); un; un = un->next_unit())
+      un->cleanup(true);
     /* reduce all selects list to default state */
     all_selects_list = select_lex;
     /* remove underlying units (units of VIEW) subtree */
@@ -4022,7 +4037,8 @@ void st_select_lex::fix_prepare_information_for_order(THD *thd, SQL_I_List< ORDE
     *list_ptrs = p = new (mem) Group_list_ptrs(thd->stmt_arena->mem_root);
   }
   p->reserve(list->elements);
-  for (ORDER *order = list->first; order; order = order->next) p->push_back(order);
+  for (ORDER *order = list->first; order; order = order->next)
+    p->push_back(order);
 }
 
 /*
@@ -4153,7 +4169,8 @@ void st_select_lex::renumber(LEX *lex)
 
   nest_level = outer_select() == NULL ? 0 : outer_select()->nest_level + 1;
 
-  for (SELECT_LEX_UNIT *u = first_inner_unit(); u; u = u->next_unit()) u->renumber_selects(lex);
+  for (SELECT_LEX_UNIT *u = first_inner_unit(); u; u = u->next_unit())
+    u->renumber_selects(lex);
 }
 
 /**

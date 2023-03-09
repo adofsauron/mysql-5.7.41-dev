@@ -96,7 +96,8 @@ void sys_var_end()
 
   my_hash_free(&system_variable_hash);
 
-  for (sys_var *var = all_sys_vars.first; var; var = var->next) var->cleanup();
+  for (sys_var *var = all_sys_vars.first; var; var = var->next)
+    var->cleanup();
 
   DBUG_VOID_RETURN;
 }
@@ -235,11 +236,20 @@ uchar *sys_var::session_value_ptr(THD *running_thd, THD *target_thd, LEX_STRING 
   return session_var_ptr(target_thd);
 }
 
-uchar *sys_var::global_value_ptr(THD *thd, LEX_STRING *base) { return global_var_ptr(); }
+uchar *sys_var::global_value_ptr(THD *thd, LEX_STRING *base)
+{
+  return global_var_ptr();
+}
 
-uchar *sys_var::session_var_ptr(THD *thd) { return ((uchar *)&(thd->variables)) + offset; }
+uchar *sys_var::session_var_ptr(THD *thd)
+{
+  return ((uchar *)&(thd->variables)) + offset;
+}
 
-uchar *sys_var::global_var_ptr() { return ((uchar *)&global_system_variables) + offset; }
+uchar *sys_var::global_var_ptr()
+{
+  return ((uchar *)&global_system_variables) + offset;
+}
 
 bool sys_var::check(THD *thd, set_var *var)
 {
@@ -280,7 +290,10 @@ uchar *sys_var::value_ptr(THD *running_thd, THD *target_thd, enum_var_type type,
     return session_value_ptr(running_thd, target_thd, base);
 }
 
-uchar *sys_var::value_ptr(THD *thd, enum_var_type type, LEX_STRING *base) { return value_ptr(thd, thd, type, base); }
+uchar *sys_var::value_ptr(THD *thd, enum_var_type type, LEX_STRING *base)
+{
+  return value_ptr(thd, thd, type, base);
+}
 
 bool sys_var::set_default(THD *thd, set_var *var)
 {
@@ -479,7 +492,8 @@ int mysql_add_sys_var_chain(sys_var *first)
   return 0;
 
 error:
-  for (; first != var; first = first->next) my_hash_delete(&system_variable_hash, (uchar *)first);
+  for (; first != var; first = first->next)
+    my_hash_delete(&system_variable_hash, (uchar *)first);
   return 1;
 }
 
@@ -501,7 +515,8 @@ int mysql_del_sys_var_chain(sys_var *first)
 
   /* A write lock should be held on LOCK_system_variables_hash */
 
-  for (sys_var *var = first; var; var = var->next) result |= my_hash_delete(&system_variable_hash, (uchar *)var);
+  for (sys_var *var = first; var; var = var->next)
+    result |= my_hash_delete(&system_variable_hash, (uchar *)var);
 
   /* Update system_variable_hash version. */
   system_variable_hash_version++;
@@ -519,19 +534,28 @@ int mysql_del_sys_var_chain(sys_var *first)
   @retval
     False if a >= b.
 */
-static int show_cmp(const void *a, const void *b) { return strcmp(((SHOW_VAR *)a)->name, ((SHOW_VAR *)b)->name); }
+static int show_cmp(const void *a, const void *b)
+{
+  return strcmp(((SHOW_VAR *)a)->name, ((SHOW_VAR *)b)->name);
+}
 
 /*
   Number of records in the system_variable_hash.
   Requires lock on LOCK_system_variables_hash.
 */
-ulong get_system_variable_hash_records(void) { return (system_variable_hash.records); }
+ulong get_system_variable_hash_records(void)
+{
+  return (system_variable_hash.records);
+}
 
 /*
   Current version of the system_variable_hash.
   Requires lock on LOCK_system_variables_hash.
 */
-ulonglong get_system_variable_hash_version(void) { return (system_variable_hash_version); }
+ulonglong get_system_variable_hash_version(void)
+{
+  return (system_variable_hash_version);
+}
 
 /**
   Constructs an array of system variables for display to the user.
@@ -668,7 +692,8 @@ int sql_set_variables(THD *thd, List< set_var_base > *var_list)
   if (!(error = MY_TEST(thd->is_error())))
   {
     it.rewind();
-    while ((var = it++)) error |= var->update(thd);  // Returns 0, -1 or 1
+    while ((var = it++))
+      error |= var->update(thd);  // Returns 0, -1 or 1
   }
 
 err:
@@ -914,7 +939,10 @@ int set_var_user::update(THD *thd)
   return 0;
 }
 
-void set_var_user::print(THD *thd, String *str) { user_var_item->print_assignment(str, QT_ORDINARY); }
+void set_var_user::print(THD *thd, String *str)
+{
+  user_var_item->print_assignment(str, QT_ORDINARY);
+}
 
 /*****************************************************************************
   Functions to handle SET PASSWORD

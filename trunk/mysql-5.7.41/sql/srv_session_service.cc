@@ -48,12 +48,18 @@ extern "C"
       0  success
       1  failure
   */
-  int srv_session_init_thread(const void *plugin) { return Srv_session::init_thread(plugin); }
+  int srv_session_init_thread(const void *plugin)
+  {
+    return Srv_session::init_thread(plugin);
+  }
 
   /**
     Deinitializes physical thread to use with session service
   */
-  void srv_session_deinit_thread() { Srv_session::deinit_thread(); }
+  void srv_session_deinit_thread()
+  {
+    Srv_session::deinit_thread();
+  }
 
   /**
     Opens server session
@@ -179,6 +185,9 @@ extern "C"
       0  not available
       1  available
   */
-  int srv_session_server_is_available() { return get_server_state() == SERVER_OPERATING; }
+  int srv_session_server_is_available()
+  {
+    return get_server_state() == SERVER_OPERATING;
+  }
 
 } /* extern "C" */

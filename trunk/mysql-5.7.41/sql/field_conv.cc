@@ -51,9 +51,15 @@ inline static bool is_subtype_of(Field::geometry_type sub, Field::geometry_type 
            (sub == Field::GEOM_MULTIPOINT || sub == Field::GEOM_MULTILINESTRING || sub == Field::GEOM_MULTIPOLYGON)));
 }
 
-static void do_field_eq(Copy_field *copy) { memcpy(copy->to_ptr, copy->from_ptr, copy->from_length()); }
+static void do_field_eq(Copy_field *copy)
+{
+  memcpy(copy->to_ptr, copy->from_ptr, copy->from_length());
+}
 
-static void do_field_1(Copy_field *copy) { copy->to_ptr[0] = copy->from_ptr[0]; }
+static void do_field_1(Copy_field *copy)
+{
+  copy->to_ptr[0] = copy->from_ptr[0];
+}
 
 static void do_field_2(Copy_field *copy)
 {
@@ -258,7 +264,9 @@ type_conversion_status set_field_to_null_with_conversions(Field *field, bool no_
   return TYPE_ERR_NULL_CONSTRAINT_VIOLATION;
 }
 
-static void do_skip(Copy_field *copy MY_ATTRIBUTE((unused))) {}
+static void do_skip(Copy_field *copy MY_ATTRIBUTE((unused)))
+{
+}
 
 static void do_copy_null(Copy_field *copy)
 {
@@ -422,7 +430,10 @@ inline type_conversion_status copy_time_to_time(Field *from, Field *to)
 /**
   Convert between fields using time representation.
 */
-static void do_field_time(Copy_field *copy) { (void)copy_time_to_time(copy->from_field(), copy->to_field()); }
+static void do_field_time(Copy_field *copy)
+{
+  (void)copy_time_to_time(copy->from_field(), copy->to_field());
+}
 
 /**
   string copy for single byte characters set when to string is shorter than

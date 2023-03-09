@@ -898,11 +898,19 @@ class Set_kill_conn : public Do_THD_Impl
   bool m_kill_dump_threads_flag;
 
  public:
-  Set_kill_conn() : m_dump_thread_count(0), m_kill_dump_threads_flag(false) {}
+  Set_kill_conn() : m_dump_thread_count(0), m_kill_dump_threads_flag(false)
+  {
+  }
 
-  void set_dump_thread_flag() { m_kill_dump_threads_flag = true; }
+  void set_dump_thread_flag()
+  {
+    m_kill_dump_threads_flag = true;
+  }
 
-  int get_dump_thread_count() const { return m_dump_thread_count; }
+  int get_dump_thread_count() const
+  {
+    return m_dump_thread_count;
+  }
 
   virtual void operator()(THD *killing_thd)
   {
@@ -947,7 +955,9 @@ class Set_kill_conn : public Do_THD_Impl
 class Call_close_conn : public Do_THD_Impl
 {
  public:
-  Call_close_conn(bool server_shutdown) : is_server_shutdown(server_shutdown) {}
+  Call_close_conn(bool server_shutdown) : is_server_shutdown(server_shutdown)
+  {
+  }
 
   virtual void operator()(THD *closing_thd)
   {
@@ -1755,7 +1765,8 @@ void setup_conn_event_handler_threads()
   }
 
   // Block until all connection listener threads have exited.
-  while (handler_count > 0) mysql_cond_wait(&COND_handler_count, &LOCK_handler_count);
+  while (handler_count > 0)
+    mysql_cond_wait(&COND_handler_count, &LOCK_handler_count);
   mysql_mutex_unlock(&LOCK_handler_count);
   DBUG_VOID_RETURN;
 }
@@ -1889,7 +1900,9 @@ void my_init_signals()
 
 extern "C"
 {
-  static void empty_signal_handler(int sig MY_ATTRIBUTE((unused))) {}
+  static void empty_signal_handler(int sig MY_ATTRIBUTE((unused)))
+  {
+  }
 }
 
 void my_init_signals()
@@ -2035,7 +2048,8 @@ extern "C" void *signal_hand(void *arg MY_ATTRIBUTE((unused)))
     have been initialized.
   */
   mysql_mutex_lock(&LOCK_server_started);
-  while (!mysqld_server_started) mysql_cond_wait(&COND_server_started, &LOCK_server_started);
+  while (!mysqld_server_started)
+    mysql_cond_wait(&COND_server_started, &LOCK_server_started);
   mysql_mutex_unlock(&LOCK_server_started);
 
   for (;;)
@@ -2205,9 +2219,15 @@ extern "C" void *my_str_malloc_mysqld(size_t size);
 extern "C" void my_str_free_mysqld(void *ptr);
 extern "C" void *my_str_realloc_mysqld(void *ptr, size_t size);
 
-void *my_str_malloc_mysqld(size_t size) { return my_malloc(key_memory_my_str_malloc, size, MYF(MY_FAE)); }
+void *my_str_malloc_mysqld(size_t size)
+{
+  return my_malloc(key_memory_my_str_malloc, size, MYF(MY_FAE));
+}
 
-void my_str_free_mysqld(void *ptr) { my_free(ptr); }
+void my_str_free_mysqld(void *ptr)
+{
+  my_free(ptr);
+}
 
 void *my_str_realloc_mysqld(void *ptr, size_t size)
 {
@@ -2511,7 +2531,8 @@ static void init_sql_statement_names()
   uint i;
   uint com_index;
 
-  for (i = 0; i < ((uint)SQLCOM_END + 1); i++) sql_statement_names[i] = empty;
+  for (i = 0; i < ((uint)SQLCOM_END + 1); i++)
+    sql_statement_names[i] = empty;
 
   SHOW_VAR *var = &com_status_vars[0];
   while (var->name != NULL)
@@ -4245,7 +4266,10 @@ static void test_lc_time_sz()
            enabling communication channels to accept user connections
 */
 
-static void set_super_read_only_post_init() { opt_super_readonly = super_read_only; }
+static void set_super_read_only_post_init()
+{
+  opt_super_readonly = super_read_only;
+}
 
 #ifdef _WIN32
 int win_main(int argc, char **argv)
@@ -5268,7 +5292,8 @@ int handle_early_options()
   sys_var_add_options(&all_early_options, sys_var::PARSE_EARLY);
 
   /* Add the command line options parsed early */
-  for (my_option *opt = my_long_early_options; opt->name != NULL; opt++) all_early_options.push_back(*opt);
+  for (my_option *opt = my_long_early_options; opt->name != NULL; opt++)
+    all_early_options.push_back(*opt);
 
   add_terminator(&all_early_options);
 
@@ -7045,14 +7070,16 @@ my_bool mysqld_get_one_option(int optid, const struct my_option *opt MY_ATTRIBUT
         return 1;
       }
       val = p + 2;
-      while (p > argument && my_isspace(mysqld_charset, p[-1])) p--;
+      while (p > argument && my_isspace(mysqld_charset, p[-1]))
+        p--;
       *p = 0;
       if (!*key)
       {
         sql_print_error("Bad syntax in replicate-rewrite-db - empty FROM db!\n");
         return 1;
       }
-      while (*val && my_isspace(mysqld_charset, *val)) val++;
+      while (*val && my_isspace(mysqld_charset, *val))
+        val++;
       if (!*val)
       {
         sql_print_error("Bad syntax in replicate-rewrite-db - empty TO db!\n");
@@ -7263,7 +7290,8 @@ my_bool mysqld_get_one_option(int optid, const struct my_option *opt MY_ATTRIBUT
       }
 
       /* Trim trailing spaces from instrument name */
-      while ((p > name) && my_isspace(mysqld_charset, p[-1])) p--;
+      while ((p > name) && my_isspace(mysqld_charset, p[-1]))
+        p--;
       *p = 0;
 
       /* Remove trailing slash from instrument name */
@@ -7274,7 +7302,8 @@ my_bool mysqld_get_one_option(int optid, const struct my_option *opt MY_ATTRIBUT
         goto pfs_error;
 
       /* Trim leading spaces from option value */
-      while (*val && my_isspace(mysqld_charset, *val)) val++;
+      while (*val && my_isspace(mysqld_charset, *val))
+        val++;
 
       /* Trim trailing spaces and matching quote from value */
       p = val + strlen(val);
@@ -7347,7 +7376,8 @@ my_bool mysqld_get_one_option(int optid, const struct my_option *opt MY_ATTRIBUT
       {
         char *start = argument;
         opt_keyring_migration_password = my_strdup(PSI_NOT_INSTRUMENTED, argument, MYF(MY_FAE));
-        while (*argument) *argument++ = 'x';
+        while (*argument)
+          *argument++ = 'x';
         if (*start)
           start[1] = 0;
       }
@@ -7686,7 +7716,8 @@ static char *get_relative_path(const char *path)
   if (test_if_hard_path(path) && is_prefix(path, DEFAULT_MYSQL_HOME) && strcmp(DEFAULT_MYSQL_HOME, FN_ROOTDIR))
   {
     path += strlen(DEFAULT_MYSQL_HOME);
-    while (is_directory_separator(*path)) path++;
+    while (is_directory_separator(*path))
+      path++;
   }
   return (char *)path;
 }
@@ -8185,7 +8216,10 @@ static void delete_pid_file(myf flags)
     SERVER_OPERATING      Server is fully initialized and operating.
     SERVER_SHUTTING_DOWN  Server is shutting down.
 */
-enum_server_operational_state get_server_state() { return server_operational_state; }
+enum_server_operational_state get_server_state()
+{
+  return server_operational_state;
+}
 
 /**
   Reset status for all threads.
@@ -8193,7 +8227,9 @@ enum_server_operational_state get_server_state() { return server_operational_sta
 class Reset_thd_status : public Do_THD_Impl
 {
  public:
-  Reset_thd_status() {}
+  Reset_thd_status()
+  {
+  }
   virtual void operator()(THD *thd)
   {
     /*

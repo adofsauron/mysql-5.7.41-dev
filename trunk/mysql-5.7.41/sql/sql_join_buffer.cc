@@ -1552,7 +1552,8 @@ int JOIN_CACHE::read_some_record_fields()
   CACHE_FIELD *copy = field_descr + flag_fields;
   CACHE_FIELD *copy_end = field_descr + fields;
   bool blob_in_rec_buff = blob_data_is_in_rec_buff(init_pos);
-  for (; copy < copy_end; copy++) read_record_field(copy, blob_in_rec_buff);
+  for (; copy < copy_end; copy++)
+    read_record_field(copy, blob_in_rec_buff);
 
   return (uint)(pos - init_pos);
 }
@@ -2721,7 +2722,8 @@ uint JOIN_CACHE_BKA::get_next_key(uchar **key)
       CACHE_FIELD *copy = field_descr + flag_fields;
       CACHE_FIELD *copy_end = copy + local_key_arg_fields;
       bool blob_in_rec_buff = blob_data_is_in_rec_buff(curr_rec_pos);
-      for (; copy < copy_end; copy++) read_record_field(copy, blob_in_rec_buff);
+      for (; copy < copy_end; copy++)
+        read_record_field(copy, blob_in_rec_buff);
 
       TABLE_REF *ref = &qep_tab->ref();
       if (ref->impossible_null_ref())
@@ -2828,7 +2830,8 @@ int JOIN_CACHE_BKA_UNIQUE::init()
   {
     CACHE_FIELD *copy = field_descr;
     CACHE_FIELD *copy_end = copy + flag_fields;
-    for (; copy < copy_end; copy++) data_fields_offset += copy->length;
+    for (; copy < copy_end; copy++)
+      data_fields_offset += copy->length;
   }
 
   DBUG_RETURN(rc);

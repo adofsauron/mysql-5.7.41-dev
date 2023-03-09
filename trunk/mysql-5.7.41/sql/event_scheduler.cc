@@ -651,7 +651,8 @@ bool Event_scheduler::stop()
   if (state != RUNNING)
   {
     /* Synchronously wait until the scheduler stops. */
-    while (state != INITIALIZED) COND_STATE_WAIT(thd, NULL, &stage_waiting_for_scheduler_to_stop);
+    while (state != INITIALIZED)
+      COND_STATE_WAIT(thd, NULL, &stage_waiting_for_scheduler_to_stop);
     goto end;
   }
 
@@ -706,14 +707,19 @@ end:
 class Is_worker : public Do_THD_Impl
 {
  public:
-  Is_worker() : m_count(0) {}
+  Is_worker() : m_count(0)
+  {
+  }
   virtual void operator()(THD *thd)
   {
     if (thd->system_thread == SYSTEM_THREAD_EVENT_WORKER)
       m_count++;
     return;
   }
-  int get_count() { return m_count; }
+  int get_count()
+  {
+    return m_count;
+  }
 
  private:
   int m_count;

@@ -157,7 +157,10 @@ class Protocol_local : public Protocol
 {
  public:
   Protocol_local(THD *thd, Ed_connection *ed_connection);
-  ~Protocol_local() { free_root(&m_rset_root, MYF(0)); }
+  ~Protocol_local()
+  {
+    free_root(&m_rset_root, MYF(0));
+  }
 
   virtual int read_packet();
 
@@ -194,8 +197,14 @@ class Protocol_local : public Protocol
   virtual bool store(double value, uint32 decimals, String *buffer);
   virtual bool store(Proto_field *field);
 
-  virtual enum enum_protocol_type type() { return PROTOCOL_LOCAL; }
-  virtual enum enum_vio_type connection_type() { return VIO_TYPE_LOCAL; }
+  virtual enum enum_protocol_type type()
+  {
+    return PROTOCOL_LOCAL;
+  }
+  virtual enum enum_vio_type connection_type()
+  {
+    return VIO_TYPE_LOCAL;
+  }
 
   virtual bool send_ok(uint server_status, uint statement_warn_count, ulonglong affected_rows, ulonglong last_insert_id,
                        const char *message);
@@ -281,7 +290,10 @@ static inline void log_execute_line(THD *thd)
     query_logger.general_log_write(thd, COM_STMT_EXECUTE, thd->query().str, thd->query().length);
 }
 
-inline bool is_param_null(const uchar *pos, ulong param_no) { return pos[param_no / 8] & (1 << (param_no & 7)); }
+inline bool is_param_null(const uchar *pos, ulong param_no)
+{
+  return pos[param_no / 8] & (1 << (param_no & 7));
+}
 
 class Statement_backup
 {
@@ -290,7 +302,10 @@ class Statement_backup
   bool m_safe_to_display;
 
  public:
-  LEX *lex() const { return m_lex; }
+  LEX *lex() const
+  {
+    return m_lex;
+  }
 
   /**
     Prepared the THD to execute the prepared statement.
@@ -812,7 +827,10 @@ inline bool is_param_long_data_type(Item_param *param)
 }
 
 #ifdef HAVE_PSI_PS_INTERFACE
-PSI_prepared_stmt *Prepared_statement::get_PS_prepared_stmt() { return m_prepared_stmt; }
+PSI_prepared_stmt *Prepared_statement::get_PS_prepared_stmt()
+{
+  return m_prepared_stmt;
+}
 #endif
 
 /**
@@ -1063,7 +1081,8 @@ static void swap_parameter_array(Item_param **param_array_dst, Item_param **para
   Item_param **src = param_array_src;
   Item_param **end = param_array_dst + param_count;
 
-  for (; dst < end; ++src, ++dst) (*dst)->set_param_type_and_swap_value(*src);
+  for (; dst < end; ++src, ++dst)
+    (*dst)->set_param_type_and_swap_value(*src);
 }
 
 /**
@@ -2313,7 +2332,8 @@ bool reinit_stmt_before_use(THD *thd, LEX *lex)
           order->next = sl->group_list_ptrs->at(ix + 1);
         }
       }
-      for (order = sl->group_list.first; order; order = order->next) order->item = &order->item_ptr;
+      for (order = sl->group_list.first; order; order = order->next)
+        order->item = &order->item_ptr;
       /* Fix ORDER list */
       if (sl->order_list_ptrs && sl->order_list_ptrs->size() > 0)
       {
@@ -2323,7 +2343,8 @@ bool reinit_stmt_before_use(THD *thd, LEX *lex)
           order->next = sl->order_list_ptrs->at(ix + 1);
         }
       }
-      for (order = sl->order_list.first; order; order = order->next) order->item = &order->item_ptr;
+      for (order = sl->order_list.first; order; order = order->next)
+        order->item = &order->item_ptr;
     }
     {
       SELECT_LEX_UNIT *unit = sl->master_unit();
@@ -2353,7 +2374,8 @@ bool reinit_stmt_before_use(THD *thd, LEX *lex)
   }
 
   /* Reset MDL tickets for procedures/functions */
-  for (Sroutine_hash_entry *rt = thd->lex->sroutines_list.first; rt; rt = rt->next) rt->mdl_request.ticket = NULL;
+  for (Sroutine_hash_entry *rt = thd->lex->sroutines_list.first; rt; rt = rt->next)
+    rt->mdl_request.ticket = NULL;
 
   /*
     Cleanup of the special case of DELETE t1, t2 FROM t1, t2, t3 ...
@@ -2403,7 +2425,8 @@ static void reset_stmt_params(Prepared_statement *stmt)
 {
   Item_param **item = stmt->param_array;
   Item_param **end = item + stmt->param_count;
-  for (; item < end; ++item) (**item).reset();
+  for (; item < end; ++item)
+    (**item).reset();
 }
 
 /**
@@ -2744,7 +2767,9 @@ void mysql_stmt_get_longdata(THD *thd, ulong stmt_id, uint param_number, uchar *
  Select_fetch_protocol_binary
 ****************************************************************************/
 
-Query_fetch_protocol_binary::Query_fetch_protocol_binary(THD *thd_arg) : protocol(thd_arg) {}
+Query_fetch_protocol_binary::Query_fetch_protocol_binary(THD *thd_arg) : protocol(thd_arg)
+{
+}
 
 bool Query_fetch_protocol_binary::send_result_set_metadata(List< Item > &list, uint flags)
 {
@@ -2822,11 +2847,15 @@ bool Reprepare_observer::report_error(THD *thd)
  * Server_runnable
  *******************************************************************/
 
-Server_runnable::~Server_runnable() {}
+Server_runnable::~Server_runnable()
+{
+}
 
 ///////////////////////////////////////////////////////////////////////////
 
-Execute_sql_statement::Execute_sql_statement(LEX_STRING sql_text) : m_sql_text(sql_text) {}
+Execute_sql_statement::Execute_sql_statement(LEX_STRING sql_text) : m_sql_text(sql_text)
+{
+}
 
 /**
   Parse and execute a statement. Does not prepare the query.
@@ -3889,7 +3918,9 @@ Ed_result_set::Ed_result_set(List< Ed_row > *rows_arg, size_t column_count_arg, 
   Create a new "execute direct" connection.
 */
 
-Ed_connection::Ed_connection(THD *thd) : m_diagnostics_area(false), m_thd(thd), m_rsets(0), m_current_rset(0) {}
+Ed_connection::Ed_connection(THD *thd) : m_diagnostics_area(false), m_thd(thd), m_rsets(0), m_current_rset(0)
+{
+}
 
 /**
   Free all result sets of the previous statement, if any,
@@ -4029,7 +4060,8 @@ Ed_result_set *Ed_connection::store_result_set()
     ed_result_set = m_current_rset;
 
     /* Exclude the return value from the list */
-    while (prev_rset->m_next_rset != m_current_rset) prev_rset = ed_result_set->m_next_rset;
+    while (prev_rset->m_next_rset != m_current_rset)
+      prev_rset = ed_result_set->m_next_rset;
     m_current_rset = prev_rset->m_next_rset = m_current_rset->m_next_rset;
   }
   ed_result_set->m_next_rset = NULL; /* safety */
@@ -4203,7 +4235,10 @@ bool Protocol_local::store(MYSQL_TIME *time, uint precision MY_ATTRIBUTE((unused
 
 /** Store MYSQL_TIME (in binary format) */
 
-bool Protocol_local::store_date(MYSQL_TIME *time) { return store_column(time, sizeof(MYSQL_TIME)); }
+bool Protocol_local::store_date(MYSQL_TIME *time)
+{
+  return store_column(time, sizeof(MYSQL_TIME));
+}
 
 /** Store MYSQL_TIME (in binary format) */
 
@@ -4214,7 +4249,10 @@ bool Protocol_local::store_time(MYSQL_TIME *time, uint precision MY_ATTRIBUTE((u
 
 /* Store a floating point number, as is. */
 
-bool Protocol_local::store(float value, uint32 decimals, String *buffer) { return store_column(&value, sizeof(float)); }
+bool Protocol_local::store(float value, uint32 decimals, String *buffer)
+{
+  return store_column(&value, sizeof(float));
+}
 
 /* Store a double precision number, as is. */
 
@@ -4225,7 +4263,10 @@ bool Protocol_local::store(double value, uint32 decimals, String *buffer)
 
 /* Store a Field. */
 
-bool Protocol_local::store(Proto_field *field) { return field->send_binary(this); }
+bool Protocol_local::store(Proto_field *field)
+{
+  return field->send_binary(this);
+}
 
 /** Called for statements that don't have a result set, at statement end. */
 
@@ -4285,17 +4326,34 @@ bool Protocol_local::send_error(uint sql_errno, const char *err_msg, const char 
   return FALSE;
 }
 
-int Protocol_local::read_packet() { return 0; }
+int Protocol_local::read_packet()
+{
+  return 0;
+}
 
-ulong Protocol_local::get_client_capabilities() { return 0; }
+ulong Protocol_local::get_client_capabilities()
+{
+  return 0;
+}
 
-bool Protocol_local::has_client_capability(unsigned long client_capability) { return false; }
+bool Protocol_local::has_client_capability(unsigned long client_capability)
+{
+  return false;
+}
 
-bool Protocol_local::connection_alive() { return false; }
+bool Protocol_local::connection_alive()
+{
+  return false;
+}
 
-void Protocol_local::end_partial_result_set() {}
+void Protocol_local::end_partial_result_set()
+{
+}
 
-int Protocol_local::shutdown(bool server_shutdown) { return 0; }
+int Protocol_local::shutdown(bool server_shutdown)
+{
+  return 0;
+}
 
 /**
   Called between two result set rows.
@@ -4327,14 +4385,32 @@ bool Protocol_local::end_row()
   DBUG_RETURN(FALSE);
 }
 
-uint Protocol_local::get_rw_status() { return 0; }
+uint Protocol_local::get_rw_status()
+{
+  return 0;
+}
 
-bool Protocol_local::start_result_metadata(uint num_cols, uint flags, const CHARSET_INFO *charset) { return 0; }
+bool Protocol_local::start_result_metadata(uint num_cols, uint flags, const CHARSET_INFO *charset)
+{
+  return 0;
+}
 
-bool Protocol_local::end_result_metadata() { return false; }
+bool Protocol_local::end_result_metadata()
+{
+  return false;
+}
 
-bool Protocol_local::send_field_metadata(Send_field *field, const CHARSET_INFO *charset) { return false; }
+bool Protocol_local::send_field_metadata(Send_field *field, const CHARSET_INFO *charset)
+{
+  return false;
+}
 
-bool Protocol_local::get_compression() { return false; }
+bool Protocol_local::get_compression()
+{
+  return false;
+}
 
-int Protocol_local::get_command(COM_DATA *com_data, enum_server_command *cmd) { return -1; }
+int Protocol_local::get_command(COM_DATA *com_data, enum_server_command *cmd)
+{
+  return -1;
+}

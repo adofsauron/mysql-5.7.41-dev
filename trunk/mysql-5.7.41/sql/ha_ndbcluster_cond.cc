@@ -1118,7 +1118,8 @@ void ha_ndbcluster_cond::cond_pop()
 void ha_ndbcluster_cond::cond_clear()
 {
   DBUG_ENTER("cond_clear");
-  while (m_cond_stack) cond_pop();
+  while (m_cond_stack)
+    cond_pop();
 
   DBUG_VOID_RETURN;
 }

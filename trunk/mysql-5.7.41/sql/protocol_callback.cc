@@ -42,7 +42,10 @@
   @return
     -1 failure
 */
-int Protocol_callback::read_packet() { return -1; };
+int Protocol_callback::read_packet()
+{
+  return -1;
+};
 
 /**
   Practically does nothing. See the comment of ::read_packet().
@@ -51,7 +54,10 @@ int Protocol_callback::read_packet() { return -1; };
   @return
     -1
 */
-int Protocol_callback::get_command(COM_DATA *com_data, enum_server_command *cmd) { return read_packet(); };
+int Protocol_callback::get_command(COM_DATA *com_data, enum_server_command *cmd)
+{
+  return read_packet();
+};
 
 /**
   Returns the type of the connection.
@@ -59,7 +65,10 @@ int Protocol_callback::get_command(COM_DATA *com_data, enum_server_command *cmd)
   @return
     VIO_TYPE_PLUGIN
 */
-enum enum_vio_type Protocol_callback::connection_type() { return VIO_TYPE_PLUGIN; }
+enum enum_vio_type Protocol_callback::connection_type()
+{
+  return VIO_TYPE_PLUGIN;
+}
 
 /**
   Sends null value
@@ -398,7 +407,10 @@ int Protocol_callback::shutdown(bool server_shutdown)
   @return
     true  alive
 */
-bool Protocol_callback::connection_alive() { return true; }
+bool Protocol_callback::connection_alive()
+{
+  return true;
+}
 
 /**
   Should return protocol's reading/writing status. Returns 0 (idle) as it this
@@ -408,7 +420,10 @@ bool Protocol_callback::connection_alive() { return true; }
   @return
     0
 */
-uint Protocol_callback::get_rw_status() { return 0; }
+uint Protocol_callback::get_rw_status()
+{
+  return 0;
+}
 
 /**
   Should check if compression is enabled. Returns always false (no compression)
@@ -416,7 +431,10 @@ uint Protocol_callback::get_rw_status() { return 0; }
   @return
     false disabled
 */
-bool Protocol_callback::get_compression() { return false; }
+bool Protocol_callback::get_compression()
+{
+  return false;
+}
 
 /**
   Called BEFORE sending metadata

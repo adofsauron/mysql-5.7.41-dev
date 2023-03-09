@@ -24,7 +24,9 @@
 #include "parse_tree_node_base.h"
 #include "sql_parse.h"
 
-Parse_context::Parse_context(THD *thd, st_select_lex *select) : thd(thd), mem_root(thd->mem_root), select(select) {}
+Parse_context::Parse_context(THD *thd, st_select_lex *select) : thd(thd), mem_root(thd->mem_root), select(select)
+{
+}
 
 /**
   my_syntax_error() function replacement for deferred reporting of syntax

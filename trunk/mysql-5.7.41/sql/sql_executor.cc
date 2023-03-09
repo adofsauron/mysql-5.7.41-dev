@@ -451,7 +451,8 @@ bool setup_sum_funcs(THD *thd, Item_sum **func_ptr)
 static void init_tmptable_sum_functions(Item_sum **func_ptr)
 {
   Item_sum *func;
-  while ((func = *(func_ptr++))) func->reset_field();
+  while ((func = *(func_ptr++)))
+    func->reset_field();
 }
 
 /** Update record 0 in tmp_table from record 1. */
@@ -459,14 +460,16 @@ static void init_tmptable_sum_functions(Item_sum **func_ptr)
 static void update_tmptable_sum_func(Item_sum **func_ptr, TABLE *tmp_table MY_ATTRIBUTE((unused)))
 {
   Item_sum *func;
-  while ((func = *(func_ptr++))) func->update_field();
+  while ((func = *(func_ptr++)))
+    func->update_field();
 }
 
 /** Copy result of sum functions to record in tmp_table. */
 
 static void copy_sum_funcs(Item_sum **func_ptr, Item_sum **end_ptr)
 {
-  for (; func_ptr != end_ptr; func_ptr++) (*func_ptr)->save_in_result_field(1);
+  for (; func_ptr != end_ptr; func_ptr++)
+    (*func_ptr)->save_in_result_field(1);
   return;
 }
 
@@ -698,7 +701,8 @@ static void return_zero_rows(JOIN *join, List< Item > &fields)
     if (join->send_row_on_empty_set())
     {
       // Mark tables as containing only NULL values
-      for (TABLE_LIST *table = select->leaf_tables; table; table = table->next_leaf) table->table->set_null_row();
+      for (TABLE_LIST *table = select->leaf_tables; table; table = table->next_leaf)
+        table->table->set_null_row();
 
       // Calculate aggregate functions for no rows
 
@@ -709,7 +713,8 @@ static void return_zero_rows(JOIN *join, List< Item > &fields)
        */
       List_iterator_fast< Item > it(join->all_fields);
       Item *item;
-      while ((item = it++)) item->no_rows_in_result();
+      while ((item = it++))
+        item->no_rows_in_result();
 
       if (!join->having_cond || join->having_cond->val_int())
         send_error = select->query_result()->send_data(fields);
@@ -856,7 +861,8 @@ static int do_select(JOIN *join)
       // Calculate aggregate functions for no rows
       List_iterator_fast< Item > it(*join->fields);
       Item *item;
-      while ((item = it++)) item->no_rows_in_result();
+      while ((item = it++))
+        item->no_rows_in_result();
 
       // Mark tables as containing only NULL values
       if (join->clear())
@@ -1691,7 +1697,8 @@ static enum_nested_loop_state evaluate_null_complemented_join_record(JOIN *join,
   */
   const enum_nested_loop_state rc = evaluate_join_record(join, qep_tab);
 
-  for (QEP_TAB *tab = first_inner_tab; tab <= last_inner_tab; tab++) tab->table()->reset_null_row();
+  for (QEP_TAB *tab = first_inner_tab; tab <= last_inner_tab; tab++)
+    tab->table()->reset_null_row();
 
   DBUG_RETURN(rc);
 }
@@ -1877,7 +1884,10 @@ static int read_system(TABLE *table)
   @retval 1  Got an error (other than row not found) during read
 */
 
-static int join_read_const(QEP_TAB *tab) { return read_const(tab->table(), &tab->ref()); }
+static int join_read_const(QEP_TAB *tab)
+{
+  return read_const(tab->table(), &tab->ref());
+}
 
 static int read_const(TABLE *table, TABLE_REF *ref)
 {
@@ -2017,7 +2027,10 @@ void join_read_key_unlock_row(QEP_TAB *tab)
   Ensure such rows are never unlocked during query execution.
 */
 
-void join_const_unlock_row(QEP_TAB *tab) { assert(tab->type() == JT_CONST); }
+void join_const_unlock_row(QEP_TAB *tab)
+{
+  assert(tab->type() == JT_CONST);
+}
 
 /**
   Read a table *assumed* to be included in execution of a pushed join.
@@ -2176,7 +2189,10 @@ int join_read_last_key(QEP_TAB *tab)
 }
 
 /* ARGSUSED */
-static int join_no_more_records(READ_RECORD *info MY_ATTRIBUTE((unused))) { return -1; }
+static int join_no_more_records(READ_RECORD *info MY_ATTRIBUTE((unused)))
+{
+  return -1;
+}
 
 static int join_read_next_same(READ_RECORD *info)
 {
@@ -2832,7 +2848,8 @@ enum_nested_loop_state end_send_group(JOIN *join, QEP_TAB *qep_tab, bool end_of_
             List_iterator_fast< Item > it(*fields);
             Item *item;
 
-            while ((item = it++)) item->no_rows_in_result();
+            while ((item = it++))
+              item->no_rows_in_result();
 
             // Mark tables as containing only NULL values
             if (join->clear())
@@ -3040,7 +3057,8 @@ ulonglong unique_hash(Field *field, ulonglong *hash_val)
     crc ^= seed1;
   }
   else
-    while (pos != end) crc = ((crc << 8) + (((uchar) * (uchar *)pos++))) + (crc >> (8 * sizeof(ha_checksum) - 8));
+    while (pos != end)
+      crc = ((crc << 8) + (((uchar) * (uchar *)pos++))) + (crc >> (8 * sizeof(ha_checksum) - 8));
 finish:
   *hash_val = crc;
   return crc;
@@ -3071,7 +3089,8 @@ ulonglong unique_hash_fields(TABLE *table)
   ulonglong crc = 0;
   Field **fields = table->visible_field_ptr();
 
-  for (uint i = 0; i < table->visible_field_count(); i++) unique_hash(fields[i], &crc);
+  for (uint i = 0; i < table->visible_field_count(); i++)
+    unique_hash(fields[i], &crc);
 
   return crc;
 }
@@ -3328,7 +3347,8 @@ enum_nested_loop_state end_write_group(JOIN *join, QEP_TAB *const qep_tab, bool 
           // Calculate aggregate functions for no rows
           List_iterator_fast< Item > it(*(qep_tab - 1)->fields);
           Item *item;
-          while ((item = it++)) item->no_rows_in_result();
+          while ((item = it++))
+            item->no_rows_in_result();
 
           // Mark tables as containing only NULL values
           if (join->clear())
@@ -4019,7 +4039,8 @@ bool setup_copy_fields(THD *thd, Temp_table_param *param, Ref_ptr_array ref_poin
   }
   param->copy_field_end = copy;
 
-  for (i = 0; i < border; i++) itr++;
+  for (i = 0; i < border; i++)
+    itr++;
   itr.sublist(res_selected_fields, elements);
   /*
     Put elements from HAVING, ORDER BY and GROUP BY last to ensure that any
@@ -4052,12 +4073,14 @@ bool copy_fields(Temp_table_param *param, const THD *thd)
 
   assert((ptr != NULL && end >= ptr) || (ptr == NULL && end == NULL));
 
-  for (; ptr < end; ptr++) ptr->invoke_do_copy(ptr);
+  for (; ptr < end; ptr++)
+    ptr->invoke_do_copy(ptr);
 
   List_iterator_fast< Item > it(param->copy_funcs);
   Item_copy *item;
   bool is_error = thd->is_error();
-  while (!is_error && (item = (Item_copy *)it++)) is_error = item->copy(thd);
+  while (!is_error && (item = (Item_copy *)it++))
+    is_error = item->copy(thd);
 
   return is_error;
 }
@@ -4157,7 +4180,8 @@ bool change_to_use_tmp_fields(THD *thd, Ref_ptr_array ref_pointer_array, List< I
   }
 
   List_iterator_fast< Item > itr(res_all_fields);
-  for (uint i = 0; i < border; i++) itr++;
+  for (uint i = 0; i < border; i++)
+    itr++;
   itr.sublist(res_selected_fields, elements);
   DBUG_RETURN(false);
 }
@@ -4195,7 +4219,8 @@ bool change_refs_to_tmp_fields(THD *thd, Ref_ptr_array ref_pointer_array, List< 
   }
 
   List_iterator_fast< Item > itr(res_all_fields);
-  for (i = 0; i < border; i++) itr++;
+  for (i = 0; i < border; i++)
+    itr++;
   itr.sublist(res_selected_fields, elements);
 
   return thd->is_fatal_error;

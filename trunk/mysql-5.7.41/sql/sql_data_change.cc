@@ -163,6 +163,7 @@ bool COPY_INFO::ignore_last_columns(TABLE *table, uint count)
 {
   if (get_function_default_columns(table))
     return true;
-  for (uint i = 0; i < count; i++) bitmap_clear_bit(m_function_default_columns, table->s->fields - 1 - i);
+  for (uint i = 0; i < count; i++)
+    bitmap_clear_bit(m_function_default_columns, table->s->fields - 1 - i);
   return false;
 }

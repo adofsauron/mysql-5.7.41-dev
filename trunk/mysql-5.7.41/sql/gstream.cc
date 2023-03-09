@@ -61,7 +61,8 @@ bool Gis_read_stream::get_next_word(LEX_STRING *res)
     my_isvar() is a macro that would cause side effects
   */
   m_cur++;
-  while ((m_cur < m_limit) && my_isvar(&my_charset_bin, *m_cur)) m_cur++;
+  while ((m_cur < m_limit) && my_isvar(&my_charset_bin, *m_cur))
+    m_cur++;
 
   res->length = (uint32)(m_cur - res->str);
   return 0;

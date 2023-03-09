@@ -304,7 +304,10 @@ static inline int dl_compare(const TABLE_LOCK_INFO *a, const TABLE_LOCK_INFO *b)
 class DL_commpare : public std::binary_function< const TABLE_LOCK_INFO &, const TABLE_LOCK_INFO &, bool >
 {
  public:
-  bool operator()(const TABLE_LOCK_INFO &a, const TABLE_LOCK_INFO &b) { return dl_compare(&a, &b) < 0; }
+  bool operator()(const TABLE_LOCK_INFO &a, const TABLE_LOCK_INFO &b)
+  {
+    return dl_compare(&a, &b) < 0;
+  }
 };
 
 static void push_locks_into_array(Saved_locks_array *ar, THR_LOCK_DATA *data, bool wait, const char *text)
@@ -505,7 +508,10 @@ class Unique_fifo_queue
     return FALSE;
   }
 
-  void reset() { first = last = 0; }
+  void reset()
+  {
+    first = last = 0;
+  }
   enum
   {
     MAX_ELEMS = 1000
@@ -635,7 +641,8 @@ int Dbug_table_list_dumper::dump_graph(st_select_lex *select_lex, TABLE_LIST *fi
   }
 
   fprintf(out, " { rank = same; ");
-  for (TABLE_LIST *tl = first_leaf; tl; tl = tl->next_leaf) fprintf(out, " \"%p\"; ", tl);
+  for (TABLE_LIST *tl = first_leaf; tl; tl = tl->next_leaf)
+    fprintf(out, " \"%p\"; ", tl);
   fprintf(out, "};\n");
   fputs("}", out);
   fclose(out);

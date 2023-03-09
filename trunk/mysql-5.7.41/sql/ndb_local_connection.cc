@@ -62,7 +62,9 @@ static inline bool should_ignore_error(const uint *ignore_error_list, uint error
 class Suppressor
 {
  public:
-  virtual ~Suppressor() {}
+  virtual ~Suppressor()
+  {
+  }
   virtual bool should_ignore_error(Ed_connection &con) const = 0;
 };
 
@@ -243,7 +245,9 @@ bool Ndb_local_connection::delete_rows(const char *db, size_t db_length, const c
 class Create_sys_table_suppressor : public Suppressor
 {
  public:
-  virtual ~Create_sys_table_suppressor() {}
+  virtual ~Create_sys_table_suppressor()
+  {
+  }
   virtual bool should_ignore_error(Ed_connection &con) const
   {
     const uint last_errno = con.get_last_errno();

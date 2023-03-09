@@ -359,13 +359,16 @@ static bool extract_date_time(Date_time_format *format, const char *val, size_t 
 
           /* Conversion specifiers that match classes of characters */
         case '.':
-          while (val < val_end && my_ispunct(cs, *val)) val++;
+          while (val < val_end && my_ispunct(cs, *val))
+            val++;
           break;
         case '@':
-          while (val < val_end && my_isalpha(cs, *val)) val++;
+          while (val < val_end && my_isalpha(cs, *val))
+            val++;
           break;
         case '#':
-          while (val < val_end && my_isdigit(cs, *val)) val++;
+          while (val < val_end && my_isdigit(cs, *val))
+            val++;
           break;
         default:
           goto err;
@@ -730,17 +733,20 @@ static bool get_interval_info(Item *args, String *str_value, bool *is_negative, 
     str++;
   }
 
-  while (str < end && !my_isdigit(cs, *str)) str++;
+  while (str < end && !my_isdigit(cs, *str))
+    str++;
 
   long msec_length = 0;
   for (uint i = 0; i < count; i++)
   {
     longlong value;
     const char *start = str;
-    for (value = 0; str != end && my_isdigit(cs, *str); str++) value = value * 10LL + (longlong)(*str - '0');
+    for (value = 0; str != end && my_isdigit(cs, *str); str++)
+      value = value * 10LL + (longlong)(*str - '0');
     msec_length = 6 - (str - start);
     values[i] = value;
-    while (str != end && !my_isdigit(cs, *str)) str++;
+    while (str != end && !my_isdigit(cs, *str))
+      str++;
     if (str == end && i != count - 1)
     {
       i++;
@@ -1729,9 +1735,15 @@ void Item_func_curdate::fix_length_and_dec()
   cached_time.set_date(thd->query_start_timeval_trunc(decimals), time_zone());
 }
 
-Time_zone *Item_func_curdate_local::time_zone() { return current_thd->time_zone(); }
+Time_zone *Item_func_curdate_local::time_zone()
+{
+  return current_thd->time_zone();
+}
 
-Time_zone *Item_func_curdate_utc::time_zone() { return my_tz_UTC; }
+Time_zone *Item_func_curdate_utc::time_zone()
+{
+  return my_tz_UTC;
+}
 
 /* CURTIME() and UTC_TIME() */
 
@@ -1759,9 +1771,15 @@ void Item_func_curtime::fix_length_and_dec()
   fix_length_and_dec_and_charset_datetime(8, decimals);
 }
 
-Time_zone *Item_func_curtime_local::time_zone() { return current_thd->time_zone(); }
+Time_zone *Item_func_curtime_local::time_zone()
+{
+  return current_thd->time_zone();
+}
 
-Time_zone *Item_func_curtime_utc::time_zone() { return my_tz_UTC; }
+Time_zone *Item_func_curtime_utc::time_zone()
+{
+  return my_tz_UTC;
+}
 
 /* NOW() and UTC_TIMESTAMP () */
 
@@ -1782,7 +1800,10 @@ void Item_func_now_local::store_in(Field *field)
   return field->store_timestamp(&tm);
 }
 
-Time_zone *Item_func_now_local::time_zone() { return current_thd->time_zone(); }
+Time_zone *Item_func_now_local::time_zone()
+{
+  return current_thd->time_zone();
+}
 
 bool Item_func_now_utc::itemize(Parse_context *pc, Item **res)
 {
@@ -1794,7 +1815,10 @@ bool Item_func_now_utc::itemize(Parse_context *pc, Item **res)
   return false;
 }
 
-Time_zone *Item_func_now_utc::time_zone() { return my_tz_UTC; }
+Time_zone *Item_func_now_utc::time_zone()
+{
+  return my_tz_UTC;
+}
 
 type_conversion_status Item_func_now::save_in_field_inner(Field *to, bool no_conversions)
 {

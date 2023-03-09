@@ -48,12 +48,20 @@ struct Ndb_find_files_list_impl
     init_alloc_root(PSI_NOT_INSTRUMENTED, &m_mem_root, 1024, 0);
   }
 
-  ~Ndb_find_files_list_impl() { free_root(&m_mem_root, 0); }
+  ~Ndb_find_files_list_impl()
+  {
+    free_root(&m_mem_root, 0);
+  }
 };
 
-Ndb_find_files_list::Ndb_find_files_list(class THD *thd) : m_thd(thd), m_impl(NULL) {}
+Ndb_find_files_list::Ndb_find_files_list(class THD *thd) : m_thd(thd), m_impl(NULL)
+{
+}
 
-Ndb_find_files_list::~Ndb_find_files_list() { delete m_impl; }
+Ndb_find_files_list::~Ndb_find_files_list()
+{
+  delete m_impl;
+}
 
 bool Ndb_find_files_list::find_files_impl(const char *db, const char *path, bool dir)
 {
@@ -103,7 +111,13 @@ bool Ndb_find_files_list::find_files_impl(const char *db, const char *path, bool
 }
 
 // Return the name of next found file
-MYSQL_LEX_STRING *Ndb_find_files_list::next() { return m_impl->m_files_list_it++; }
+MYSQL_LEX_STRING *Ndb_find_files_list::next()
+{
+  return m_impl->m_files_list_it++;
+}
 
 // Return the number of found files
-uint Ndb_find_files_list::found_files() const { return m_impl->m_files_list.elements; }
+uint Ndb_find_files_list::found_files() const
+{
+  return m_impl->m_files_list.elements;
+}

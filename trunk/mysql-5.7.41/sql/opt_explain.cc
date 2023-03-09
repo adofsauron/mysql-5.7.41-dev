@@ -81,7 +81,9 @@ class Explain
     Item *const condition;
 
    public:
-    Lazy_condition(Item *condition_arg) : condition(condition_arg) {}
+    Lazy_condition(Item *condition_arg) : condition(condition_arg)
+    {
+    }
     virtual bool eval(String *ret)
     {
       ret->length(0);
@@ -105,7 +107,9 @@ class Explain
   }
 
  public:
-  virtual ~Explain() {}
+  virtual ~Explain()
+  {
+  }
 
   bool send();
 
@@ -200,17 +204,44 @@ class Explain
   */
   virtual bool explain_id();
   virtual bool explain_select_type();
-  virtual bool explain_table_name() { return false; }
-  virtual bool explain_partitions() { return false; }
-  virtual bool explain_join_type() { return false; }
-  virtual bool explain_possible_keys() { return false; }
+  virtual bool explain_table_name()
+  {
+    return false;
+  }
+  virtual bool explain_partitions()
+  {
+    return false;
+  }
+  virtual bool explain_join_type()
+  {
+    return false;
+  }
+  virtual bool explain_possible_keys()
+  {
+    return false;
+  }
   /** fill col_key and and col_key_len fields together */
-  virtual bool explain_key_and_len() { return false; }
-  virtual bool explain_ref() { return false; }
+  virtual bool explain_key_and_len()
+  {
+    return false;
+  }
+  virtual bool explain_ref()
+  {
+    return false;
+  }
   /** fill col_rows and col_filtered fields together */
-  virtual bool explain_rows_and_filtered() { return false; }
-  virtual bool explain_extra() { return false; }
-  virtual bool explain_modify_flags() { return false; }
+  virtual bool explain_rows_and_filtered()
+  {
+    return false;
+  }
+  virtual bool explain_extra()
+  {
+    return false;
+  }
+  virtual bool explain_modify_flags()
+  {
+    return false;
+  }
 
  protected:
   /**
@@ -221,11 +252,17 @@ class Explain
 
      By default, if we are explaining another connection, this is not safe.
   */
-  virtual bool can_walk_clauses() { return !explain_other; }
+  virtual bool can_walk_clauses()
+  {
+    return !explain_other;
+  }
   virtual enum_parsing_context get_subquery_context(SELECT_LEX_UNIT *unit) const;
 };
 
-enum_parsing_context Explain::get_subquery_context(SELECT_LEX_UNIT *unit) const { return unit->get_explain_marker(); }
+enum_parsing_context Explain::get_subquery_context(SELECT_LEX_UNIT *unit) const
+{
+  return unit->get_explain_marker();
+}
 
 /**
   Explain_no_table class outputs a trivial EXPLAIN row with "extra" column
@@ -447,7 +484,10 @@ class Explain_table : public Explain_table_base
 
 /* Explain class functions ****************************************************/
 
-bool Explain::shallow_explain() { return prepare_columns() || fmt->flush_entry(); }
+bool Explain::shallow_explain()
+{
+  return prepare_columns() || fmt->flush_entry();
+}
 
 /**
   Qualify subqueries with WHERE/HAVING/ORDER BY/GROUP BY clause type marker
@@ -657,7 +697,10 @@ bool Explain_no_table::explain_rows_and_filtered()
   return false;
 }
 
-bool Explain_no_table::explain_extra() { return fmt->entry()->col_message.set(message); }
+bool Explain_no_table::explain_extra()
+{
+  return fmt->entry()->col_message.set(message);
+}
 
 bool Explain_no_table::explain_modify_flags()
 {
@@ -687,7 +730,10 @@ bool Explain_no_table::explain_modify_flags()
 
 /* Explain_union_result class functions ****************************************/
 
-bool Explain_union_result::explain_id() { return false; }
+bool Explain_union_result::explain_id()
+{
+  return false;
+}
 
 bool Explain_union_result::explain_table_name()
 {
@@ -1321,7 +1367,8 @@ static void human_readable_size(char *buf, int buf_len, double data_size)
 {
   char size[] = " KMGTP";
   int i;
-  for (i = 0; data_size > 1024 && i < 5; i++) data_size /= 1024;
+  for (i = 0; data_size > 1024 && i < 5; i++)
+    data_size /= 1024;
   const char mult = i == 0 ? 0 : size[i];
   my_snprintf(buf, buf_len, "%llu%c", (ulonglong)data_size, mult);
   buf[buf_len - 1] = 0;
@@ -1594,7 +1641,10 @@ bool Explain_table::shallow_explain()
   return false;
 }
 
-bool Explain_table::explain_table_name() { return fmt->entry()->col_table_name.set(table->alias); }
+bool Explain_table::explain_table_name()
+{
+  return fmt->entry()->col_table_name.set(table->alias);
+}
 
 bool Explain_table::explain_join_type()
 {
@@ -2021,7 +2071,9 @@ bool mysql_explain_unit(THD *ethd, SELECT_LEX_UNIT *unit)
 class Find_thd_query_lock : public Find_THD_Impl
 {
  public:
-  explicit Find_thd_query_lock(my_thread_id value) : m_id(value), m_thd(NULL) {}
+  explicit Find_thd_query_lock(my_thread_id value) : m_id(value), m_thd(NULL)
+  {
+  }
   ~Find_thd_query_lock()
   {
     if (m_thd)

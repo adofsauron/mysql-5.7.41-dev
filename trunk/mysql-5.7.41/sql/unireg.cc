@@ -76,8 +76,13 @@ class Pack_header_error_handler : public Internal_error_handler
     m_is_handled = (sql_errno == ER_TOO_MANY_FIELDS);
     return m_is_handled;
   }
-  Pack_header_error_handler() : m_is_handled(false) {}
-  bool is_handled() const { return m_is_handled; }
+  Pack_header_error_handler() : m_is_handled(false)
+  {
+  }
+  bool is_handled() const
+  {
+    return m_is_handled;
+  }
 };
 
 /*
@@ -535,7 +540,8 @@ static uchar *pack_screens(List< Create_field > &create_fields, uint *info_lengt
   length = (*screens) * (SC_INFO_LENGTH + (cols >> 1) + 4);
 
   Create_field *field;
-  while ((field = it++)) length += strlen(field->field_name) + 1 + TE_INFO_LENGTH + cols / 2;
+  while ((field = it++))
+    length += strlen(field->field_name) + 1 + TE_INFO_LENGTH + cols / 2;
 
   if (!(info = (uchar *)my_malloc(key_memory_frm, length, MYF(MY_WME))))
     DBUG_RETURN(0);
@@ -972,7 +978,8 @@ static bool pack_fields(File file, List< Create_field > &create_fields, ulong da
         memset(occ, 0, sizeof(occ));
 
         for (i = 0; (val = (unsigned char *)field->interval->type_names[i]); i++)
-          for (uint j = 0; j < field->interval->type_lengths[i]; j++) occ[(unsigned int)(val[j])] = 1;
+          for (uint j = 0; j < field->interval->type_lengths[i]; j++)
+            occ[(unsigned int)(val[j])] = 1;
 
         if (!occ[(unsigned char)NAMES_SEP_CHAR])
           sep = (unsigned char)NAMES_SEP_CHAR;

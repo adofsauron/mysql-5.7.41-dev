@@ -786,7 +786,10 @@ const char *Log_event::get_type_str(Log_event_type type)
   }
 }
 
-const char *Log_event::get_type_str() { return get_type_str(get_type_code()); }
+const char *Log_event::get_type_str()
+{
+  return get_type_str(get_type_code());
+}
 
 /*
   Log_event::Log_event()
@@ -867,7 +870,10 @@ Log_event::Log_event(Log_event_header *header, Log_event_footer *footer)
   This method is not on header file to avoid using key_memory_log_event
   outside log_event.cc, allowing header file to be included on plugins.
 */
-void *Log_event::operator new(size_t size) { return my_malloc(key_memory_log_event, size, MYF(MY_WME | MY_FAE)); }
+void *Log_event::operator new(size_t size)
+{
+  return my_malloc(key_memory_log_event, size, MYF(MY_WME | MY_FAE));
+}
 
 #ifndef MYSQL_CLIENT
 #ifdef HAVE_REPLICATION
@@ -2586,7 +2592,10 @@ end:
 }
 
 #ifdef MYSQL_CLIENT
-void free_table_map_log_event(Table_map_log_event *event) { delete event; }
+void free_table_map_log_event(Table_map_log_event *event)
+{
+  delete event;
+}
 #endif
 
 void Log_event::print_base64(IO_CACHE *file, PRINT_EVENT_INFO *print_event_info, bool more)
@@ -3784,7 +3793,9 @@ bool Query_log_event::write(IO_CACHE *file)
   creating static objects that have a special meaning and are invisible
   to the log.
 */
-Query_log_event::Query_log_event() : binary_log::Query_event(), Log_event(header(), footer()), data_buf(NULL) {}
+Query_log_event::Query_log_event() : binary_log::Query_event(), Log_event(header(), footer()), data_buf(NULL)
+{
+}
 
 /**
   Creates a Query Log Event.
@@ -4298,7 +4309,10 @@ void Query_log_event::detach_temp_tables_worker(THD *thd_arg, const Relay_log_in
 /*
   Query_log_event::do_apply_event()
 */
-int Query_log_event::do_apply_event(Relay_log_info const *rli) { return do_apply_event(rli, query, q_len); }
+int Query_log_event::do_apply_event(Relay_log_info const *rli)
+{
+  return do_apply_event(rli, query, q_len);
+}
 
 /*
   is_silent_error
@@ -5146,7 +5160,8 @@ int Start_log_event_v3::do_apply_event(Relay_log_info const *rli)
           restart.
         */
         TABLE *table;
-        for (table = thd->temporary_tables; table; table = table->next) table->in_use = thd;
+        for (table = thd->temporary_tables; table; table = table->next)
+          table->in_use = thd;
       }
       break;
 
@@ -5770,7 +5785,10 @@ Load_log_event::Load_log_event(const char *buf, uint event_len, const Format_des
 */
 
 #ifdef MYSQL_CLIENT
-void Load_log_event::print(FILE *file, PRINT_EVENT_INFO *print_event_info) { print(file, print_event_info, 0); }
+void Load_log_event::print(FILE *file, PRINT_EVENT_INFO *print_event_info)
+{
+  print(file, print_event_info, 0);
+}
 
 void Load_log_event::print(FILE *file_arg, PRINT_EVENT_INFO *print_event_info, bool commented)
 {
@@ -7735,7 +7753,10 @@ void Create_file_log_event::print(FILE *file, PRINT_EVENT_INFO *print_event_info
   my_b_printf(&print_event_info->head_cache, " file_id: %d  block_len: %d\n", file_id, block_len);
 }
 
-void Create_file_log_event::print(FILE *file, PRINT_EVENT_INFO *print_event_info) { print(file, print_event_info, 0); }
+void Create_file_log_event::print(FILE *file, PRINT_EVENT_INFO *print_event_info)
+{
+  print(file, print_event_info, 0);
+}
 #endif /* MYSQL_CLIENT */
 
 /*
@@ -7940,7 +7961,10 @@ int Append_block_log_event::pack_info(Protocol *protocol)
   Append_block_log_event::get_create_or_append()
 */
 
-int Append_block_log_event::get_create_or_append() const { return 0; /* append to the file, fail if not exists */ }
+int Append_block_log_event::get_create_or_append() const
+{
+  return 0; /* append to the file, fail if not exists */
+}
 
 /*
   Append_block_log_event::do_apply_event()
@@ -8275,7 +8299,10 @@ Begin_load_query_log_event::Begin_load_query_log_event(const char *buf, uint len
 }
 
 #if defined(HAVE_REPLICATION) && !defined(MYSQL_CLIENT)
-int Begin_load_query_log_event::get_create_or_append() const { return 1; /* create the file */ }
+int Begin_load_query_log_event::get_create_or_append() const
+{
+  return 1; /* create the file */
+}
 #endif /* defined( HAVE_REPLICATION) && !defined(MYSQL_CLIENT) */
 
 #if !defined(MYSQL_CLIENT) && defined(HAVE_REPLICATION)
@@ -8555,7 +8582,8 @@ const uchar *set_extra_data(uchar *arr)
   uchar val = (dbug_extra_row_data_val++) % (EXTRA_ROW_INFO_MAX_PAYLOAD + 1); /* 0 .. MAX_PAYLOAD + 1 */
   arr[EXTRA_ROW_INFO_LEN_OFFSET] = val + EXTRA_ROW_INFO_HDR_BYTES;
   arr[EXTRA_ROW_INFO_FORMAT_OFFSET] = val;
-  for (uchar i = 0; i < val; i++) arr[EXTRA_ROW_INFO_HDR_BYTES + i] = val;
+  for (uchar i = 0; i < val; i++)
+    arr[EXTRA_ROW_INFO_HDR_BYTES + i] = val;
 
   return arr;
 }
@@ -11108,7 +11136,8 @@ Table_map_log_event::Table_map_log_event(THD *thd_arg, TABLE *tbl, const Table_i
   m_coltype = (uchar *)my_malloc(key_memory_log_event, m_colcnt, MYF(MY_WME));
 
   assert(m_colcnt == m_table->s->fields);
-  for (unsigned int i = 0; i < m_table->s->fields; ++i) m_coltype[i] = m_table->field[i]->binlog_type();
+  for (unsigned int i = 0; i < m_table->s->fields; ++i)
+    m_coltype[i] = m_table->field[i]->binlog_type();
 
   /*
     Calculate a bitmap for the results of maybe_null() for all columns.
@@ -12420,7 +12449,9 @@ Ignorable_log_event::Ignorable_log_event(const char *buf, const Format_descripti
   DBUG_VOID_RETURN;
 }
 
-Ignorable_log_event::~Ignorable_log_event() {}
+Ignorable_log_event::~Ignorable_log_event()
+{
+}
 
 #ifndef MYSQL_CLIENT
 /* Pack info for its unrecognized ignorable event */
@@ -13317,7 +13348,8 @@ size_t View_change_log_event::get_size_data_map(std::map< std::string, std::stri
 
   std::map< std::string, std::string >::iterator iter;
   size += (ENCODED_CERT_INFO_KEY_SIZE_LEN + ENCODED_CERT_INFO_VALUE_LEN) * map->size();
-  for (iter = map->begin(); iter != map->end(); iter++) size += iter->first.length() + iter->second.length();
+  for (iter = map->begin(); iter != map->end(); iter++)
+    size += iter->first.length() + iter->second.length();
 
   DBUG_RETURN(size);
 }

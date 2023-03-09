@@ -1085,7 +1085,10 @@ static Sys_var_charptr Sys_character_sets_dir("character_sets_dir", "Directory w
                                               READ_ONLY GLOBAL_VAR(charsets_dir), CMD_LINE(REQUIRED_ARG), IN_FS_CHARSET,
                                               DEFAULT(0));
 
-static bool check_not_null(sys_var *self, THD *thd, set_var *var) { return var->value && var->value->is_null(); }
+static bool check_not_null(sys_var *self, THD *thd, set_var *var)
+{
+  return var->value && var->value->is_null();
+}
 
 /**
   Check storage engine is not empty and log warning.
@@ -1835,7 +1838,10 @@ static Sys_var_mybool Sys_log_statements_unsafe_for_binlog(
 
 /* logging to host OS's syslog */
 
-static bool fix_syslog(sys_var *self, THD *thd, enum_var_type type) { return log_syslog_update_settings(); }
+static bool fix_syslog(sys_var *self, THD *thd, enum_var_type type)
+{
+  return log_syslog_update_settings();
+}
 
 static bool check_syslog_tag(sys_var *self, THD *THD, set_var *var)
 {
@@ -4140,7 +4146,10 @@ static bool update_last_insert_id(THD *thd, set_var *var)
   thd->substitute_null_with_insert_id = TRUE;
   return false;
 }
-static ulonglong read_last_insert_id(THD *thd) { return thd->read_first_successful_insert_id_in_prev_stmt(); }
+static ulonglong read_last_insert_id(THD *thd)
+{
+  return thd->read_first_successful_insert_id_in_prev_stmt();
+}
 static Sys_var_session_special Sys_last_insert_id("last_insert_id", "The value to be returned from LAST_INSERT_ID()",
                                                   sys_var::ONLY_SESSION, NO_CMD_LINE, VALID_RANGE(0, ULLONG_MAX),
                                                   BLOCK_SIZE(1), NO_MUTEX_GUARD, IN_BINLOG, ON_CHECK(0),
@@ -4182,7 +4191,10 @@ static bool update_insert_id(THD *thd, set_var *var)
   return false;
 }
 
-static ulonglong read_insert_id(THD *thd) { return thd->auto_inc_intervals_forced.minimum(); }
+static ulonglong read_insert_id(THD *thd)
+{
+  return thd->auto_inc_intervals_forced.minimum();
+}
 static Sys_var_session_special Sys_insert_id("insert_id",
                                              "The value to be used by the following INSERT "
                                              "or ALTER TABLE statement when inserting an AUTO_INCREMENT value",
@@ -4200,7 +4212,10 @@ static bool update_rand_seed1(THD *thd, set_var *var)
   thd->rand.seed1 = (ulong)var->save_result.ulonglong_value;
   return false;
 }
-static ulonglong read_rand_seed(THD *thd) { return 0; }
+static ulonglong read_rand_seed(THD *thd)
+{
+  return 0;
+}
 static Sys_var_session_special Sys_rand_seed1("rand_seed1",
                                               "Sets the internal state of the RAND() "
                                               "generator for replication purposes",
@@ -4225,7 +4240,10 @@ static Sys_var_session_special Sys_rand_seed2("rand_seed2",
                                               BLOCK_SIZE(1), NO_MUTEX_GUARD, IN_BINLOG, ON_CHECK(0),
                                               ON_UPDATE(update_rand_seed2), ON_READ(read_rand_seed));
 
-static ulonglong read_error_count(THD *thd) { return thd->get_stmt_da()->error_count(thd); }
+static ulonglong read_error_count(THD *thd)
+{
+  return thd->get_stmt_da()->error_count(thd);
+}
 // this really belongs to the SHOW STATUS
 static Sys_var_session_special Sys_error_count("error_count",
                                                "The number of errors that resulted from the "
@@ -4234,7 +4252,10 @@ static Sys_var_session_special Sys_error_count("error_count",
                                                BLOCK_SIZE(1), NO_MUTEX_GUARD, NOT_IN_BINLOG, ON_CHECK(0), ON_UPDATE(0),
                                                ON_READ(read_error_count));
 
-static ulonglong read_warning_count(THD *thd) { return thd->get_stmt_da()->warn_count(thd); }
+static ulonglong read_warning_count(THD *thd)
+{
+  return thd->get_stmt_da()->warn_count(thd);
+}
 // this really belongs to the SHOW STATUS
 static Sys_var_session_special Sys_warning_count("warning_count",
                                                  "The number of errors, warnings, and notes "
@@ -4499,7 +4520,10 @@ static Sys_var_mybool Sys_slow_query_log("slow_query_log",
                                          GLOBAL_VAR(opt_slow_log), CMD_LINE(OPT_ARG), DEFAULT(FALSE), NO_MUTEX_GUARD,
                                          NOT_IN_BINLOG, ON_CHECK(0), ON_UPDATE(fix_slow_log_state));
 
-static bool check_not_empty_set(sys_var *self, THD *thd, set_var *var) { return var->save_result.ulonglong_value == 0; }
+static bool check_not_empty_set(sys_var *self, THD *thd, set_var *var)
+{
+  return var->save_result.ulonglong_value == 0;
+}
 static bool fix_log_output(sys_var *self, THD *thd, enum_var_type type)
 {
   query_logger.set_handlers(static_cast< uint >(log_output_options));

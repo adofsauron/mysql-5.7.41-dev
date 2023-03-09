@@ -58,7 +58,9 @@ class Service_visitor : public Select_lex_visitor
 
     @param arg Will be passed to processor on every call.
   */
-  Service_visitor(parse_node_visit_function processor, uchar *arg) : m_processor(processor), m_arg(arg) {}
+  Service_visitor(parse_node_visit_function processor, uchar *arg) : m_processor(processor), m_arg(arg)
+  {
+  }
 
  protected:
   bool visit_item(Item *item)
@@ -112,7 +114,10 @@ class Plugin_error_handler : public Internal_error_handler
     return false;
   }
 
-  const char *get_message() { return m_message; }
+  const char *get_message()
+  {
+    return m_message;
+  }
 
   ~Plugin_error_handler()
   {
@@ -121,7 +126,10 @@ class Plugin_error_handler : public Internal_error_handler
   }
 };
 
-extern "C" MYSQL_THD mysql_parser_current_session() { return current_thd; }
+extern "C" MYSQL_THD mysql_parser_current_session()
+{
+  return current_thd;
+}
 
 extern "C" MYSQL_THD mysql_parser_open_session()
 {
@@ -146,7 +154,9 @@ namespace
 
 struct thread_args
 {
-  thread_args(MYSQL_THD thd, callback_function fun, void *arg) : m_thd(thd), m_fun(fun), m_arg(arg) {}
+  thread_args(MYSQL_THD thd, callback_function fun, void *arg) : m_thd(thd), m_fun(fun), m_arg(arg)
+  {
+  }
   MYSQL_THD m_thd;
   callback_function m_fun;
   void *m_arg;
@@ -203,7 +213,10 @@ extern "C" void mysql_parser_start_thread(THD *thd, callback_function fun, void 
   *thread_handle = handle;
 }
 
-extern "C" void mysql_parser_join_thread(my_thread_handle *thread_id) { my_thread_join(thread_id, NULL); }
+extern "C" void mysql_parser_join_thread(my_thread_handle *thread_id)
+{
+  my_thread_join(thread_id, NULL);
+}
 
 extern "C" void mysql_parser_set_current_database(MYSQL_THD thd, const MYSQL_LEX_STRING db)
 {
@@ -288,13 +301,17 @@ extern "C" int mysql_parser_get_statement_digest(MYSQL_THD thd, uchar *digest)
   return false;
 }
 
-extern "C" int mysql_parser_get_number_params(MYSQL_THD thd) { return thd->lex->param_list.elements; }
+extern "C" int mysql_parser_get_number_params(MYSQL_THD thd)
+{
+  return thd->lex->param_list.elements;
+}
 
 extern "C" int mysql_parser_extract_prepared_params(MYSQL_THD thd, int *positions)
 {
   LEX *lex = thd->lex;
   List_iterator_fast< Item_param > it(lex->param_list);
-  for (uint i = 0; i < lex->param_list.elements; i++) positions[i] = it++->pos_in_query;
+  for (uint i = 0; i < lex->param_list.elements; i++)
+    positions[i] = it++->pos_in_query;
   return lex->param_list.elements;
 }
 
@@ -317,7 +334,10 @@ extern "C" MYSQL_LEX_STRING mysql_parser_item_string(MYSQL_ITEM item)
   return res;
 }
 
-extern "C" void mysql_parser_free_string(MYSQL_LEX_STRING string) { delete[] string.str; }
+extern "C" void mysql_parser_free_string(MYSQL_LEX_STRING string)
+{
+  delete[] string.str;
+}
 
 extern "C" MYSQL_LEX_STRING mysql_parser_get_query(MYSQL_THD thd)
 {

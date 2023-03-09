@@ -42,7 +42,10 @@ struct Rtree_value_maker
 struct Is_rtree_box_valid
 {
   typedef std::pair< BG_box, size_t > Rtree_entry;
-  bool operator()(Rtree_entry const &re) const { return is_box_valid(re.first); }
+  bool operator()(Rtree_entry const &re) const
+  {
+    return is_box_valid(re.first);
+  }
 };
 
 void make_rtree(const BG_geometry_collection::Geometry_list &gl, Rtree_index *rtree)

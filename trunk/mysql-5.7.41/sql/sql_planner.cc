@@ -1705,7 +1705,8 @@ bool Optimize_table_order::choose_table_order()
   DBUG_ENTER("Optimize_table_order::choose_table_order");
 
   // Make consistent prefix cost estimates also for the const tables:
-  for (uint i = 0; i < join->const_tables; i++) (join->positions + i)->set_prefix_cost(0.0, 1.0);
+  for (uint i = 0; i < join->const_tables; i++)
+    (join->positions + i)->set_prefix_cost(0.0, 1.0);
 
   /* Are there any tables to optimize? */
   if (join->const_tables == join->tables)
@@ -2130,7 +2131,8 @@ bool Optimize_table_order::greedy_search(table_map remaining_tables)
     /* find the position of 'best_table' in 'join->best_ref' */
     best_idx = idx;
     JOIN_TAB *pos = join->best_ref[best_idx];
-    while (pos && best_table != pos) pos = join->best_ref[++best_idx];
+    while (pos && best_table != pos)
+      pos = join->best_ref[++best_idx];
     assert((pos != NULL));  // should always find 'best_table'
     /*
       Maintain '#rows-sorted' order of 'best_ref[]':
@@ -3493,7 +3495,8 @@ void Optimize_table_order::semijoin_mat_scan_access_paths(uint last_inner_tab, u
   cost += sjm_nest->nested_join->sjm.materialization_cost.total_cost() +
           rowcount * sjm_nest->nested_join->sjm.scan_cost.total_cost();
 
-  for (uint i = last_inner_tab + 1; i <= last_outer_tab; i++) remaining_tables |= positions[i].table->table_ref->map();
+  for (uint i = last_inner_tab + 1; i <= last_outer_tab; i++)
+    remaining_tables |= positions[i].table->table_ref->map();
   /*
     Materialization removes duplicates from the materialized table, so
     number of rows to scan is probably less than the number of rows

@@ -307,7 +307,9 @@ class Mutexed_map_thd_srv_session
   class Do_Impl
   {
    public:
-    virtual ~Do_Impl() {}
+    virtual ~Do_Impl()
+    {
+    }
     /**
       Work on the session
 
@@ -554,37 +556,84 @@ Srv_session::Session_backup_and_attach::~Session_backup_and_attach()
   }
 }
 
-static int err_start_result_metadata(void *, uint, uint, const CHARSET_INFO *) { return 1; }
+static int err_start_result_metadata(void *, uint, uint, const CHARSET_INFO *)
+{
+  return 1;
+}
 
-static int err_field_metadata(void *, struct st_send_field *, const CHARSET_INFO *) { return 1; }
+static int err_field_metadata(void *, struct st_send_field *, const CHARSET_INFO *)
+{
+  return 1;
+}
 
-static int err_end_result_metadata(void *, uint, uint) { return 1; }
+static int err_end_result_metadata(void *, uint, uint)
+{
+  return 1;
+}
 
-static int err_start_row(void *) { return 1; }
+static int err_start_row(void *)
+{
+  return 1;
+}
 
-static int err_end_row(void *) { return 1; }
+static int err_end_row(void *)
+{
+  return 1;
+}
 
-static void err_abort_row(void *) {}
+static void err_abort_row(void *)
+{
+}
 
-static ulong err_get_client_capabilities(void *) { return 0; }
+static ulong err_get_client_capabilities(void *)
+{
+  return 0;
+}
 
-static int err_get_null(void *) { return 1; }
+static int err_get_null(void *)
+{
+  return 1;
+}
 
-static int err_get_integer(void *, longlong) { return 1; }
+static int err_get_integer(void *, longlong)
+{
+  return 1;
+}
 
-static int err_get_longlong(void *, longlong, uint) { return 1; }
+static int err_get_longlong(void *, longlong, uint)
+{
+  return 1;
+}
 
-static int err_get_decimal(void *, const decimal_t *) { return 1; }
+static int err_get_decimal(void *, const decimal_t *)
+{
+  return 1;
+}
 
-static int err_get_double(void *, double, uint32) { return 1; }
+static int err_get_double(void *, double, uint32)
+{
+  return 1;
+}
 
-static int err_get_date(void *, const MYSQL_TIME *) { return 1; }
+static int err_get_date(void *, const MYSQL_TIME *)
+{
+  return 1;
+}
 
-static int err_get_time(void *, const MYSQL_TIME *, uint) { return 1; }
+static int err_get_time(void *, const MYSQL_TIME *, uint)
+{
+  return 1;
+}
 
-static int err_get_datetime(void *, const MYSQL_TIME *, uint) { return 1; }
+static int err_get_datetime(void *, const MYSQL_TIME *, uint)
+{
+  return 1;
+}
 
-static int err_get_string(void *, const char *, size_t, const CHARSET_INFO *) { return 1; }
+static int err_get_string(void *, const char *, size_t, const CHARSET_INFO *)
+{
+  return 1;
+}
 
 static void err_handle_ok(void *ctx, uint server_status, uint warn_count, ulonglong affected_rows,
                           ulonglong last_insert_id, const char *const message)
@@ -606,7 +655,9 @@ static void err_handle_error(void *ctx, uint err_errno, const char *err_msg, con
     pctx->handler(pctx->handler_context, err_errno, err_msg);
 }
 
-static void err_shutdown(void *, int server_shutdown) {}
+static void err_shutdown(void *, int server_shutdown)
+{
+}
 
 const struct st_command_service_cbs error_protocol_callbacks = {err_start_result_metadata,
                                                                 err_field_metadata,
@@ -1243,7 +1294,10 @@ class Find_thd_by_id_with_callback_set : public Find_THD_Impl
 /**
   Callback for inspecting a THD object and modifying the peer_port member
 */
-static void set_client_port_in_thd(THD *thd, uint16_t *input) { thd->peer_port = *input; }
+static void set_client_port_in_thd(THD *thd, uint16_t *input)
+{
+  thd->peer_port = *input;
+}
 
 /**
   Sets the client port.
@@ -1262,9 +1316,15 @@ void Srv_session::set_client_port(uint16_t port)
 /**
   Returns the number opened sessions in thread initialized by this class.
 */
-unsigned int Srv_session::session_count() { return server_session_list.size(); }
+unsigned int Srv_session::session_count()
+{
+  return server_session_list.size();
+}
 
 /**
   Returns the number currently running threads initialized by this class.
 */
-unsigned int Srv_session::thread_count(const void *plugin) { return server_session_threads.count(plugin); }
+unsigned int Srv_session::thread_count(const void *plugin)
+{
+  return server_session_threads.count(plugin);
+}

@@ -74,7 +74,9 @@ Host_errors::Host_errors()
 {
 }
 
-Host_errors::~Host_errors() {}
+Host_errors::~Host_errors()
+{
+}
 
 void Host_errors::reset()
 {
@@ -128,11 +130,20 @@ void Host_errors::aggregate(const Host_errors *errors)
 
 static hash_filo *hostname_cache;
 
-void hostname_cache_refresh() { hostname_cache->clear(); }
+void hostname_cache_refresh()
+{
+  hostname_cache->clear();
+}
 
-uint hostname_cache_size() { return hostname_cache->size(); }
+uint hostname_cache_size()
+{
+  return hostname_cache->size();
+}
 
-void hostname_cache_resize(uint size) { hostname_cache->resize(size); }
+void hostname_cache_resize(uint size)
+{
+  hostname_cache->resize(size);
+}
 
 bool hostname_cache_init(uint size)
 {
@@ -154,9 +165,15 @@ void hostname_cache_free()
   hostname_cache = NULL;
 }
 
-void hostname_cache_lock() { mysql_mutex_lock(&hostname_cache->lock); }
+void hostname_cache_lock()
+{
+  mysql_mutex_lock(&hostname_cache->lock);
+}
 
-void hostname_cache_unlock() { mysql_mutex_unlock(&hostname_cache->lock); }
+void hostname_cache_unlock()
+{
+  mysql_mutex_unlock(&hostname_cache->lock);
+}
 
 static void prepare_hostname_cache_key(const char *ip_string, char *ip_key)
 {
@@ -167,7 +184,10 @@ static void prepare_hostname_cache_key(const char *ip_string, char *ip_key)
   memcpy(ip_key, ip_string, ip_string_length);
 }
 
-Host_entry *hostname_cache_first() { return (Host_entry *)hostname_cache->first(); }
+Host_entry *hostname_cache_first()
+{
+  return (Host_entry *)hostname_cache->first();
+}
 
 static inline Host_entry *hostname_cache_search(const char *ip_key)
 {
@@ -347,7 +367,8 @@ static inline bool is_hostname_valid(const char *hostname)
 
   const char *p = hostname + 1;
 
-  while (my_isdigit(&my_charset_latin1, *p)) ++p;
+  while (my_isdigit(&my_charset_latin1, *p))
+    ++p;
 
   return *p != '.';
 }

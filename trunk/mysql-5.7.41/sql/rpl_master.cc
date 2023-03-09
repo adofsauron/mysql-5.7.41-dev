@@ -72,7 +72,10 @@ extern "C" uint32 *slave_list_key(SLAVE_INFO *si, size_t *len, my_bool not_used 
   return &si->server_id;
 }
 
-extern "C" void slave_info_free(void *s) { my_free(s); }
+extern "C" void slave_info_free(void *s)
+{
+  my_free(s);
+}
 
 #ifdef HAVE_PSI_INTERFACE
 static PSI_mutex_key key_LOCK_slave_list;
@@ -434,7 +437,9 @@ String *get_slave_uuid(THD *thd, String *value)
 class Find_zombie_dump_thread : public Find_THD_Impl
 {
  public:
-  Find_zombie_dump_thread(String value) : m_slave_uuid(value) {}
+  Find_zombie_dump_thread(String value) : m_slave_uuid(value)
+  {
+  }
   virtual bool operator()(THD *thd)
   {
     THD *cur_thd = current_thd;

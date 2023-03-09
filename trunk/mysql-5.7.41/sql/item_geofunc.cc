@@ -74,7 +74,9 @@ bool is_colinear(const Point_range &ls)
   return true;
 }
 
-Item_geometry_func::Item_geometry_func(const POS &pos, PT_item_list *list) : Item_str_func(pos, list) {}
+Item_geometry_func::Item_geometry_func(const POS &pos, PT_item_list *list) : Item_str_func(pos, list)
+{
+}
 
 Field *Item_geometry_func::tmp_table_field(TABLE *t_arg)
 {
@@ -1240,7 +1242,10 @@ bool Item_func_geomfromgeojson::is_member_valid(const Json_dom *member, const ch
   return true;
 }
 
-void Item_func_geomfromgeojson::fix_length_and_dec() { Item_geometry_func::fix_length_and_dec(); }
+void Item_func_geomfromgeojson::fix_length_and_dec()
+{
+  Item_geometry_func::fix_length_and_dec();
+}
 
 /**
   Checks if the supplied argument is a valid integer type.
@@ -2114,7 +2119,10 @@ String *Item_func_validate::val_str(String *str)
   return isvalid ? swkb : error_str();
 }
 
-Field::geometry_type Item_func_make_envelope::get_geometry_type() const { return Field::GEOM_POLYGON; }
+Field::geometry_type Item_func_make_envelope::get_geometry_type() const
+{
+  return Field::GEOM_POLYGON;
+}
 
 String *Item_func_make_envelope::val_str(String *str)
 {
@@ -2239,7 +2247,10 @@ String *Item_func_make_envelope::val_str(String *str)
   return str;
 }
 
-Field::geometry_type Item_func_envelope::get_geometry_type() const { return Field::GEOM_GEOMETRY; }
+Field::geometry_type Item_func_envelope::get_geometry_type() const
+{
+  return Field::GEOM_GEOMETRY;
+}
 
 String *Item_func_envelope::val_str(String *str)
 {
@@ -2277,7 +2288,10 @@ String *Item_func_envelope::val_str(String *str)
   return str;
 }
 
-Field::geometry_type Item_func_centroid::get_geometry_type() const { return Field::GEOM_POINT; }
+Field::geometry_type Item_func_centroid::get_geometry_type() const
+{
+  return Field::GEOM_POINT;
+}
 
 String *Item_func_centroid::val_str(String *str)
 {
@@ -2321,7 +2335,9 @@ class Point_accumulator : public WKB_scanner_event_handler
   const void *pt_start;
 
  public:
-  explicit Point_accumulator(Gis_multi_point *mpts) : m_mpts(mpts), pt_start(NULL) {}
+  explicit Point_accumulator(Gis_multi_point *mpts) : m_mpts(mpts), pt_start(NULL)
+  {
+  }
 
   virtual void on_wkb_start(Geometry::wkbByteOrder bo, Geometry::wkbType geotype, const void *wkb, uint32 len,
                             bool has_hdr)
@@ -2580,7 +2596,10 @@ bool Item_func_centroid::bg_centroid(const Geometry *geom, String *ptwkb)
   return null_value;
 }
 
-Field::geometry_type Item_func_convex_hull::get_geometry_type() const { return Field::GEOM_GEOMETRY; }
+Field::geometry_type Item_func_convex_hull::get_geometry_type() const
+{
+  return Field::GEOM_GEOMETRY;
+}
 
 String *Item_func_convex_hull::val_str(String *str)
 {
@@ -3038,7 +3057,10 @@ err:
  *  Concatenate doubles into Point
  */
 
-Field::geometry_type Item_func_point::get_geometry_type() const { return Field::GEOM_POINT; }
+Field::geometry_type Item_func_point::get_geometry_type() const
+{
+  return Field::GEOM_POINT;
+}
 
 String *Item_func_point::val_str(String *str)
 {
@@ -3684,9 +3706,14 @@ class Geomcoll_validity_checker : public WKB_scanner_event_handler
   std::stack< Geometry::wkbType > types;
 
  public:
-  explicit Geomcoll_validity_checker(Geometry::srid_t srid) : m_isvalid(true), m_srid(srid) {}
+  explicit Geomcoll_validity_checker(Geometry::srid_t srid) : m_isvalid(true), m_srid(srid)
+  {
+  }
 
-  bool is_valid() const { return m_isvalid; }
+  bool is_valid() const
+  {
+    return m_isvalid;
+  }
 
   virtual void on_wkb_start(Geometry::wkbByteOrder bo, Geometry::wkbType geotype, const void *wkb, uint32 len,
                             bool has_hdr)
@@ -4298,9 +4325,14 @@ class Point_coordinate_checker : public WKB_scanner_event_handler
     }
   }
 
-  virtual void on_wkb_end(const void *wkb) {}
+  virtual void on_wkb_end(const void *wkb)
+  {
+  }
 
-  bool has_invalid_point() const { return has_invalid; }
+  bool has_invalid_point() const
+  {
+    return has_invalid;
+  }
 };
 
 template < typename CoordinateSystem >

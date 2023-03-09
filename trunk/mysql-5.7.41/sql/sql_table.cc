@@ -653,7 +653,9 @@ struct st_global_ddl_log
   bool inited;
   bool do_release;
   bool recovery_phase;
-  st_global_ddl_log() : inited(false), do_release(false) {}
+  st_global_ddl_log() : inited(false), do_release(false)
+  {
+  }
 };
 
 st_global_ddl_log global_ddl_log;
@@ -3706,7 +3708,8 @@ static int mysql_prepare_create_table(THD *thd, const char *error_schema_name, c
     if (key->name.str == ignore_key)
     {
       /* ignore redundant keys */
-      do key = key_iterator++;
+      do
+        key = key_iterator++;
       while (key && key->name.str == ignore_key);
       if (!key)
         break;
@@ -4713,7 +4716,8 @@ static bool create_table_impl(THD *thd, const char *db, const char *table_name, 
         List_iterator< partition_element > part_it(part_info->partitions);
         part_it++;
         assert(thd->lex->sql_command != SQLCOM_CREATE_TABLE);
-        for (i = 1; i < part_info->partitions.elements; i++) (part_it++)->part_state = PART_TO_BE_DROPPED;
+        for (i = 1; i < part_info->partitions.elements; i++)
+          (part_it++)->part_state = PART_TO_BE_DROPPED;
       }
       else if (part_info->is_sub_partitioned() && part_info->use_default_num_subpartitions && part_info->num_subparts &&
                (int)part_info->num_subparts != part_handler->get_default_num_partitions(create_info))
@@ -5519,8 +5523,14 @@ class Tablespace_op_flag_handler
   THD *m_thd;
 
  public:
-  Tablespace_op_flag_handler(THD *thd) : m_thd(thd) { m_thd->tablespace_op = true; }
-  ~Tablespace_op_flag_handler() { m_thd->tablespace_op = false; }
+  Tablespace_op_flag_handler(THD *thd) : m_thd(thd)
+  {
+    m_thd->tablespace_op = true;
+  }
+  ~Tablespace_op_flag_handler()
+  {
+    m_thd->tablespace_op = false;
+  }
 };
 
 /* table_list should contain just one table */
@@ -5854,7 +5864,10 @@ static bool has_index_def_changed(Alter_inplace_info *ha_alter_info, const KEY *
   return false;
 }
 
-static int compare_uint(const uint *s, const uint *t) { return (*s < *t) ? -1 : ((*s > *t) ? 1 : 0); }
+static int compare_uint(const uint *s, const uint *t)
+{
+  return (*s < *t) ? -1 : ((*s > *t) ? 1 : 0);
+}
 
 /**
    Lock the list of tables which are direct or indirect parents in
@@ -6222,8 +6235,10 @@ static bool fill_alter_inplace_info(THD *thd, TABLE *table, bool varchar, Alter_
     First, we need to handle keys being renamed, otherwise code handling
     dropping/addition of keys might be confused in some situations.
   */
-  for (table_key = table->key_info; table_key < table_key_end; table_key++) table_key->flags &= ~HA_KEY_RENAMED;
-  for (new_key = ha_alter_info->key_info_buffer; new_key < new_key_end; new_key++) new_key->flags &= ~HA_KEY_RENAMED;
+  for (table_key = table->key_info; table_key < table_key_end; table_key++)
+    table_key->flags &= ~HA_KEY_RENAMED;
+  for (new_key = ha_alter_info->key_info_buffer; new_key < new_key_end; new_key++)
+    new_key->flags &= ~HA_KEY_RENAMED;
 
   List_iterator_fast< Alter_rename_key > rename_key_it(alter_info->alter_rename_key_list);
   Alter_rename_key *rename_key;
@@ -8227,7 +8242,9 @@ static bool simple_rename_or_index_change(THD *thd, TABLE_LIST *table_list,
 class Alter_table_hton_notification_guard
 {
  public:
-  Alter_table_hton_notification_guard(THD *thd, const MDL_key *key) : m_hton_notified(false), m_thd(thd), m_key(key) {}
+  Alter_table_hton_notification_guard(THD *thd, const MDL_key *key) : m_hton_notified(false), m_thd(thd), m_key(key)
+  {
+  }
 
   bool notify()
   {
@@ -8296,7 +8313,10 @@ bool mysql_alter_table(THD *thd, const char *new_db, const char *new_name, HA_CR
     THD *m_thd;
 
    public:
-    Silence_deprecation_warnings(THD *thd) : m_thd(thd) { m_thd->push_internal_handler(this); }
+    Silence_deprecation_warnings(THD *thd) : m_thd(thd)
+    {
+      m_thd->push_internal_handler(this);
+    }
     bool handle_condition(THD *thd, uint sql_errno, const char *sqlstate, Sql_condition::enum_severity_level *level,
                           const char *msg)
     {
@@ -8311,7 +8331,10 @@ bool mysql_alter_table(THD *thd, const char *new_db, const char *new_name, HA_CR
         m_thd->pop_internal_handler();
       m_thd = NULL;
     }
-    ~Silence_deprecation_warnings() { pop(); }
+    ~Silence_deprecation_warnings()
+    {
+      pop();
+    }
   };
 
   DBUG_ENTER("mysql_alter_table");
@@ -9664,7 +9687,8 @@ bool mysql_checksum_table(THD *thd, TABLE_LIST *tables, HA_CHECK_OPT *check_opt)
     privilege checking. Clear all references to closed tables.
   */
   close_thread_tables(thd);
-  for (table = tables; table; table = table->next_local) table->table = NULL;
+  for (table = tables; table; table = table->next_local)
+    table->table = NULL;
 
   /* Open one table after the other to keep lock time as short as possible. */
   for (table = tables; table; table = table->next_local)

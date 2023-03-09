@@ -645,14 +645,26 @@ bool Protocol_classic::send_error(uint sql_errno, const char *err_msg, const cha
   DBUG_RETURN(retval);
 }
 
-void Protocol_classic::set_read_timeout(ulong read_timeout) { my_net_set_read_timeout(&m_thd->net, read_timeout); }
+void Protocol_classic::set_read_timeout(ulong read_timeout)
+{
+  my_net_set_read_timeout(&m_thd->net, read_timeout);
+}
 
-void Protocol_classic::set_write_timeout(ulong write_timeout) { my_net_set_write_timeout(&m_thd->net, write_timeout); }
+void Protocol_classic::set_write_timeout(ulong write_timeout)
+{
+  my_net_set_write_timeout(&m_thd->net, write_timeout);
+}
 
 // NET interaction functions
-bool Protocol_classic::init_net(Vio *vio) { return my_net_init(&m_thd->net, vio); }
+bool Protocol_classic::init_net(Vio *vio)
+{
+  return my_net_init(&m_thd->net, vio);
+}
 
-void Protocol_classic::claim_memory_ownership() { net_claim_memory_ownership(&m_thd->net); }
+void Protocol_classic::claim_memory_ownership()
+{
+  net_claim_memory_ownership(&m_thd->net);
+}
 
 void Protocol_classic::end_net()
 {
@@ -661,33 +673,75 @@ void Protocol_classic::end_net()
   m_thd->net.vio = NULL;
 }
 
-bool Protocol_classic::flush_net() { return net_flush(&m_thd->net); }
+bool Protocol_classic::flush_net()
+{
+  return net_flush(&m_thd->net);
+}
 
-bool Protocol_classic::write(const uchar *ptr, size_t len) { return my_net_write(&m_thd->net, ptr, len); }
+bool Protocol_classic::write(const uchar *ptr, size_t len)
+{
+  return my_net_write(&m_thd->net, ptr, len);
+}
 
-uchar Protocol_classic::get_error() { return m_thd->net.error; }
+uchar Protocol_classic::get_error()
+{
+  return m_thd->net.error;
+}
 
-uint Protocol_classic::get_last_errno() { return m_thd->net.last_errno; }
+uint Protocol_classic::get_last_errno()
+{
+  return m_thd->net.last_errno;
+}
 
-void Protocol_classic::set_last_errno(uint err) { m_thd->net.last_errno = err; }
+void Protocol_classic::set_last_errno(uint err)
+{
+  m_thd->net.last_errno = err;
+}
 
-char *Protocol_classic::get_last_error() { return m_thd->net.last_error; }
+char *Protocol_classic::get_last_error()
+{
+  return m_thd->net.last_error;
+}
 
-void Protocol_classic::wipe_net() { memset(&m_thd->net, 0, sizeof(m_thd->net)); }
+void Protocol_classic::wipe_net()
+{
+  memset(&m_thd->net, 0, sizeof(m_thd->net));
+}
 
-void Protocol_classic::set_max_packet_size(ulong max_packet_size) { m_thd->net.max_packet_size = max_packet_size; }
+void Protocol_classic::set_max_packet_size(ulong max_packet_size)
+{
+  m_thd->net.max_packet_size = max_packet_size;
+}
 
-NET *Protocol_classic::get_net() { return &m_thd->net; }
+NET *Protocol_classic::get_net()
+{
+  return &m_thd->net;
+}
 
-Vio *Protocol_classic::get_vio() { return m_thd->net.vio; }
+Vio *Protocol_classic::get_vio()
+{
+  return m_thd->net.vio;
+}
 
-void Protocol_classic::set_vio(Vio *vio) { m_thd->net.vio = vio; }
+void Protocol_classic::set_vio(Vio *vio)
+{
+  m_thd->net.vio = vio;
+}
 
-void Protocol_classic::set_pkt_nr(uint pkt_nr) { m_thd->net.pkt_nr = pkt_nr; }
+void Protocol_classic::set_pkt_nr(uint pkt_nr)
+{
+  m_thd->net.pkt_nr = pkt_nr;
+}
 
-uint Protocol_classic::get_pkt_nr() { return m_thd->net.pkt_nr; }
+uint Protocol_classic::get_pkt_nr()
+{
+  return m_thd->net.pkt_nr;
+}
 
-String *Protocol_classic::get_packet() { return &m_thd->packet; }
+String *Protocol_classic::get_packet()
+{
+  return &m_thd->packet;
+}
 
 int Protocol_classic::read_packet()
 {
@@ -875,7 +929,10 @@ int Protocol_classic::get_command(COM_DATA *com_data, enum_server_command *cmd)
   return parse_packet(com_data, *cmd);
 }
 
-uint Protocol_classic::get_rw_status() { return m_thd->net.reading_or_writing; }
+uint Protocol_classic::get_rw_status()
+{
+  return m_thd->net.reading_or_writing;
+}
 
 /**
   Finish the result set with EOF packet, as is expected by the client,
@@ -901,7 +958,10 @@ bool Protocol_classic::flush()
 #endif
 }
 
-bool Protocol_classic::get_compression() { return m_thd->net.compress; }
+bool Protocol_classic::get_compression()
+{
+  return m_thd->net.compress;
+}
 
 #ifndef EMBEDDED_LIBRARY
 bool Protocol_classic::start_result_metadata(uint num_cols, uint flags, const CHARSET_INFO *cs)
@@ -1091,7 +1151,10 @@ bool store(Protocol *prot, I_List< i_string > *str_list)
 
 #ifndef EMBEDDED_LIBRARY
 
-bool Protocol_classic::connection_alive() { return m_thd->net.vio != NULL; }
+bool Protocol_classic::connection_alive()
+{
+  return m_thd->net.vio != NULL;
+}
 
 void Protocol_text::start_row()
 {
@@ -1130,7 +1193,10 @@ bool Protocol_classic::store_string_aux(const char *from, size_t length, const C
   return net_store_data((uchar *)from, length);
 }
 
-int Protocol_classic::shutdown(bool server_shutdown) { return m_thd->net.vio ? vio_shutdown(m_thd->net.vio) : 0; }
+int Protocol_classic::shutdown(bool server_shutdown)
+{
+  return m_thd->net.vio ? vio_shutdown(m_thd->net.vio) : 0;
+}
 
 bool Protocol_text::store(const char *from, size_t length, const CHARSET_INFO *fromcs, const CHARSET_INFO *tocs)
 {
@@ -1227,7 +1293,10 @@ bool Protocol_text::store(double from, uint32 decimals, String *buffer)
   return net_store_data((uchar *)buffer->ptr(), buffer->length());
 }
 
-bool Protocol_text::store(Proto_field *field) { return field->send_text(this); }
+bool Protocol_text::store(Proto_field *field)
+{
+  return field->send_text(this);
+}
 
 /**
   @todo
@@ -1674,4 +1743,7 @@ bool Protocol_binary::send_out_parameters(List< Item_param > *sp_params)
   @returns: the file descriptor of the socket.
 */
 
-my_socket Protocol_classic::get_socket() { return get_vio()->mysql_socket.fd; }
+my_socket Protocol_classic::get_socket()
+{
+  return get_vio()->mysql_socket.fd;
+}

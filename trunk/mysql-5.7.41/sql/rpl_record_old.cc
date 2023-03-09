@@ -102,7 +102,8 @@ int unpack_row_old(Relay_log_info *rli, TABLE *table, uint const colcnt, uchar *
   if (colcnt != table->s->fields)
   {
     Field **fptr = &table->field[colcnt - 1];
-    do master_null_bytes = (*fptr)->last_null_byte();
+    do
+      master_null_bytes = (*fptr)->last_null_byte();
     while (master_null_bytes == Field::LAST_NULL_BYTE_UNDEF && fptr-- > table->field);
 
     /*

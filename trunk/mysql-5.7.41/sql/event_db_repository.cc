@@ -91,7 +91,10 @@ class Event_db_intact : public Table_check_intact
   bool silence_error;
 
  public:
-  Event_db_intact() : silence_error(FALSE) { has_keys = TRUE; }
+  Event_db_intact() : silence_error(FALSE)
+  {
+    has_keys = TRUE;
+  }
   my_bool check_event_table(TABLE *table);
 
  protected:

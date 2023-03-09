@@ -58,7 +58,10 @@ int compare_ulonglong2(void *cmp_arg MY_ATTRIBUTE((unused)), const ulonglong *s,
   return compare_ulonglong(s, t);
 }
 
-int compare_decimal2(int *len, const char *s, const char *t) { return memcmp(s, t, *len); }
+int compare_decimal2(int *len, const char *s, const char *t)
+{
+  return memcmp(s, t, *len);
+}
 
 /**
   Create column data accumulator structures
@@ -195,7 +198,8 @@ bool test_if_number(NUM_INFO *info, const char *str, uint str_len)
       info->ullval = (ulonglong)my_strtoll10(begin, &endpos, &error);
       DBUG_RETURN(1);
     }
-    for (; str != end && my_isdigit(system_charset_info, *str); str++) info->decimals++;
+    for (; str != end && my_isdigit(system_charset_info, *str); str++)
+      info->decimals++;
     if (str == end)
     {
       info->dval = my_atof(begin);
@@ -359,7 +363,8 @@ void field_real::add()
     end = buff + length - 1 - decs + max_notzero_dec_len;
 
     zero_count = 0;
-    for (ptr = buff + length - 1; ptr > end && *ptr == '0'; ptr--) zero_count++;
+    for (ptr = buff + length - 1; ptr > end && *ptr == '0'; ptr--)
+      zero_count++;
 
     if ((decs - zero_count > max_notzero_dec_len))
       max_notzero_dec_len = decs - zero_count;
@@ -1076,7 +1081,8 @@ void Query_result_analyse::cleanup()
 {
   if (f_info)
   {
-    for (field_info **f = f_info; f != f_end; f++) delete (*f);
+    for (field_info **f = f_info; f != f_end; f++)
+      delete (*f);
     f_info = f_end = NULL;
   }
   rows = 0;
@@ -1094,7 +1100,10 @@ void Query_result_analyse::abort_result_set()
   return result->abort_result_set();
 }
 
-int compare_double(const double *s, const double *t) { return ((*s < *t) ? -1 : *s > *t ? 1 : 0); } /* compare_double */
+int compare_double(const double *s, const double *t)
+{
+  return ((*s < *t) ? -1 : *s > *t ? 1 : 0);
+} /* compare_double */
 
 int compare_longlong(const longlong *s, const longlong *t)
 {

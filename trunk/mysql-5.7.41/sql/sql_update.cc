@@ -1167,7 +1167,8 @@ static table_map get_table_map(List< Item > *items)
   Item_field *item;
   table_map map = 0;
 
-  while ((item = (Item_field *)item_it++)) map |= item->used_tables();
+  while ((item = (Item_field *)item_it++))
+    map |= item->used_tables();
   DBUG_PRINT("info", ("table_map: 0x%08lx", (long)map));
   return map;
 }
@@ -1787,7 +1788,8 @@ int Query_result_update::prepare(List< Item > &not_used_values, SELECT_LEX_UNIT 
 
   /* Allocate copy fields */
   uint max_fields = 0;
-  for (uint i = 0; i < table_count; i++) set_if_bigger(max_fields, fields_for_table[i]->elements + leaf_table_count);
+  for (uint i = 0; i < table_count; i++)
+    set_if_bigger(max_fields, fields_for_table[i]->elements + leaf_table_count);
   copy_field = new Copy_field[max_fields];
 
   for (TABLE_LIST *ref = leaves; ref != NULL; ref = ref->next_leaf)
@@ -2141,7 +2143,8 @@ Query_result_update::~Query_result_update()
   assert(trans_safe || !updated || thd->get_transaction()->cannot_safely_rollback(Transaction_ctx::STMT));
 
   if (update_operations != NULL)
-    for (uint i = 0; i < table_count; i++) delete update_operations[i];
+    for (uint i = 0; i < table_count; i++)
+      delete update_operations[i];
 }
 
 bool Query_result_update::send_data(List< Item > &not_used_values)
@@ -2578,7 +2581,8 @@ int Query_result_update::do_updates()
     (void)table->file->ha_rnd_end();
     (void)tmp_table->file->ha_rnd_end();
     check_opt_it.rewind();
-    while (TABLE *tbl = check_opt_it++) tbl->file->ha_rnd_end();
+    while (TABLE *tbl = check_opt_it++)
+      tbl->file->ha_rnd_end();
   }
   DBUG_RETURN(0);
 

@@ -51,7 +51,9 @@ static void read_cost_constants(Cost_model_constants *cost_constants);
   by calling init().
 */
 
-Cost_constant_cache::Cost_constant_cache() : current_cost_constants(NULL), m_inited(false) {}
+Cost_constant_cache::Cost_constant_cache() : current_cost_constants(NULL), m_inited(false)
+{
+}
 
 Cost_constant_cache::~Cost_constant_cache()
 {

@@ -368,7 +368,8 @@ static int ndb_index_stat_option_parse(char *p, Ndb_index_stat_opt &opt)
     DBUG_RETURN(-1);
   *r++ = 0;
 
-  while (isspace(*r)) *r++ = 0;
+  while (isspace(*r))
+    *r++ = 0;
   if (*r == 0)
     DBUG_RETURN(-1);
 
@@ -382,7 +383,8 @@ static int ndb_index_stat_option_parse(char *p, Ndb_index_stat_opt &opt)
     found = true;
 
     char *s;
-    for (s = r; *s != 0; s++) *s = tolower(*s);
+    for (s = r; *s != 0; s++)
+      *s = tolower(*s);
     ulonglong val = my_strtoull(r, &s, 10);
 
     switch (v.unit)
@@ -484,7 +486,8 @@ static int ndb_index_stat_str2opt(const char *str, Ndb_index_stat_opt &opt)
   char *p = buf;
   while (1)
   {
-    while (isspace(*p)) p++;
+    while (isspace(*p))
+      p++;
     if (*p == 0)
       break;
 
@@ -1296,9 +1299,14 @@ struct Ndb_index_stat_proc
   uint cache_query_bytes;
   uint cache_clean_bytes;
 #endif
-  Ndb_index_stat_proc() : is_util(0), ndb(0), now(0), lt(0), busy(false), end(false) {}
+  Ndb_index_stat_proc() : is_util(0), ndb(0), now(0), lt(0), busy(false), end(false)
+  {
+  }
 
-  ~Ndb_index_stat_proc() { assert(ndb == NULL); }
+  ~Ndb_index_stat_proc()
+  {
+    assert(ndb == NULL);
+  }
 
   bool init_ndb(Ndb_cluster_connection *connection)
   {
@@ -2120,7 +2128,8 @@ static void ndb_index_stat_list_verify(Ndb_index_stat_proc &pr)
   pr.cache_query_bytes = 0;
   pr.cache_clean_bytes = 0;
 
-  for (int lt = 1; lt < Ndb_index_stat::LT_Count; lt++) ndb_index_stat_list_verify(pr, lt);
+  for (int lt = 1; lt < Ndb_index_stat::LT_Count; lt++)
+    ndb_index_stat_list_verify(pr, lt);
 
   assert(glob.cache_query_bytes == pr.cache_query_bytes);
   assert(glob.cache_clean_bytes == pr.cache_clean_bytes);

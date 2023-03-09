@@ -140,7 +140,10 @@ const KEY_PART_INFO *Table_access::get_key_part_info(uint field_no) const
 /**
   Get the table that this operation accesses.
 */
-TABLE *Table_access::get_table() const { return get_qep_tab()->table(); }
+TABLE *Table_access::get_table() const
+{
+  return get_qep_tab()->table();
+}
 
 double Table_access::get_fanout() const
 {
@@ -172,7 +175,10 @@ double Table_access::get_fanout() const
 }
 
 /** Get the QEP_TAB object that corresponds to this operation.*/
-const QEP_TAB *Table_access::get_qep_tab() const { return m_join_plan->get_qep_tab(m_tab_no); }
+const QEP_TAB *Table_access::get_qep_tab() const
+{
+  return m_join_plan->get_qep_tab(m_tab_no);
+}
 
 /** Get the Item_equal's set relevant for the specified 'Item_field' */
 Item_equal *Table_access::get_item_equal(const Item_field *field_item) const

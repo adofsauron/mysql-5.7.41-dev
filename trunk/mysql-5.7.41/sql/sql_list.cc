@@ -27,13 +27,15 @@ list_node end_of_list;
 void free_list(I_List< i_string_pair > *list)
 {
   i_string_pair *tmp;
-  while ((tmp = list->get())) delete tmp;
+  while ((tmp = list->get()))
+    delete tmp;
 }
 
 void free_list(I_List< i_string > *list)
 {
   i_string *tmp;
-  while ((tmp = list->get())) delete tmp;
+  while ((tmp = list->get()))
+    delete tmp;
 }
 
 base_list::base_list(const base_list &rhs, MEM_ROOT *mem_root)

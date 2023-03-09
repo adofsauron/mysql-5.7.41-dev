@@ -112,8 +112,14 @@ extern int finalize_schema_table(st_plugin_int *plugin);
 
 #ifdef EMBEDDED_LIBRARY
 // Dummy implementations for embedded
-int initialize_audit_plugin(st_plugin_int *plugin) { return 1; }
-int finalize_audit_plugin(st_plugin_int *plugin) { return 0; }
+int initialize_audit_plugin(st_plugin_int *plugin)
+{
+  return 1;
+}
+int finalize_audit_plugin(st_plugin_int *plugin)
+{
+  return 0;
+}
 #endif
 
 /*
@@ -257,8 +263,14 @@ class sys_var_pluginvar : public sys_var
   */
   const char *orig_pluginvar_name;
 
-  static void *operator new(size_t size, MEM_ROOT *mem_root) { return alloc_root(mem_root, size); }
-  static void operator delete(void *ptr_arg, size_t size) { TRASH(ptr_arg, size); }
+  static void *operator new(size_t size, MEM_ROOT *mem_root)
+  {
+    return alloc_root(mem_root, size);
+  }
+  static void operator delete(void *ptr_arg, size_t size)
+  {
+    TRASH(ptr_arg, size);
+  }
 
   sys_var_pluginvar(sys_var_chain *chain, const char *name_arg, st_mysql_sys_var *plugin_var_arg)
       : sys_var(chain, name_arg, plugin_var_arg->comment,
@@ -272,21 +284,34 @@ class sys_var_pluginvar : public sys_var
   {
     plugin_var->name = name_arg;
   }
-  sys_var_pluginvar *cast_pluginvar() { return this; }
+  sys_var_pluginvar *cast_pluginvar()
+  {
+    return this;
+  }
   bool check_update_type(Item_result type);
   SHOW_TYPE show_type();
   uchar *real_value_ptr(THD *thd, enum_var_type type);
   TYPELIB *plugin_var_typelib(void);
   uchar *do_value_ptr(THD *running_thd, THD *target_thd, enum_var_type type, LEX_STRING *base);
-  uchar *do_value_ptr(THD *thd, enum_var_type type, LEX_STRING *base) { return do_value_ptr(thd, thd, type, base); }
+  uchar *do_value_ptr(THD *thd, enum_var_type type, LEX_STRING *base)
+  {
+    return do_value_ptr(thd, thd, type, base);
+  }
   uchar *session_value_ptr(THD *running_thd, THD *target_thd, LEX_STRING *base)
   {
     return do_value_ptr(running_thd, target_thd, OPT_SESSION, base);
   }
-  uchar *global_value_ptr(THD *thd, LEX_STRING *base) { return do_value_ptr(thd, OPT_GLOBAL, base); }
+  uchar *global_value_ptr(THD *thd, LEX_STRING *base)
+  {
+    return do_value_ptr(thd, OPT_GLOBAL, base);
+  }
   bool do_check(THD *thd, set_var *var);
-  virtual void session_save_default(THD *thd, set_var *var) {}
-  virtual void global_save_default(THD *thd, set_var *var) {}
+  virtual void session_save_default(THD *thd, set_var *var)
+  {
+  }
+  virtual void global_save_default(THD *thd, set_var *var)
+  {
+  }
   bool session_update(THD *thd, set_var *var);
   bool global_update(THD *thd, set_var *var);
 };
@@ -609,7 +634,8 @@ static st_plugin_dl *plugin_dl_add(const LEX_STRING *dl, int report)
       missing 0 record at the end of a list, it will fail miserably
       since the compiler is likely to optimize this away. /Matz
      */
-    for (i = 0; ((st_mysql_plugin *)(ptr + i * sizeof_st_plugin))->info; i++) /* no op */;
+    for (i = 0; ((st_mysql_plugin *)(ptr + i * sizeof_st_plugin))->info; i++)
+      /* no op */;
 
     cur = (st_mysql_plugin *)my_malloc(key_memory_mysql_plugin, (i + 1) * sizeof(st_mysql_plugin),
                                        MYF(MY_ZEROFILL | MY_WME));
@@ -1024,7 +1050,8 @@ static void reap_plugins(void)
   mysql_mutex_lock(&LOCK_plugin_delete);
   mysql_mutex_lock(&LOCK_plugin);
 
-  while ((plugin = *(--reap))) plugin_del(plugin);
+  while ((plugin = *(--reap)))
+    plugin_del(plugin);
 
   mysql_mutex_unlock(&LOCK_plugin_delete);
 }
@@ -1111,7 +1138,8 @@ void plugin_unlock_list(THD *thd, plugin_ref *list, size_t count)
     DBUG_VOID_RETURN;
 
   mysql_mutex_lock(&LOCK_plugin);
-  while (count--) intern_plugin_unlock(lex, *list++);
+  while (count--)
+    intern_plugin_unlock(lex, *list++);
   reap_plugins();
   mysql_mutex_unlock(&LOCK_plugin);
   DBUG_VOID_RETURN;
@@ -1371,7 +1399,8 @@ bool plugin_register_early_plugins(int *argc, char **argv, int flags)
 
   I_List_iterator< i_string > iter(opt_early_plugin_load_list);
   i_string *item;
-  while (NULL != (item = iter++)) plugin_load_list(&tmp_root, argc, argv, item->ptr);
+  while (NULL != (item = iter++))
+    plugin_load_list(&tmp_root, argc, argv, item->ptr);
 
   /* Temporary mem root not needed anymore, can free it here */
   free_root(&tmp_root, MYF(0));
@@ -1531,7 +1560,8 @@ bool plugin_register_dynamic_and_init_all(int *argc, char **argv, int flags)
   {
     I_List_iterator< i_string > iter(opt_plugin_load_list);
     i_string *item;
-    while (NULL != (item = iter++)) plugin_load_list(&tmp_root, argc, argv, item->ptr);
+    while (NULL != (item = iter++))
+      plugin_load_list(&tmp_root, argc, argv, item->ptr);
 
     if (!(flags & PLUGIN_INIT_SKIP_PLUGIN_TABLE))
       plugin_load(&tmp_root, argc, argv);
@@ -1940,7 +1970,8 @@ void plugin_shutdown(void)
 
   /* Dispose of the memory */
 
-  for (i = 0; i < MYSQL_MAX_PLUGIN_TYPE_NUM; i++) my_hash_free(&plugin_hash[i]);
+  for (i = 0; i < MYSQL_MAX_PLUGIN_TYPE_NUM; i++)
+    my_hash_free(&plugin_hash[i]);
   delete plugin_array;
   plugin_array = NULL;
 
@@ -1948,8 +1979,10 @@ void plugin_shutdown(void)
   {
     size_t count = plugin_dl_array->size();
     dl = (st_plugin_dl **)my_alloca(sizeof(void *) * count);
-    for (i = 0; i < count; i++) dl[i] = plugin_dl_array->at(i);
-    for (i = 0; i < plugin_dl_array->size(); i++) free_plugin_mem(dl[i]);
+    for (i = 0; i < count; i++)
+      dl[i] = plugin_dl_array->at(i);
+    for (i = 0; i < plugin_dl_array->size(); i++)
+      free_plugin_mem(dl[i]);
     delete plugin_dl_array;
     plugin_dl_array = NULL;
   }
@@ -2653,9 +2686,15 @@ static void update_func_double(THD *thd, st_mysql_sys_var *var, void *tgt, const
   the function is outside mutex.
 */
 
-void lock_plugin_mutex() { mysql_mutex_lock(&LOCK_plugin); }
+void lock_plugin_mutex()
+{
+  mysql_mutex_lock(&LOCK_plugin);
+}
 
-void unlock_plugin_mutex() { mysql_mutex_unlock(&LOCK_plugin); }
+void unlock_plugin_mutex()
+{
+  mysql_mutex_unlock(&LOCK_plugin);
+}
 
 sys_var *find_sys_var_ex(THD *thd, const char *str, size_t length, bool throw_error, bool locked)
 {
@@ -2967,11 +3006,20 @@ static uchar *intern_sys_var_ptr(THD *thd, int offset, bool global_lock)
   construct_options to their respective types.
 */
 
-static char *mysql_sys_var_char(THD *thd, int offset) { return (char *)intern_sys_var_ptr(thd, offset, true); }
+static char *mysql_sys_var_char(THD *thd, int offset)
+{
+  return (char *)intern_sys_var_ptr(thd, offset, true);
+}
 
-static int *mysql_sys_var_int(THD *thd, int offset) { return (int *)intern_sys_var_ptr(thd, offset, true); }
+static int *mysql_sys_var_int(THD *thd, int offset)
+{
+  return (int *)intern_sys_var_ptr(thd, offset, true);
+}
 
-static long *mysql_sys_var_long(THD *thd, int offset) { return (long *)intern_sys_var_ptr(thd, offset, true); }
+static long *mysql_sys_var_long(THD *thd, int offset)
+{
+  return (long *)intern_sys_var_ptr(thd, offset, true);
+}
 
 static unsigned long *mysql_sys_var_ulong(THD *thd, int offset)
 {
@@ -2988,9 +3036,15 @@ static unsigned long long *mysql_sys_var_ulonglong(THD *thd, int offset)
   return (unsigned long long *)intern_sys_var_ptr(thd, offset, true);
 }
 
-static char **mysql_sys_var_str(THD *thd, int offset) { return (char **)intern_sys_var_ptr(thd, offset, true); }
+static char **mysql_sys_var_str(THD *thd, int offset)
+{
+  return (char **)intern_sys_var_ptr(thd, offset, true);
+}
 
-static double *mysql_sys_var_double(THD *thd, int offset) { return (double *)intern_sys_var_ptr(thd, offset, true); }
+static double *mysql_sys_var_double(THD *thd, int offset)
+{
+  return (double *)intern_sys_var_ptr(thd, offset, true);
+}
 
 void plugin_thdvar_init(THD *thd, bool enable_plugins)
 {
@@ -3082,7 +3136,8 @@ void plugin_thdvar_cleanup(THD *thd, bool enable_plugins)
     {
       plugin_ref *list = thd->lex->plugins.end() - 1;
       DBUG_PRINT("info", ("unlocking %u plugins", static_cast< uint >(idx)));
-      while (list >= thd->lex->plugins.begin()) intern_plugin_unlock(thd->lex, *list--);
+      while (list >= thd->lex->plugins.begin())
+        intern_plugin_unlock(thd->lex, *list--);
     }
 
     reap_plugins();

@@ -40,7 +40,10 @@
 namespace rules_table_service
 {
 
-int MY_ATTRIBUTE((visibility("default"))) dummy_function_to_ensure_we_are_linked_into_the_server() { return 1; }
+int MY_ATTRIBUTE((visibility("default"))) dummy_function_to_ensure_we_are_linked_into_the_server()
+{
+  return 1;
+}
 
 const char *db_name = "query_rewrite";
 const char *table_name = "rewrite_rules";
@@ -54,7 +57,10 @@ int Cursor::read()
   return m_last_read_status;
 }
 
-void free_string(const char *str) { delete[] str; }
+void free_string(const char *str)
+{
+  delete[] str;
+}
 
 static void add_column(MY_BITMAP *map, Cursor::column_id column)
 {
@@ -192,6 +198,9 @@ Cursor::~Cursor()
   delete m_table_list;
 }
 
-Cursor end() { return Cursor(); }
+Cursor end()
+{
+  return Cursor();
+}
 
 }  // namespace rules_table_service

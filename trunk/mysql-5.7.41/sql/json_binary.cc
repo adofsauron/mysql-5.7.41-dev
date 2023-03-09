@@ -939,7 +939,10 @@ enum_field_types Value::field_type() const
 /**
   Create a Value object that represents an error condition.
 */
-static Value err() { return Value(Value::ERROR); }
+static Value err()
+{
+  return Value(Value::ERROR);
+}
 
 /**
   Parse a JSON scalar value.
@@ -1045,7 +1048,10 @@ static Value parse_scalar(uint8 type, const char *data, size_t len)
   @param large tells if the large or small storage format is used; true
                means read four bytes, false means read two bytes
 */
-static size_t read_offset_or_size(const char *data, bool large) { return large ? uint4korr(data) : uint2korr(data); }
+static size_t read_offset_or_size(const char *data, bool large)
+{
+  return large ? uint4korr(data) : uint2korr(data);
+}
 
 /**
   Parse a JSON array or object.

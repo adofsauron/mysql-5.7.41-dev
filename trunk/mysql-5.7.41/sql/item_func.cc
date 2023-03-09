@@ -85,7 +85,10 @@ bool eval_const_cond(THD *thd, Item *cond, bool *value)
 /**
    Test if the sum of arguments overflows the ulonglong range.
 */
-static inline bool test_if_sum_overflows_ull(ulonglong arg1, ulonglong arg2) { return ULLONG_MAX - arg1 < arg2; }
+static inline bool test_if_sum_overflows_ull(ulonglong arg1, ulonglong arg2)
+{
+  return ULLONG_MAX - arg1 < arg2;
+}
 
 void Item_func::set_arguments(List< Item > &list, bool context_free)
 {
@@ -110,7 +113,10 @@ void Item_func::set_arguments(List< Item > &list, bool context_free)
   list.empty();     // Fields are used
 }
 
-Item_func::Item_func(List< Item > &list) : allowed_arg_cols(1) { set_arguments(list, false); }
+Item_func::Item_func(List< Item > &list) : allowed_arg_cols(1)
+{
+  set_arguments(list, false);
+}
 
 Item_func::Item_func(const POS &pos, PT_item_list *opt_list) : super(pos), allowed_arg_cols(1)
 {
@@ -477,9 +483,15 @@ void Item_func_sp::fix_after_pullout(SELECT_LEX *parent_select, SELECT_LEX *remo
   used_tables_cache |= PARAM_TABLE_BIT;
 }
 
-table_map Item_func::used_tables() const { return used_tables_cache; }
+table_map Item_func::used_tables() const
+{
+  return used_tables_cache;
+}
 
-table_map Item_func::not_null_tables() const { return not_null_tables_cache; }
+table_map Item_func::not_null_tables() const
+{
+  return not_null_tables_cache;
+}
 
 void Item_func::print(String *str, enum_query_type query_type)
 {
@@ -635,7 +647,9 @@ void Item_func::fix_num_length_and_dec()
   }
 }
 
-void Item_func_numhybrid::fix_num_length_and_dec() {}
+void Item_func_numhybrid::fix_num_length_and_dec()
+{
+}
 
 /**
   Count max_length and decimals for temporal functions.
@@ -711,7 +725,8 @@ void Item_func::count_decimal_length(Item **item, uint nitems)
 void Item_func::count_only_length(Item **item, uint nitems)
 {
   uint32 char_length = 0;
-  for (uint i = 0; i < nitems; i++) set_if_bigger(char_length, item[i]->max_char_length());
+  for (uint i = 0; i < nitems; i++)
+    set_if_bigger(char_length, item[i]->max_char_length());
   fix_char_length(char_length);
 }
 
@@ -1069,7 +1084,10 @@ Item *Item_func::gc_subst_transformer(uchar *arg)
   return this;
 }
 
-void Item_func::replace_argument(THD *thd, Item **oldpp, Item *newp) { thd->change_item_tree(oldpp, newp); }
+void Item_func::replace_argument(THD *thd, Item **oldpp, Item *newp)
+{
+  thd->change_item_tree(oldpp, newp);
+}
 
 double Item_int_func::val_real()
 {
@@ -3933,7 +3951,8 @@ void Item_func_field::fix_length_and_dec()
   maybe_null = 0;
   max_length = 3;
   cmp_type = args[0]->result_type();
-  for (uint i = 1; i < arg_count; i++) cmp_type = item_cmp_type(cmp_type, args[i]->result_type());
+  for (uint i = 1; i < arg_count; i++)
+    cmp_type = item_cmp_type(cmp_type, args[i]->result_type());
   if (cmp_type == STRING_RESULT)
     agg_arg_charsets_for_comparison(cmp_collation, args, arg_count);
 }
@@ -3969,7 +3988,8 @@ longlong Item_func_ord::val_int()
     uint32 n = 0, l = my_ismbchar(res->charset(), str, str + res->length());
     if (!l)
       return (longlong)((uchar)*str);
-    while (l--) n = (n << 8) | (uint32)((uchar)*str++);
+    while (l--)
+      n = (n << 8) | (uint32)((uchar)*str++);
     return (longlong)n;
   }
   return (longlong)((uchar)(*res)[0]);
@@ -4502,7 +4522,10 @@ String *Item_func_udf_decimal::val_str(String *str)
   return str;
 }
 
-void Item_func_udf_decimal::fix_length_and_dec() { fix_num_length_and_dec(); }
+void Item_func_udf_decimal::fix_length_and_dec()
+{
+  fix_num_length_and_dec();
+}
 
 /* Default max_length is max argument length */
 
@@ -4510,7 +4533,8 @@ void Item_func_udf_str::fix_length_and_dec()
 {
   DBUG_ENTER("Item_func_udf_str::fix_length_and_dec");
   max_length = 0;
-  for (uint i = 0; i < arg_count; i++) set_if_bigger(max_length, args[i]->max_length);
+  for (uint i = 0; i < arg_count; i++)
+    set_if_bigger(max_length, args[i]->max_length);
   DBUG_VOID_RETURN;
 }
 
@@ -4529,7 +4553,10 @@ udf_handler::~udf_handler()
 }
 
 #else
-bool udf_handler::get_arguments() { return 0; }
+bool udf_handler::get_arguments()
+{
+  return 0;
+}
 #endif /* HAVE_DLOPEN */
 
 bool Item_master_pos_wait::itemize(Parse_context *pc, Item **res)
@@ -4877,9 +4904,13 @@ class Interruptible_wait
   static const ulonglong m_interrupt_interval;
 
  public:
-  Interruptible_wait(THD *thd) : m_thd(thd) {}
+  Interruptible_wait(THD *thd) : m_thd(thd)
+  {
+  }
 
-  ~Interruptible_wait() {}
+  ~Interruptible_wait()
+  {
+  }
 
  public:
   /**
@@ -5032,9 +5063,14 @@ void mysql_ull_set_explicit_lock_duration(THD *thd)
 class User_level_lock_wait_error_handler : public Internal_error_handler
 {
  public:
-  User_level_lock_wait_error_handler() : m_lock_wait_timeout(false) {}
+  User_level_lock_wait_error_handler() : m_lock_wait_timeout(false)
+  {
+  }
 
-  bool got_timeout() const { return m_lock_wait_timeout; }
+  bool got_timeout() const
+  {
+    return m_lock_wait_timeout;
+  }
 
   virtual bool handle_condition(THD *thd, uint sql_errno, const char *sqlstate,
                                 Sql_condition::enum_severity_level *level, const char *msg)
@@ -5060,11 +5096,19 @@ class User_level_lock_wait_error_handler : public Internal_error_handler
 class MDL_lock_get_owner_thread_id_visitor : public MDL_context_visitor
 {
  public:
-  MDL_lock_get_owner_thread_id_visitor() : m_owner_id(0) {}
+  MDL_lock_get_owner_thread_id_visitor() : m_owner_id(0)
+  {
+  }
 
-  void visit_context(const MDL_context *ctx) { m_owner_id = ctx->get_owner()->get_thd()->thread_id(); }
+  void visit_context(const MDL_context *ctx)
+  {
+    m_owner_id = ctx->get_owner()->get_thd()->thread_id();
+  }
 
-  my_thread_id get_owner_id() const { return m_owner_id; }
+  my_thread_id get_owner_id() const
+  {
+    return m_owner_id;
+  }
 
  private:
   my_thread_id m_owner_id;
@@ -6667,7 +6711,10 @@ bool Item_func_get_user_var::const_item() const
   return (!var_entry || current_thd->query_id != var_entry->update_query_id);
 }
 
-enum Item_result Item_func_get_user_var::result_type() const { return m_cached_result_type; }
+enum Item_result Item_func_get_user_var::result_type() const
+{
+  return m_cached_result_type;
+}
 
 void Item_func_get_user_var::print(String *str, enum_query_type query_type)
 {
@@ -6879,7 +6926,10 @@ void Item_func_get_system_var::fix_length_and_dec()
   }
 }
 
-void Item_func_get_system_var::print(String *str, enum_query_type query_type) { str->append(item_name); }
+void Item_func_get_system_var::print(String *str, enum_query_type query_type)
+{
+  str->append(item_name);
+}
 
 enum Item_result Item_func_get_system_var::result_type() const
 {
@@ -7285,7 +7335,8 @@ bool Item_func_match::init_search(THD *thd)
     List< Item > fields;
     if (fields.push_back(new Item_string(" ", 1, cmp_collation.collation)))
       DBUG_RETURN(true);
-    for (uint i = 0; i < arg_count; i++) fields.push_back(args[i]);
+    for (uint i = 0; i < arg_count; i++)
+      fields.push_back(args[i]);
     concat_ws = new Item_func_concat_ws(fields);
     if (concat_ws == NULL)
       DBUG_RETURN(true);
@@ -7455,7 +7506,8 @@ bool Item_func_match::fix_fields(THD *thd, Item **ref)
     else
     {
       /* read_set needs to be updated for MATCH arguments */
-      for (uint i = 0; i < arg_count; i++) update_table_read_set(((Item_field *)args[i])->field);
+      for (uint i = 0; i < arg_count; i++)
+        update_table_read_set(((Item_field *)args[i])->field);
       /*
         Prevent index only accces by non-FTS index if table does not have
         FTS_DOC_ID column, find_relevance does not work properly without
@@ -7471,7 +7523,8 @@ bool Item_func_match::fix_fields(THD *thd, Item **ref)
       Since read_set is not updated for MATCH arguments
       it's necessary to update it here for MyISAM.
     */
-    for (uint i = 0; i < arg_count; i++) update_table_read_set(((Item_field *)args[i])->field);
+    for (uint i = 0; i < arg_count; i++)
+      update_table_read_set(((Item_field *)args[i])->field);
   }
 
   table->fulltext_searched = 1;
@@ -7902,7 +7955,10 @@ const char *Item_func_sp::func_name() const
   return qname.ptr();
 }
 
-table_map Item_func_sp::get_initial_pseudo_tables() const { return m_sp->m_chistics->detistic ? 0 : RAND_TABLE_BIT; }
+table_map Item_func_sp::get_initial_pseudo_tables() const
+{
+  return m_sp->m_chistics->detistic ? 0 : RAND_TABLE_BIT;
+}
 
 void my_missing_function_error(const LEX_STRING &token, const char *func_name)
 {
@@ -8328,7 +8384,10 @@ void Item_func_sp::update_used_tables()
 
 ulonglong uuid_value;
 
-void uuid_short_init() { uuid_value = ((((ulonglong)server_id) << 56) + (((ulonglong)server_start_time) << 24)); }
+void uuid_short_init()
+{
+  uuid_value = ((((ulonglong)server_id) << 56) + (((ulonglong)server_start_time) << 24));
+}
 
 bool Item_func_uuid_short::itemize(Parse_context *pc, Item **res)
 {

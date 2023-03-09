@@ -138,7 +138,9 @@ const char *Ndb_rep_tab_reader::nrt_server_id = "server_id";
 const char *Ndb_rep_tab_reader::nrt_binlog_type = "binlog_type";
 const char *Ndb_rep_tab_reader::nrt_conflict_fn = "conflict_fn";
 
-Ndb_rep_tab_reader::Ndb_rep_tab_reader() : binlog_flags(NBT_DEFAULT), conflict_fn_spec(NULL), warning_msg(NULL) {}
+Ndb_rep_tab_reader::Ndb_rep_tab_reader() : binlog_flags(NBT_DEFAULT), conflict_fn_spec(NULL), warning_msg(NULL)
+{
+}
 
 int Ndb_rep_tab_reader::check_schema(const NdbDictionary::Table *reptab, NdbDictionary::Dictionary *dict,
                                      const char **error_str)
@@ -475,11 +477,20 @@ int Ndb_rep_tab_reader::lookup(Ndb *ndb,
   DBUG_RETURN(error);
 };
 
-Uint32 Ndb_rep_tab_reader::get_binlog_flags() const { return binlog_flags; }
+Uint32 Ndb_rep_tab_reader::get_binlog_flags() const
+{
+  return binlog_flags;
+}
 
-const char *Ndb_rep_tab_reader::get_conflict_fn_spec() const { return conflict_fn_spec; }
+const char *Ndb_rep_tab_reader::get_conflict_fn_spec() const
+{
+  return conflict_fn_spec;
+}
 
-const char *Ndb_rep_tab_reader::get_warning_message() const { return warning_msg; }
+const char *Ndb_rep_tab_reader::get_warning_message() const
+{
+  return warning_msg;
+}
 
 /* #ifdef HAVE_NDB_BINLOG */
 

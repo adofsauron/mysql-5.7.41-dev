@@ -74,7 +74,8 @@ static bool check_single_table_insert(List< Item > &fields, TABLE_LIST *view, TA
   *insert_table_ref = NULL;  // reset for call to check_single_table()
   table_map tables = 0;
 
-  while ((item = it++)) tables |= item->used_tables();
+  while ((item = it++))
+    tables |= item->used_tables();
 
   if (view->check_single_table(insert_table_ref, tables))
   {
@@ -1091,7 +1092,8 @@ static void prepare_for_positional_update(TABLE *table, TABLE_LIST *tables)
   assert(tables->is_view());
   List_iterator< TABLE_LIST > it(*tables->view_tables);
   TABLE_LIST *tbl;
-  while ((tbl = it++)) prepare_for_positional_update(tbl->table, tbl);
+  while ((tbl = it++))
+    prepare_for_positional_update(tbl->table, tbl);
 
   return;
 }

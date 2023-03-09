@@ -44,7 +44,10 @@ class Ndb_schema_objects
                        PSI_INSTRUMENT_ME);
   }
 
-  ~Ndb_schema_objects() { my_hash_free(&m_hash); }
+  ~Ndb_schema_objects()
+  {
+    my_hash_free(&m_hash);
+  }
 
 } ndb_schema_objects;
 

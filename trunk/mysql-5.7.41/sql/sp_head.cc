@@ -445,7 +445,8 @@ sp_head::~sp_head()
   // Parsing of SP-body must have been already finished.
   assert(!m_parser_data.is_parsing_sp_body());
 
-  for (uint ip = 0; (i = get_instr(ip)); ip++) delete i;
+  for (uint ip = 0; (i = get_instr(ip)); ip++)
+    delete i;
 
   delete m_root_parsing_ctx;
 
@@ -863,7 +864,8 @@ bool sp_head::execute(THD *thd, bool merge_da_on_success)
   }
 
   // Restore the caller's original Diagnostics Area.
-  while (thd->get_stmt_da() != &sp_da) thd->pop_diagnostics_area();
+  while (thd->get_stmt_da() != &sp_da)
+    thd->pop_diagnostics_area();
   thd->pop_diagnostics_area();
   assert(thd->get_stmt_da() == caller_da);
 
@@ -1753,7 +1755,8 @@ void sp_head::optimize()
         sp_branch_instr *ibp;
         List_iterator_fast< sp_branch_instr > li(bp);
 
-        while ((ibp = li++)) ibp->set_destination(src, dst);
+        while ((ibp = li++))
+          ibp->set_destination(src, dst);
       }
       i->opt_move(dst, &bp);
       src += 1;

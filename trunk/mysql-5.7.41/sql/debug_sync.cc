@@ -414,7 +414,9 @@ struct st_debug_sync_globals
   ulonglong dsp_executed;         /* statistics */
   ulonglong dsp_max_active;       /* statistics */
 
-  st_debug_sync_globals() : dsp_hits(0), dsp_executed(0), dsp_max_active(0) {}
+  st_debug_sync_globals() : dsp_hits(0), dsp_executed(0), dsp_max_active(0)
+  {
+  }
 
  private:
   // Not implemented:
@@ -1212,7 +1214,8 @@ static inline const char *advance_mbchar_ptr(const char *ptr)
 
 static inline const char *skip_whitespace(const char *ptr)
 {
-  while (ptr != NULL && *ptr && my_isspace(system_charset_info, *ptr)) ptr = advance_mbchar_ptr(ptr);
+  while (ptr != NULL && *ptr && my_isspace(system_charset_info, *ptr))
+    ptr = advance_mbchar_ptr(ptr);
 
   return ptr;
 }
@@ -1227,7 +1230,8 @@ static inline const char *skip_whitespace(const char *ptr)
 
 static inline const char *get_token_end_ptr(const char *ptr)
 {
-  while (ptr != NULL && *ptr && !my_isspace(system_charset_info, *ptr)) ptr = advance_mbchar_ptr(ptr);
+  while (ptr != NULL && *ptr && !my_isspace(system_charset_info, *ptr))
+    ptr = advance_mbchar_ptr(ptr);
 
   return ptr;
 }

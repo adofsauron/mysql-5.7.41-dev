@@ -60,9 +60,13 @@ namespace
 
 struct Mem_compare
 {
-  Mem_compare() : m_compare_length(0) {}
+  Mem_compare() : m_compare_length(0)
+  {
+  }
 
-  Mem_compare(const Mem_compare &that) : m_compare_length(that.m_compare_length) {}
+  Mem_compare(const Mem_compare &that) : m_compare_length(that.m_compare_length)
+  {
+  }
 
   bool operator()(const uchar *s1, const uchar *s2) const
   {
@@ -536,7 +540,8 @@ uint Filesort::make_sortorder()
   DBUG_ENTER("make_sortorder");
 
   count = 0;
-  for (ord = order; ord; ord = ord->next) count++;
+  for (ord = order; ord; ord = ord->next)
+    count++;
   if (!sortorder)
     sortorder = (st_sort_field *)sql_alloc(sizeof(st_sort_field) * (count + 1));
   pos = sort = sortorder;
@@ -690,13 +695,19 @@ class Filesort_error_handler : public Internal_error_handler
     stack. The handler will be automatically popped from the error
     handler stack when it is destroyed.
   */
-  Filesort_error_handler(THD *thd) : m_thd(thd), m_seen_not_supported(false) { thd->push_internal_handler(this); }
+  Filesort_error_handler(THD *thd) : m_thd(thd), m_seen_not_supported(false)
+  {
+    thd->push_internal_handler(this);
+  }
 
   /**
     Pop the error handler from the error handler stack, and destroy
     it.
   */
-  ~Filesort_error_handler() { m_thd->pop_internal_handler(); }
+  ~Filesort_error_handler()
+  {
+    m_thd->pop_internal_handler();
+  }
 
   /**
     Handle a condition.
@@ -1832,7 +1843,9 @@ struct Merge_chunk_less
   Merge_chunk_compare_context *m_arg;
 
   // CTOR for filesort()
-  explicit Merge_chunk_less(size_t len) : m_len(len), m_fun(NULL), m_arg(NULL) {}
+  explicit Merge_chunk_less(size_t len) : m_len(len), m_fun(NULL), m_arg(NULL)
+  {
+  }
 
   // CTOR for Unique::get()
   Merge_chunk_less(Sort_param::chunk_compare_fun fun, Merge_chunk_compare_context *arg)
@@ -2424,7 +2437,8 @@ void change_double_for_sort(double nr, uchar *to)
     if (tmp[0] & 128) /* Negative */
     {                 /* make complement */
       uint i;
-      for (i = 0; i < sizeof(nr); i++) tmp[i] = tmp[i] ^ (uchar)255;
+      for (i = 0; i < sizeof(nr); i++)
+        tmp[i] = tmp[i] ^ (uchar)255;
     }
     else
     { /* Set high and move exponent one up */

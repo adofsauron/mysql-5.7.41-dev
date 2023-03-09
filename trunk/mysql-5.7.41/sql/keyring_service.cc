@@ -30,7 +30,9 @@
 
 struct Key_data
 {
-  Key_data() : result(TRUE) {}
+  Key_data() : result(TRUE)
+  {
+  }
 
   const char *key_id;
   const char *key_type_to_store;

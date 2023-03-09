@@ -832,7 +832,8 @@ void free_items(Item *item)
 void cleanup_items(Item *item)
 {
   DBUG_ENTER("cleanup_items");
-  for (; item; item = item->next) item->cleanup();
+  for (; item; item = item->next)
+    item->cleanup();
   DBUG_VOID_RETURN;
 }
 
@@ -2429,7 +2430,8 @@ int mysql_execute_command(THD *thd, bool first_level)
         DBUG_RETURN(0);
       }
 
-      for (table = all_tables; table; table = table->next_global) table->updating = TRUE;
+      for (table = all_tables; table; table = table->next_global)
+        table->updating = TRUE;
     }
 
     /*
@@ -4930,7 +4932,10 @@ bool my_yyoverflow(short **yyss, YYSTYPE **yyvs, YYLTYPE **yyls, ulong *yystacks
 
   @todo Call it after we use THD for queries, not before.
 */
-void mysql_reset_thd_for_next_command(THD *thd) { thd->reset_for_next_command(); }
+void mysql_reset_thd_for_next_command(THD *thd)
+{
+  thd->reset_for_next_command();
+}
 
 void THD::reset_for_next_command()
 {
@@ -5416,7 +5421,10 @@ bool add_field_to_list(THD *thd, LEX_STRING *field_name, enum_field_types type, 
 
 /** Store position for column in ALTER TABLE .. ADD column. */
 
-void store_position_for_column(const char *name) { current_thd->lex->last_field->after = (char *)(name); }
+void store_position_for_column(const char *name)
+{
+  current_thd->lex->last_field->after = (char *)(name);
+}
 
 /**
   save order by and tables in own lists.
@@ -6501,7 +6509,9 @@ bool check_host_name(const LEX_CSTRING &str)
 class Parser_oom_handler : public Internal_error_handler
 {
  public:
-  Parser_oom_handler() : m_has_errors(false), m_is_mem_error(false) {}
+  Parser_oom_handler() : m_has_errors(false), m_is_mem_error(false)
+  {
+  }
   virtual bool handle_condition(THD *thd, uint sql_errno, const char *sqlstate,
                                 Sql_condition::enum_severity_level *level, const char *msg)
   {

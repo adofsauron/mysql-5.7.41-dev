@@ -619,7 +619,8 @@ static void ipv6_to_str(const in6_addr *ipv6, char *str)
 
   uint16 ipv6_words[IN6_ADDR_NUM_WORDS];
 
-  for (int i = 0; i < IN6_ADDR_NUM_WORDS; ++i) ipv6_words[i] = (ipv6_bytes[2 * i] << 8) + ipv6_bytes[2 * i + 1];
+  for (int i = 0; i < IN6_ADDR_NUM_WORDS; ++i)
+    ipv6_words[i] = (ipv6_bytes[2 * i] << 8) + ipv6_bytes[2 * i + 1];
 
   // 2. Find "the gap" -- longest sequence of zeros in IPv6-address.
 

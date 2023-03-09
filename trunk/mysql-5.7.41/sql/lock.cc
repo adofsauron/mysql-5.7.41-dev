@@ -548,7 +548,8 @@ void mysql_lock_abort(THD *thd, TABLE *table, bool upgrade_lock)
 
   if ((locked = get_lock_data(thd, &table, 1, GET_LOCK_UNLOCK)))
   {
-    for (uint i = 0; i < locked->lock_count; i++) thr_abort_locks(locked->locks[i]->lock, upgrade_lock);
+    for (uint i = 0; i < locked->lock_count; i++)
+      thr_abort_locks(locked->locks[i]->lock, upgrade_lock);
     my_free(locked);
   }
   DBUG_VOID_RETURN;

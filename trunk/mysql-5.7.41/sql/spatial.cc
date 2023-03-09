@@ -215,19 +215,40 @@ Geometry::Class_info::Class_info(const char *name, int type_id, create_geom_t cr
   ci_collection[type_id] = this;
 }
 
-inline static Geometry *create_point(char *buffer) { return ::new (buffer) Gis_point(false); }
+inline static Geometry *create_point(char *buffer)
+{
+  return ::new (buffer) Gis_point(false);
+}
 
-inline static Geometry *create_linestring(char *buffer) { return ::new (buffer) Gis_line_string(false); }
+inline static Geometry *create_linestring(char *buffer)
+{
+  return ::new (buffer) Gis_line_string(false);
+}
 
-inline static Geometry *create_polygon(char *buffer) { return ::new (buffer) Gis_polygon(false); }
+inline static Geometry *create_polygon(char *buffer)
+{
+  return ::new (buffer) Gis_polygon(false);
+}
 
-inline static Geometry *create_multipoint(char *buffer) { return ::new (buffer) Gis_multi_point(false); }
+inline static Geometry *create_multipoint(char *buffer)
+{
+  return ::new (buffer) Gis_multi_point(false);
+}
 
-inline static Geometry *create_multipolygon(char *buffer) { return ::new (buffer) Gis_multi_polygon(false); }
+inline static Geometry *create_multipolygon(char *buffer)
+{
+  return ::new (buffer) Gis_multi_polygon(false);
+}
 
-inline static Geometry *create_multilinestring(char *buffer) { return ::new (buffer) Gis_multi_line_string(false); }
+inline static Geometry *create_multilinestring(char *buffer)
+{
+  return ::new (buffer) Gis_multi_line_string(false);
+}
 
-inline static Geometry *create_geometrycollection(char *buffer) { return ::new (buffer) Gis_geometry_collection(); }
+inline static Geometry *create_geometrycollection(char *buffer)
+{
+  return ::new (buffer) Gis_geometry_collection();
+}
 
 /**
   Check if geometry type sub is a subtype of super.
@@ -679,7 +700,10 @@ class Geometry_well_formed_checker : public WKB_scanner_event_handler
     previous_type = current_type;
   }
 
-  virtual bool continue_scan() const { return is_ok; }
+  virtual bool continue_scan() const
+  {
+    return is_ok;
+  }
 
   /**
     Check if the parsed WKB was well-formed, as far as this handler
@@ -692,14 +716,20 @@ class Geometry_well_formed_checker : public WKB_scanner_event_handler
 
     @return True if the WKB was well-formed, false otherwise.
    */
-  bool is_well_formed() { return is_ok; }
+  bool is_well_formed()
+  {
+    return is_ok;
+  }
 
   /**
     Get the position after the last parsed byte.
 
     @return Pointer pointing to after the last parsed byte.
   */
-  const char *get_last_position() { return static_cast< const char * >(last_position); }
+  const char *get_last_position()
+  {
+    return static_cast< const char * >(last_position);
+  }
 };
 
 bool Geometry::is_well_formed(const char *from, size_t length, Geometry::wkbType type, Geometry::wkbByteOrder bo)
@@ -946,7 +976,9 @@ class GeomColl_component_counter : public WKB_scanner_event_handler
  public:
   size_t num;
 
-  GeomColl_component_counter() : num(0) {}
+  GeomColl_component_counter() : num(0)
+  {
+  }
 
   virtual void on_wkb_start(Geometry::wkbByteOrder bo, Geometry::wkbType geotype, const void *wkb, uint32 len,
                             bool has_hdr)
@@ -955,7 +987,9 @@ class GeomColl_component_counter : public WKB_scanner_event_handler
       num++;
   }
 
-  virtual void on_wkb_end(const void *wkb) {}
+  virtual void on_wkb_end(const void *wkb)
+  {
+  }
 };
 
 bool Geometry::envelope(String *result) const
@@ -1407,7 +1441,10 @@ bool Gis_point::get_mbr(MBR *mbr, wkb_parser *wkb) const
   return false;
 }
 
-const Geometry::Class_info *Gis_point::get_class_info() const { return &point_class; }
+const Geometry::Class_info *Gis_point::get_class_info() const
+{
+  return &point_class;
+}
 
 /***************************** LineString *******************************/
 uint32 Gis_line_string::get_data_size() const
@@ -1536,7 +1573,10 @@ bool Gis_line_string::get_data_as_wkt(String *txt, wkb_parser *wkb) const
   return false;
 }
 
-bool Gis_line_string::get_mbr(MBR *mbr, wkb_parser *wkb) const { return get_mbr_for_points(mbr, wkb, 0); }
+bool Gis_line_string::get_mbr(MBR *mbr, wkb_parser *wkb) const
+{
+  return get_mbr_for_points(mbr, wkb, 0);
+}
 
 int Gis_line_string::geom_length(double *len) const
 {
@@ -1623,7 +1663,10 @@ int Gis_line_string::point_n(uint32 num, String *result) const
   return create_point(result, &wkb);
 }
 
-const Geometry::Class_info *Gis_line_string::get_class_info() const { return &linestring_class; }
+const Geometry::Class_info *Gis_line_string::get_class_info() const
+{
+  return &linestring_class;
+}
 
 /***************************** Polygon *******************************/
 /**
@@ -2194,7 +2237,10 @@ int Gis_polygon::interior_ring_n(uint32 num, String *result) const
   return 0;
 }
 
-const Geometry::Class_info *Gis_polygon::get_class_info() const { return &polygon_class; }
+const Geometry::Class_info *Gis_polygon::get_class_info() const
+{
+  return &polygon_class;
+}
 
 /**
    Packup a polygon's outer ring and inner rings into a single chunk of
@@ -2414,7 +2460,10 @@ bool Gis_multi_point::get_data_as_wkt(String *txt, wkb_parser *wkb) const
   return false;
 }
 
-bool Gis_multi_point::get_mbr(MBR *mbr, wkb_parser *wkb) const { return get_mbr_for_points(mbr, wkb, WKB_HEADER_SIZE); }
+bool Gis_multi_point::get_mbr(MBR *mbr, wkb_parser *wkb) const
+{
+  return get_mbr_for_points(mbr, wkb, WKB_HEADER_SIZE);
+}
 
 int Gis_multi_point::num_geometries(uint32 *num) const
 {
@@ -2436,7 +2485,10 @@ int Gis_multi_point::geometry_n(uint32 num, String *result) const
   return 0;
 }
 
-const Geometry::Class_info *Gis_multi_point::get_class_info() const { return &multipoint_class; }
+const Geometry::Class_info *Gis_multi_point::get_class_info() const
+{
+  return &multipoint_class;
+}
 
 /***************************** MultiLineString *******************************/
 uint32 Gis_multi_line_string::get_data_size() const
@@ -2649,7 +2701,10 @@ int Gis_multi_line_string::is_closed(int *closed) const
   return 0;
 }
 
-const Geometry::Class_info *Gis_multi_line_string::get_class_info() const { return &multilinestring_class; }
+const Geometry::Class_info *Gis_multi_line_string::get_class_info() const
+{
+  return &multilinestring_class;
+}
 
 /***************************** MultiPolygon *******************************/
 uint32 Gis_multi_polygon::get_data_size() const
@@ -2843,7 +2898,10 @@ int Gis_multi_polygon::geometry_n(uint32 num, String *result) const
   return result->append(start_of_polygon, (uint32)(wkb.data() - start_of_polygon), static_cast< size_t >(0));
 }
 
-const Geometry::Class_info *Gis_multi_polygon::get_class_info() const { return &multipolygon_class; }
+const Geometry::Class_info *Gis_multi_polygon::get_class_info() const
+{
+  return &multipolygon_class;
+}
 
 /************************* GeometryCollection ****************************/
 
@@ -3305,7 +3363,10 @@ bool Gis_geometry_collection::dimension(uint32 *res_dim, wkb_parser *wkb) const
   return false;
 }
 
-const Geometry::Class_info *Gis_geometry_collection::get_class_info() const { return &geometrycollection_class; }
+const Geometry::Class_info *Gis_geometry_collection::get_class_info() const
+{
+  return &geometrycollection_class;
+}
 
 /************************* Stepper classes  ****************************/
 
@@ -3484,7 +3545,8 @@ const char *Polygon_stepper::operator()(const char *p)
   nls = uint4korr(p);
   p += sizeof(uint32);
 
-  for (uint32 i = 0; i < nls; i++) p = lsstepper(p);
+  for (uint32 i = 0; i < nls; i++)
+    p = lsstepper(p);
 
   // m_bo is latest byte order, which allows mixed byte orders in the same
   // wkb byte string.
@@ -4626,7 +4688,8 @@ void Gis_wkb_vector< T >::resize(size_t sz)
     // know how much to shrink in m_ptr.
     reassemble();
     size_t sublen = 0;
-    for (size_t i = ngeo; i > sz; i--) sublen += (*m_geo_vect)[i - 1].get_nbytes();
+    for (size_t i = ngeo; i > sz; i--)
+      sublen += (*m_geo_vect)[i - 1].get_nbytes();
 
     // '\0' not allowed in middle and no need for ending '\0' because it's
     // at the end of the original free chunk which is right after this chunk.

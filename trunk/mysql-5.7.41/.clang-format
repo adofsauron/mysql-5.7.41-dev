@@ -14,10 +14,10 @@ AllowAllConstructorInitializersOnNextLine: true
 AllowAllParametersOfDeclarationOnNextLine: true
 AllowShortBlocksOnASingleLine: Never
 AllowShortCaseLabelsOnASingleLine: false
-AllowShortFunctionsOnASingleLine: All
-AllowShortLambdasOnASingleLine: All
+AllowShortFunctionsOnASingleLine: None
+AllowShortLambdasOnASingleLine: None
 AllowShortIfStatementsOnASingleLine: Never
-AllowShortLoopsOnASingleLine: true
+AllowShortLoopsOnASingleLine: false
 AlwaysBreakAfterDefinitionReturnType: None
 AlwaysBreakAfterReturnType: None
 AlwaysBreakBeforeMultilineStrings: true
@@ -172,7 +172,7 @@ DerivePointerAlignment: false
 PointerAlignment: Right
  
 # MySQL source code is allowed to use C++11 (and C++14) features.
-# Standard:        Cpp11
+Standard:        Cpp11
  
 # MySQL includes frequently are not order-independent (e.g. my_config.h needs
 # to go on top). This is unfortunate, but not something we can change easily,

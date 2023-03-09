@@ -559,10 +559,12 @@ static void register_hidden_field(TABLE *table, Field **default_field, Field **f
   Field **tmp_field = table->field;
 
   /* Increase all of registed fields index */
-  for (i = 0; i < table->s->fields; i++) tmp_field[i]->field_index++;
+  for (i = 0; i < table->s->fields; i++)
+    tmp_field[i]->field_index++;
 
   // Increase the field_index of visible blob field
-  for (i = 0; i < table->s->blob_fields; i++) blob_field[i]++;
+  for (i = 0; i < table->s->blob_fields; i++)
+    blob_field[i]++;
   // Insert field
   table->field[-1] = field;
   default_field[-1] = NULL;
@@ -1928,7 +1930,8 @@ TABLE *create_virtual_tmp_table(THD *thd, List< Create_field > &field_list)
   }
   return table;
 error:
-  for (field = table->field; *field; ++field) delete *field; /* just invokes field destructor */
+  for (field = table->field; *field; ++field)
+    delete *field; /* just invokes field destructor */
   return 0;
 }
 
@@ -2271,7 +2274,8 @@ void free_tmp_table(THD *thd, TABLE *entry)
     entry->set_deleted();
   }
   /* free blobs */
-  for (Field **ptr = entry->field; *ptr; ptr++) (*ptr)->mem_free();
+  for (Field **ptr = entry->field; *ptr; ptr++)
+    (*ptr)->mem_free();
   free_io_cache(entry);
 
   if (entry->temp_pool_slot != MY_BIT_NONE)

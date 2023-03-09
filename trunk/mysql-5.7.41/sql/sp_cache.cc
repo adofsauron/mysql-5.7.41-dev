@@ -54,7 +54,10 @@ class sp_cache
                  key_memory_sp_cache);
   }
 
-  ~sp_cache() { my_hash_free(&m_hashtable); }
+  ~sp_cache()
+  {
+    my_hash_free(&m_hashtable);
+  }
 
   /**
    Inserts a sp_head object into a hash table.
@@ -63,14 +66,20 @@ class sp_cache
      @return TRUE Failure
      @return FALSE Success
   */
-  bool insert(sp_head *sp) { return my_hash_insert(&m_hashtable, (const uchar *)sp); }
+  bool insert(sp_head *sp)
+  {
+    return my_hash_insert(&m_hashtable, (const uchar *)sp);
+  }
 
   sp_head *lookup(char *name, size_t namelen)
   {
     return (sp_head *)my_hash_search(&m_hashtable, (const uchar *)name, namelen);
   }
 
-  void remove(sp_head *sp) { my_hash_delete(&m_hashtable, (uchar *)sp); }
+  void remove(sp_head *sp)
+  {
+    my_hash_delete(&m_hashtable, (uchar *)sp);
+  }
 
   /**
     Remove all elements from a stored routine cache if the current
@@ -209,7 +218,10 @@ void sp_cache_flush_obsolete(sp_cache **cp, sp_head **sp)
   Return the current global version of the cache.
 */
 
-int64 sp_cache_version() { return my_atomic_load64(&Cversion); }
+int64 sp_cache_version()
+{
+  return my_atomic_load64(&Cversion);
+}
 
 /**
   Enforce that the current number of elements in the cache don't exceed

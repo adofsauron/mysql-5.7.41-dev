@@ -164,7 +164,8 @@ void BG_geometry_collection::merge_components(my_bool *pnull_value)
       const size_t num_geos = m_geos.size();
       uint32 composition[6] = {0};
 
-      for (size_t i = 0; i < num_geos; ++i) composition[m_geos[i]->get_type() - 1]++;
+      for (size_t i = 0; i < num_geos; ++i)
+        composition[m_geos[i]->get_type() - 1]++;
 
       if (num_geos != last_num_geos || memcmp(composition, last_composition, sizeof(composition)))
       {
@@ -284,7 +285,8 @@ class Pointer_vector : public std::vector< T * >
  public:
   ~Pointer_vector()
   {
-    for (typename parent::iterator i = this->begin(); i != this->end(); ++i) delete (*i);
+    for (typename parent::iterator i = this->begin(); i != this->end(); ++i)
+      delete (*i);
   }
 };
 
@@ -294,17 +296,27 @@ class Is_target_geometry
   Geometry *m_target;
 
  public:
-  Is_target_geometry(Geometry *t) : m_target(t) {}
+  Is_target_geometry(Geometry *t) : m_target(t)
+  {
+  }
 
-  bool operator()(Geometry *g) { return g == m_target; }
+  bool operator()(Geometry *g)
+  {
+    return g == m_target;
+  }
 };
 
 class Rtree_entry_compare
 {
  public:
-  Rtree_entry_compare() {}
+  Rtree_entry_compare()
+  {
+  }
 
-  bool operator()(const BG_rtree_entry &re1, const BG_rtree_entry &re2) const { return re1.second < re2.second; }
+  bool operator()(const BG_rtree_entry &re1, const BG_rtree_entry &re2) const
+  {
+    return re1.second < re2.second;
+  }
 };
 
 /**
@@ -583,7 +595,9 @@ class Is_empty_geometry : public WKB_scanner_event_handler
  public:
   bool is_empty;
 
-  Is_empty_geometry() : is_empty(true) {}
+  Is_empty_geometry() : is_empty(true)
+  {
+  }
 
   virtual void on_wkb_start(Geometry::wkbByteOrder bo, Geometry::wkbType geotype, const void *wkb, uint32 len,
                             bool has_hdr)
@@ -592,9 +606,14 @@ class Is_empty_geometry : public WKB_scanner_event_handler
       is_empty = false;
   }
 
-  virtual void on_wkb_end(const void *wkb) {}
+  virtual void on_wkb_end(const void *wkb)
+  {
+  }
 
-  virtual bool continue_scan() const { return is_empty; }
+  virtual bool continue_scan() const
+  {
+    return is_empty;
+  }
 };
 
 bool is_empty_geocollection(const Geometry *g)

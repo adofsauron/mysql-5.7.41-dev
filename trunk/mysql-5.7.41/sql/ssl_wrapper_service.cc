@@ -36,7 +36,10 @@
 namespace ssl_wrappe_service
 {
 
-int MY_ATTRIBUTE((visibility("default"))) dummy_function_to_ensure_we_are_linked_into_the_server() { return 1; }
+int MY_ATTRIBUTE((visibility("default"))) dummy_function_to_ensure_we_are_linked_into_the_server()
+{
+  return 1;
+}
 
 }  // namespace ssl_wrappe_service
 
@@ -132,9 +135,15 @@ extern "C"
       -1 default values should be used
       >0 verification depth
   */
-  long ssl_wrapper_verify_depth(Vio *vio) { return SSL_get_verify_depth((SSL *)vio->ssl_arg); }
+  long ssl_wrapper_verify_depth(Vio *vio)
+  {
+    return SSL_get_verify_depth((SSL *)vio->ssl_arg);
+  }
 
-  long ssl_wrapper_verify_mode(Vio *vio) { return SSL_get_verify_mode((SSL *)vio->ssl_arg); }
+  long ssl_wrapper_verify_mode(Vio *vio)
+  {
+    return SSL_get_verify_mode((SSL *)vio->ssl_arg);
+  }
 
   /**
     Return issuer name form peers ssl certificate
@@ -285,7 +294,10 @@ extern "C"
     SSL_free(ssl);
   }
 
-  long ssl_wrapper_sess_accept(struct st_VioSSLFd *vio_ssl) { return SSL_CTX_sess_accept(vio_ssl->ssl_context); }
+  long ssl_wrapper_sess_accept(struct st_VioSSLFd *vio_ssl)
+  {
+    return SSL_CTX_sess_accept(vio_ssl->ssl_context);
+  }
 
   long ssl_wrapper_sess_accept_good(struct st_VioSSLFd *vio_ssl)
   {

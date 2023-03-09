@@ -158,7 +158,8 @@ void Gtid_set::add_interval_memory_lock_taken(int n_ivs, Interval *ivs)
   DBUG_ENTER("Gtid_set::add_interval_memory");
   assert_free_intervals_locked();
   // make ivs a linked list
-  for (int i = 0; i < n_ivs - 1; i++) ivs[i].next = &(ivs[i + 1]);
+  for (int i = 0; i < n_ivs - 1; i++)
+    ivs[i].next = &(ivs[i + 1]);
   Interval_iterator ivit(this);
   ivs[n_ivs - 1].next = ivit.get();
   // add intervals to list of free intervals
@@ -269,7 +270,8 @@ void Gtid_set::clear()
     if (iv != NULL)
     {
       // find the end of the list of free intervals
-      while (free_ivit.get() != NULL) free_ivit.next();
+      while (free_ivit.get() != NULL)
+        free_ivit.next();
       // append the present list
       free_ivit.set(iv);
       // clear the pointer to the head of this list
@@ -416,7 +418,10 @@ rpl_gno parse_gno(const char **s)
   return ret;
 }
 
-int format_gno(char *s, rpl_gno gno) { return (int)(ll2str(gno, s, 10, 1) - s); }
+int format_gno(char *s, rpl_gno gno)
+{
+  return (int)(ll2str(gno, s, 10, 1) - s);
+}
 
 enum_return_status Gtid_set::add_gtid_text(const char *text, bool *anonymous)
 {
@@ -1034,7 +1039,8 @@ bool Gtid_set::equals(const Gtid_set *other) const
   {
     rpl_sidno sidno = 0, other_sidno = 0;  // set to 0 to avoid compilation warning
     // find next sidno (in order of increasing sid) for this set
-    while (sid_i < map_max_sidno && !contains_sidno(sidno = sid_map->get_sorted_sidno(sid_i))) sid_i++;
+    while (sid_i < map_max_sidno && !contains_sidno(sidno = sid_map->get_sorted_sidno(sid_i)))
+      sid_i++;
     // find next sidno (in order of increasing sid) for other set
     while (other_sid_i < other_map_max_sidno &&
            !other->contains_sidno(other_sidno = other_sid_map->get_sorted_sidno(other_sid_i)))

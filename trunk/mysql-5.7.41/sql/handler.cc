@@ -172,7 +172,10 @@ using std::min;
   This will be slightly slower and perhaps a tiny bit less accurate than
   doing it the IEEE754 way but log2() should be available on C99 systems.
 */
-inline double log2(double x) { return (log(x) / M_LN2); }
+inline double log2(double x)
+{
+  return (log(x) / M_LN2);
+}
 #endif
 
 /*
@@ -642,7 +645,10 @@ handler *get_new_handler(TABLE_SHARE *share, MEM_ROOT *alloc, handlerton *db_typ
 static const char **handler_errmsgs;
 
 C_MODE_START
-static const char *get_handler_errmsg(int nr) { return handler_errmsgs[nr - HA_ERR_FIRST]; }
+static const char *get_handler_errmsg(int nr)
+{
+  return handler_errmsgs[nr - HA_ERR_FIRST];
+}
 C_MODE_END
 
 /**
@@ -825,7 +831,8 @@ int ha_initialize_handlerton(st_plugin_int *plugin)
       {
         int idx = (int)DB_TYPE_FIRST_DYNAMIC;
 
-        while (idx < (int)DB_TYPE_DEFAULT && installed_htons[idx]) idx++;
+        while (idx < (int)DB_TYPE_DEFAULT && installed_htons[idx])
+          idx++;
 
         if (idx == (int)DB_TYPE_DEFAULT)
         {
@@ -963,7 +970,10 @@ static my_bool dropdb_handlerton(THD *unused1, plugin_ref plugin, void *path)
   return FALSE;
 }
 
-void ha_drop_database(char *path) { plugin_foreach(NULL, dropdb_handlerton, MYSQL_STORAGE_ENGINE_PLUGIN, path); }
+void ha_drop_database(char *path)
+{
+  plugin_foreach(NULL, dropdb_handlerton, MYSQL_STORAGE_ENGINE_PLUGIN, path);
+}
 
 static my_bool closecon_handlerton(THD *thd, plugin_ref plugin, void *unused)
 {
@@ -986,7 +996,10 @@ static my_bool closecon_handlerton(THD *thd, plugin_ref plugin, void *unused)
   @note
     don't bother to rollback here, it's done already
 */
-void ha_close_connection(THD *thd) { plugin_foreach(thd, closecon_handlerton, MYSQL_STORAGE_ENGINE_PLUGIN, 0); }
+void ha_close_connection(THD *thd)
+{
+  plugin_foreach(thd, closecon_handlerton, MYSQL_STORAGE_ENGINE_PLUGIN, 0);
+}
 
 static my_bool kill_handlerton(THD *thd, plugin_ref plugin, void *)
 {
@@ -1001,7 +1014,10 @@ static my_bool kill_handlerton(THD *thd, plugin_ref plugin, void *)
   return FALSE;
 }
 
-void ha_kill_connection(THD *thd) { plugin_foreach(thd, kill_handlerton, MYSQL_STORAGE_ENGINE_PLUGIN, 0); }
+void ha_kill_connection(THD *thd)
+{
+  plugin_foreach(thd, kill_handlerton, MYSQL_STORAGE_ENGINE_PLUGIN, 0);
+}
 
 /* ========================================================================
  ======================= TRANSACTIONS ===================================*/
@@ -2613,7 +2629,10 @@ void handler::end_psi_batch_mode()
 #endif
 }
 
-PSI_table_share *handler::ha_table_share_psi(const TABLE_SHARE *share) const { return share->m_psi; }
+PSI_table_share *handler::ha_table_share_psi(const TABLE_SHARE *share) const
+{
+  return share->m_psi;
+}
 
 /** @brief
   Open database-handler.
@@ -3121,7 +3140,8 @@ int handler::read_first_row(uchar *buf, uint primary_key)
   {
     if (!(error = ha_rnd_init(1)))
     {
-      while ((error = ha_rnd_next(buf)) == HA_ERR_RECORD_DELETED) /* skip deleted row */;
+      while ((error = ha_rnd_next(buf)) == HA_ERR_RECORD_DELETED)
+        /* skip deleted row */;
       const int end_error = ha_rnd_end();
       if (!error)
         error = end_error;
@@ -3999,7 +4019,10 @@ void handler::print_error(int error, myf errflag)
   @return
     Returns true if this is a temporary error
 */
-bool handler::get_error_message(int error, String *buf) { return FALSE; }
+bool handler::get_error_message(int error, String *buf)
+{
+  return FALSE;
+}
 
 /**
   Check for incompatible collation changes.
@@ -4246,7 +4269,8 @@ int handler::rename_table(const char *from, const char *to)
   if (error)
   {
     /* Try to revert the rename. Ignore errors. */
-    for (; ext >= start_ext; ext--) rename_file_ext(to, from, *ext);
+    for (; ext >= start_ext; ext--)
+      rename_file_ext(to, from, *ext);
   }
   return error;
 }
@@ -4618,7 +4642,10 @@ enum_alter_inplace_result handler::check_if_supported_inplace_alter(TABLE *alter
    and old online add/drop index API
 */
 
-void handler::notify_table_changed() { ha_create_handler_files(table->s->path.str, NULL, CHF_INDEX_FLAG, NULL); }
+void handler::notify_table_changed()
+{
+  ha_create_handler_files(table->s->path.str, NULL, CHF_INDEX_FLAG, NULL);
+}
 
 void Alter_inplace_info::report_unsupported_error(const char *not_supported, const char *try_instead)
 {
@@ -5162,7 +5189,8 @@ const char **ha_known_system_databases(void)
 
   list< const char * >::iterator it;
   database = databases;
-  for (it = found_databases.begin(); it != found_databases.end(); it++) *database++ = *it;
+  for (it = found_databases.begin(); it != found_databases.end(); it++)
+    *database++ = *it;
   *database = 0;  // Last element.
 
   return databases;
@@ -5190,7 +5218,10 @@ static my_bool system_databases_handlerton(THD *unused, plugin_ref plugin, void 
   return FALSE;
 }
 
-void st_ha_check_opt::init() { flags = sql_flags = 0; }
+void st_ha_check_opt::init()
+{
+  flags = sql_flags = 0;
+}
 
 /*****************************************************************************
   Key cache handling.
@@ -5468,7 +5499,8 @@ static my_bool binlog_func_foreach(THD *thd, binlog_func_st *bfn)
   hton_list.sz = 0;
   plugin_foreach(thd, binlog_func_list, MYSQL_STORAGE_ENGINE_PLUGIN, &hton_list);
 
-  for (i = 0, sz = hton_list.sz; i < sz; i++) hton_list.hton[i]->binlog_func(hton_list.hton[i], thd, bfn->fn, bfn->arg);
+  for (i = 0, sz = hton_list.sz; i < sz; i++)
+    hton_list.hton[i]->binlog_func(hton_list.hton[i], thd, bfn->fn, bfn->arg);
   return FALSE;
 }
 
@@ -6320,7 +6352,10 @@ void DsMrr_impl::reset()
   DBUG_VOID_RETURN;
 }
 
-static int rowid_cmp(void *h, uchar *a, uchar *b) { return ((handler *)h)->cmp_ref(a, b); }
+static int rowid_cmp(void *h, uchar *a, uchar *b)
+{
+  return ((handler *)h)->cmp_ref(a, b);
+}
 
 /**
   DS-MRR: Fill the buffer with rowids and sort it by rowid
@@ -7199,7 +7234,8 @@ TYPELIB *ha_known_exts()
   known_extensions->type_names = ext;
 
   List_iterator_fast< char > it(found_exts);
-  while ((old_ext = it++)) *ext++ = old_ext;
+  while ((old_ext = it++))
+    *ext++ = old_ext;
   *ext = NULL;
   return known_extensions;
 }

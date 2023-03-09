@@ -333,7 +333,10 @@ Diagnostics_area::Diagnostics_area(bool allow_unlimited_conditions)
   m_message_text[0] = '\0';
 }
 
-Diagnostics_area::~Diagnostics_area() { free_root(&m_condition_root, MYF(0)); }
+Diagnostics_area::~Diagnostics_area()
+{
+  free_root(&m_condition_root, MYF(0));
+}
 
 void Diagnostics_area::reset_diagnostics_area()
 {
@@ -551,7 +554,8 @@ void Diagnostics_area::mark_preexisting_sql_conditions()
   Sql_condition_iterator it(m_conditions_list);
   const Sql_condition *cond;
 
-  while ((cond = it++)) m_preexisting_sql_conditions.push_back(cond, &m_condition_root);
+  while ((cond = it++))
+    m_preexisting_sql_conditions.push_back(cond, &m_condition_root);
 }
 
 void Diagnostics_area::copy_new_sql_conditions(THD *thd, const Diagnostics_area *src_da)

@@ -228,7 +228,9 @@ my_bool metaphon_init(UDF_INIT *initid, UDF_ARGS *args, char *message)
 ** initid	Return value from xxxx_init
 ****************************************************************************/
 
-void metaphon_deinit(UDF_INIT *initid MY_ATTRIBUTE((unused))) {}
+void metaphon_deinit(UDF_INIT *initid MY_ATTRIBUTE((unused)))
+{
+}
 
 /***************************************************************************
 ** UDF string function.
@@ -497,7 +499,8 @@ my_bool myfunc_double_init(UDF_INIT *initid, UDF_ARGS *args, char *message)
   ** As this function wants to have everything as strings, force all arguments
   ** to strings.
   */
-  for (i = 0; i < args->arg_count; i++) args->arg_type[i] = STRING_RESULT;
+  for (i = 0; i < args->arg_count; i++)
+    args->arg_type[i] = STRING_RESULT;
   initid->maybe_null = 1; /* The result may be null */
   initid->decimals = 2;   /* We want 2 decimals in the result */
   initid->max_length = 6; /* 3 digits + . + 2 decimals */
@@ -516,7 +519,8 @@ double myfunc_double(UDF_INIT *initid MY_ATTRIBUTE((unused)), UDF_ARGS *args, ch
     if (args->args[i] == NULL)
       continue;
     val += args->lengths[i];
-    for (j = args->lengths[i]; j-- > 0;) v += args->args[i][j];
+    for (j = args->lengths[i]; j-- > 0;)
+      v += args->args[i][j];
   }
   if (val)
     return (double)v / (double)val;

@@ -199,7 +199,10 @@ enum_return_check Rpl_info_file::do_check_info(uint instance)
   return last_check;
 }
 
-enum_return_check Rpl_info_file::do_check_info() { return do_check_repository_file(info_fname); }
+enum_return_check Rpl_info_file::do_check_info()
+{
+  return do_check_repository_file(info_fname);
+}
 
 /*
   The function counts number of files in a range starting
@@ -448,9 +451,15 @@ bool Rpl_info_file::do_get_info(const int pos, Server_ids *value,
   return error;
 }
 
-char *Rpl_info_file::do_get_description_info() { return info_fname; }
+char *Rpl_info_file::do_get_description_info()
+{
+  return info_fname;
+}
 
-bool Rpl_info_file::do_is_transactional() { return FALSE; }
+bool Rpl_info_file::do_is_transactional()
+{
+  return FALSE;
+}
 
 bool Rpl_info_file::do_update_is_transactional()
 {
@@ -458,7 +467,10 @@ bool Rpl_info_file::do_update_is_transactional()
   return FALSE;
 }
 
-uint Rpl_info_file::do_get_rpl_info_type() { return INFO_REPOSITORY_FILE; }
+uint Rpl_info_file::do_get_rpl_info_type()
+{
+  return INFO_REPOSITORY_FILE;
+}
 
 int init_strvar_from_file(char *var, size_t max_size, IO_CACHE *f, const char *default_val)
 {

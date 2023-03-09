@@ -27,7 +27,9 @@
 
 #include "debug_sync.h"
 
-Logical_clock::Logical_clock() : state(SEQ_UNINIT), offset(0) {}
+Logical_clock::Logical_clock() : state(SEQ_UNINIT), offset(0)
+{
+}
 
 /**
   Atomically fetch the current state.
@@ -134,7 +136,10 @@ void Commit_order_trx_dependency_tracker::get_dependency(THD *thd, int64 &sequen
                       : trn_ctx->last_committed - m_max_committed_transaction.get_offset();
 }
 
-int64 Commit_order_trx_dependency_tracker::step() { return m_transaction_counter.step(); }
+int64 Commit_order_trx_dependency_tracker::step()
+{
+  return m_transaction_counter.step();
+}
 
 void Commit_order_trx_dependency_tracker::rotate()
 {
@@ -344,7 +349,10 @@ void Transaction_dependency_tracker::update_max_committed(THD *thd)
          thd->commit_error == THD::CE_FLUSH_GNO_EXHAUSTED_ERROR);
 }
 
-int64 Transaction_dependency_tracker::step() { return m_commit_order.step(); }
+int64 Transaction_dependency_tracker::step()
+{
+  return m_commit_order.step();
+}
 
 void Transaction_dependency_tracker::rotate()
 {

@@ -582,7 +582,8 @@ static bool create_full_part_field_array(THD *thd, TABLE *table, partition_info 
     partitioning.
   */
   if ((ptr = part_info->full_part_field_array))
-    for (; *ptr; ptr++) bitmap_set_bit(&part_info->full_part_field_set, (*ptr)->field_index);
+    for (; *ptr; ptr++)
+      bitmap_set_bit(&part_info->full_part_field_set, (*ptr)->field_index);
 
 end:
   DBUG_RETURN(result);
@@ -690,7 +691,8 @@ static void clear_field_flag(TABLE *table)
   Field **ptr;
   DBUG_ENTER("clear_field_flag");
 
-  for (ptr = table->field; *ptr; ptr++) (*ptr)->flags &= (~GET_FIXED_FIELDS_FLAG);
+  for (ptr = table->field; *ptr; ptr++)
+    (*ptr)->flags &= (~GET_FIXED_FIELDS_FLAG);
   DBUG_VOID_RETURN;
 }
 
@@ -1728,21 +1730,45 @@ static int add_write(File fptr, const char *buf, size_t len)
     return 1;
 }
 
-static int add_string_object(File fptr, String *string) { return add_write(fptr, string->ptr(), string->length()); }
+static int add_string_object(File fptr, String *string)
+{
+  return add_write(fptr, string->ptr(), string->length());
+}
 
-static int add_string(File fptr, const char *string) { return add_write(fptr, string, strlen(string)); }
+static int add_string(File fptr, const char *string)
+{
+  return add_write(fptr, string, strlen(string));
+}
 
-static int add_string_len(File fptr, const char *string, size_t len) { return add_write(fptr, string, len); }
+static int add_string_len(File fptr, const char *string, size_t len)
+{
+  return add_write(fptr, string, len);
+}
 
-static int add_space(File fptr) { return add_string(fptr, space_str); }
+static int add_space(File fptr)
+{
+  return add_string(fptr, space_str);
+}
 
-static int add_comma(File fptr) { return add_string(fptr, comma_str); }
+static int add_comma(File fptr)
+{
+  return add_string(fptr, comma_str);
+}
 
-static int add_equal(File fptr) { return add_string(fptr, equal_str); }
+static int add_equal(File fptr)
+{
+  return add_string(fptr, equal_str);
+}
 
-static int add_end_parenthesis(File fptr) { return add_string(fptr, end_paren_str); }
+static int add_end_parenthesis(File fptr)
+{
+  return add_string(fptr, end_paren_str);
+}
 
-static int add_begin_parenthesis(File fptr) { return add_string(fptr, begin_paren_str); }
+static int add_begin_parenthesis(File fptr)
+{
+  return add_string(fptr, begin_paren_str);
+}
 
 static int add_part_key_word(File fptr, const char *key_string)
 {
@@ -4508,7 +4534,8 @@ bool compare_partition_options(HA_CREATE_INFO *table_create_info, partition_elem
   if (part_elem->index_file_name || table_create_info->index_file_name)
     option_diffs[errors++] = "INDEX DIRECTORY";
 
-  for (i = 0; i < errors; i++) my_error(ER_PARTITION_EXCHANGE_DIFFERENT_OPTION, MYF(0), option_diffs[i]);
+  for (i = 0; i < errors; i++)
+    my_error(ER_PARTITION_EXCHANGE_DIFFERENT_OPTION, MYF(0), option_diffs[i]);
   DBUG_RETURN(errors != 0);
 }
 
@@ -6755,7 +6782,10 @@ void append_row_to_str(String &str, const uchar *row, TABLE *table)
     simple routine that signals this error.
 */
 
-void mem_alloc_error(size_t size) { my_error(ER_OUTOFMEMORY, MYF(ME_FATALERROR), static_cast< int >(size)); }
+void mem_alloc_error(size_t size)
+{
+  my_error(ER_OUTOFMEMORY, MYF(ME_FATALERROR), static_cast< int >(size));
+}
 
 /**
   Return comma-separated list of used partitions in the provided given string.

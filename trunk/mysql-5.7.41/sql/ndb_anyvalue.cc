@@ -110,14 +110,20 @@ void dbug_ndbcluster_anyvalue_set_userbits(Uint32 &anyValue)
 }
 #endif
 
-bool ndbcluster_anyvalue_is_reserved(Uint32 anyValue) { return ((anyValue & NDB_ANYVALUE_RESERVED_BIT) != 0); }
+bool ndbcluster_anyvalue_is_reserved(Uint32 anyValue)
+{
+  return ((anyValue & NDB_ANYVALUE_RESERVED_BIT) != 0);
+}
 
 bool ndbcluster_anyvalue_is_nologging(Uint32 anyValue)
 {
   return ((anyValue & NDB_ANYVALUE_RESERVED_MASK) == NDB_ANYVALUE_NOLOGGING_CODE);
 }
 
-void ndbcluster_anyvalue_set_nologging(Uint32 &anyValue) { anyValue |= NDB_ANYVALUE_NOLOGGING_CODE; }
+void ndbcluster_anyvalue_set_nologging(Uint32 &anyValue)
+{
+  anyValue |= NDB_ANYVALUE_NOLOGGING_CODE;
+}
 
 bool ndbcluster_anyvalue_is_refresh_op(Uint32 anyValue)
 {
@@ -159,7 +165,10 @@ void ndbcluster_anyvalue_set_normal(Uint32 &anyValue)
   anyValue &= ~(opt_server_id_mask);
 }
 
-bool ndbcluster_anyvalue_is_serverid_in_range(Uint32 serverId) { return ((serverId & ~opt_server_id_mask) == 0); }
+bool ndbcluster_anyvalue_is_serverid_in_range(Uint32 serverId)
+{
+  return ((serverId & ~opt_server_id_mask) == 0);
+}
 
 Uint32 ndbcluster_anyvalue_get_serverid(Uint32 anyValue)
 {

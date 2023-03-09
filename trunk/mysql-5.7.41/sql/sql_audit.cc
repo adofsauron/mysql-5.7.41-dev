@@ -130,7 +130,10 @@ class Audit_error_handler : public Internal_error_handler
 
     @retval Converted result value.
   */
-  int get_result(int result) { return m_error_reported ? 0 : result; }
+  int get_result(int result)
+  {
+    return m_error_reported ? 0 : result;
+  }
 
  private:
   /** Current thread data. */
@@ -155,7 +158,10 @@ class Auto_THD : public Internal_error_handler
   /**
     Create THD object and initialize internal variables.
   */
-  Auto_THD() : thd(create_thd(false, true, false, 0)) { thd->push_internal_handler(this); }
+  Auto_THD() : thd(create_thd(false, true, false, 0))
+  {
+    thd->push_internal_handler(this);
+  }
 
   /**
     Deinitialize THD.
@@ -248,7 +254,10 @@ static int event_class_dispatch_error(THD *thd, mysql_event_class_t event_class,
   @param mask Mask, to which rhs mask is to be added.
   @param rhs  Mask to be added to mask parameter.
 */
-static inline void add_audit_mask(unsigned long *mask, unsigned long rhs) { *mask |= rhs; }
+static inline void add_audit_mask(unsigned long *mask, unsigned long rhs)
+{
+  *mask |= rhs;
+}
 
 /**
   Add entire audit mask specified by the src to dst.
@@ -259,7 +268,8 @@ static inline void add_audit_mask(unsigned long *mask, unsigned long rhs) { *mas
 static inline void add_audit_mask(unsigned long *dst, const unsigned long *src)
 {
   int i;
-  for (i = MYSQL_AUDIT_GENERAL_CLASS; i < MYSQL_AUDIT_CLASS_MASK_SIZE; i++) add_audit_mask(dst++, *src++);
+  for (i = MYSQL_AUDIT_GENERAL_CLASS; i < MYSQL_AUDIT_CLASS_MASK_SIZE; i++)
+    add_audit_mask(dst++, *src++);
 }
 
 /**
@@ -270,7 +280,10 @@ static inline void add_audit_mask(unsigned long *dst, const unsigned long *src)
 
   @return false, when masks overlap, otherwise true.
 */
-static inline bool check_audit_mask(const unsigned long lhs, const unsigned long rhs) { return !(lhs & rhs); }
+static inline bool check_audit_mask(const unsigned long lhs, const unsigned long rhs)
+{
+  return !(lhs & rhs);
+}
 
 /**
   Check, whether mask arrays specified by the lhs parameter and rhs parameter
@@ -350,7 +363,10 @@ class Ignore_event_error_handler : public Audit_error_handler
 
     @retval True on error rejection, otherwise false.
   */
-  virtual bool handle() { return true; }
+  virtual bool handle()
+  {
+    return true;
+  }
 
   /**
   @brief Custom warning print routine.
@@ -781,7 +797,10 @@ class Ignore_command_start_error_handler : public Audit_error_handler
 
     @retval True on error rejection, otherwise false.
   */
-  virtual bool handle() { return ignore_command(m_command); }
+  virtual bool handle()
+  {
+    return ignore_command(m_command);
+  }
 
   /**
     @brief Custom warning print routine.
@@ -1121,7 +1140,10 @@ void mysql_audit_initialize()
   Finalize Audit global variables
 */
 
-void mysql_audit_finalize() { mysql_mutex_destroy(&LOCK_audit_mask); }
+void mysql_audit_finalize()
+{
+  mysql_mutex_destroy(&LOCK_audit_mask);
+}
 
 /**
   Initialize an Audit plug-in
@@ -1287,7 +1309,8 @@ static int event_class_dispatch(THD *thd, mysql_event_class_t event_class, const
     plugins = thd->audit_class_plugins.begin();
     plugins_last = thd->audit_class_plugins.end();
 
-    for (; plugins != plugins_last; plugins++) result |= plugins_dispatch(thd, *plugins, &event_generic);
+    for (; plugins != plugins_last; plugins++)
+      result |= plugins_dispatch(thd, *plugins, &event_generic);
   }
 
   return result;

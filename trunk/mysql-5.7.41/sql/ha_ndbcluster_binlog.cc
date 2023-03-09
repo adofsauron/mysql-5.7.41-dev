@@ -982,9 +982,17 @@ static bool ndb_schema_table__create(THD *thd)
 class Thd_ndb_options_guard
 {
  public:
-  Thd_ndb_options_guard(Thd_ndb *thd_ndb) : m_val(thd_ndb->options), m_save_val(thd_ndb->options) {}
-  ~Thd_ndb_options_guard() { m_val = m_save_val; }
-  void set(uint32 flag) { m_val |= flag; }
+  Thd_ndb_options_guard(Thd_ndb *thd_ndb) : m_val(thd_ndb->options), m_save_val(thd_ndb->options)
+  {
+  }
+  ~Thd_ndb_options_guard()
+  {
+    m_val = m_save_val;
+  }
+  void set(uint32 flag)
+  {
+    m_val |= flag;
+  }
 
  private:
   uint32 &m_val;
@@ -2003,8 +2011,14 @@ static int ndb_handle_schema_change(THD *thd, Ndb *is_ndb, NdbEventOperation *pO
 class Mutex_guard
 {
  public:
-  Mutex_guard(native_mutex_t &mutex) : m_mutex(mutex) { native_mutex_lock(&m_mutex); };
-  ~Mutex_guard() { native_mutex_unlock(&m_mutex); };
+  Mutex_guard(native_mutex_t &mutex) : m_mutex(mutex)
+  {
+    native_mutex_lock(&m_mutex);
+  };
+  ~Mutex_guard()
+  {
+    native_mutex_unlock(&m_mutex);
+  };
 
  private:
   native_mutex_t &m_mutex;
@@ -2036,7 +2050,9 @@ class Ndb_schema_dist_data
 
  public:
   Ndb_schema_dist_data(const Ndb_schema_dist_data &);  // Not implemented
-  Ndb_schema_dist_data() : subscriber_bitmap(NULL), m_num_bitmaps(0), m_prepared_rename_key(NULL) {}
+  Ndb_schema_dist_data() : subscriber_bitmap(NULL), m_num_bitmaps(0), m_prepared_rename_key(NULL)
+  {
+  }
 
   void init(Ndb_cluster_connection *cluster_connection)
   {
@@ -2046,7 +2062,8 @@ class Ndb_schema_dist_data
     uint node_id, i = 0;
     Ndb_cluster_connection_node_iter node_iter;
     memset((void *)m_data_node_id_list, 0xFFFF, sizeof(m_data_node_id_list));
-    while ((node_id = cluster_connection->get_next_node(node_iter))) m_data_node_id_list[node_id] = i++;
+    while ((node_id = cluster_connection->get_next_node(node_iter)))
+      m_data_node_id_list[node_id] = i++;
 
     {
       // Create array of bitmaps for keeping track of subscribed nodes
@@ -2150,9 +2167,15 @@ class Ndb_schema_dist_data
     }
   }
 
-  void save_prepared_rename_key(NDB_SHARE_KEY *key) { m_prepared_rename_key = key; }
+  void save_prepared_rename_key(NDB_SHARE_KEY *key)
+  {
+    m_prepared_rename_key = key;
+  }
 
-  NDB_SHARE_KEY *get_prepared_rename_key() const { return m_prepared_rename_key; }
+  NDB_SHARE_KEY *get_prepared_rename_key() const
+  {
+    return m_prepared_rename_key;
+  }
 };
 
 #include "ndb_local_schema.h"
@@ -2559,7 +2582,10 @@ class Ndb_schema_event_handler
     DBUG_VOID_RETURN;
   }
 
-  uint own_nodeid(void) const { return m_own_nodeid; }
+  uint own_nodeid(void) const
+  {
+    return m_own_nodeid;
+  }
 
   void ndbapi_invalidate_table(const char *db_name, const char *table_name) const
   {
@@ -3395,7 +3421,10 @@ class Ndb_schema_event_handler
   Ndb_schema_dist_data &m_schema_dist_data;
   bool m_post_epoch;
 
-  bool is_post_epoch(void) const { return m_post_epoch; }
+  bool is_post_epoch(void) const
+  {
+    return m_post_epoch;
+  }
 
   List< Ndb_schema_op > m_post_epoch_handle_list;
   List< Ndb_schema_op > m_post_epoch_ack_list;
@@ -4309,7 +4338,8 @@ int ndbcluster_create_event(THD *thd, Ndb *ndb, const NDBTAB *ndbtab, const char
 
   /* add all columns to the event */
   int n_cols = ndbtab->getNoOfColumns();
-  for (int a = 0; a < n_cols; a++) my_event.addEventColumn(a);
+  for (int a = 0; a < n_cols; a++)
+    my_event.addEventColumn(a);
 
   if (dict->createEvent(my_event))  // Add event to database
   {
@@ -5555,9 +5585,13 @@ extern ulong opt_ndb_report_thresh_binlog_mem_usage;
 extern ulong opt_ndb_eventbuffer_max_alloc;
 extern uint opt_ndb_eventbuffer_free_percent;
 
-Ndb_binlog_thread::Ndb_binlog_thread() : Ndb_component("Binlog") {}
+Ndb_binlog_thread::Ndb_binlog_thread() : Ndb_component("Binlog")
+{
+}
 
-Ndb_binlog_thread::~Ndb_binlog_thread() {}
+Ndb_binlog_thread::~Ndb_binlog_thread()
+{
+}
 
 void Ndb_binlog_thread::do_wakeup()
 {

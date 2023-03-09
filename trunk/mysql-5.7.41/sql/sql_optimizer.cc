@@ -382,7 +382,8 @@ int JOIN::optimize()
   if (const_tables && !thd->locked_tables_mode && !(select_lex->active_options() & SELECT_NO_UNLOCK))
   {
     TABLE *ct[MAX_TABLES];
-    for (uint i = 0; i < const_tables; i++) ct[i] = best_ref[i]->table();
+    for (uint i = 0; i < const_tables; i++)
+      ct[i] = best_ref[i]->table();
     mysql_unlock_some_tables(thd, ct, const_tables);
   }
   if (!where_cond && select_lex->outer_join)
@@ -867,7 +868,8 @@ bool JOIN::alloc_qep(uint n)
   qep_tab = new (thd->mem_root) QEP_TAB[n];
   if (!qep_tab)
     return true; /* purecov: inspected */
-  for (uint i = 0; i < n; ++i) qep_tab[i].init(best_ref[i]);
+  for (uint i = 0; i < n; ++i)
+    qep_tab[i].init(best_ref[i]);
   return false;
 }
 
@@ -1372,7 +1374,8 @@ int test_if_order_by_key(ORDER *order, TABLE *table, uint idx, uint *used_key_pa
       Skip key parts that are constants in the WHERE clause.
       These are already skipped in the ORDER BY by const_expression_in_where()
     */
-    for (; const_key_parts & 1 && key_part < key_part_end; const_key_parts >>= 1) key_part++;
+    for (; const_key_parts & 1 && key_part < key_part_end; const_key_parts >>= 1)
+      key_part++;
 
     /* Avoid usage of prefix index for sorting a partition table */
     if (table->part_info && key_part != table->key_info[idx].key_part && key_part != key_part_end &&
@@ -1394,7 +1397,8 @@ int test_if_order_by_key(ORDER *order, TABLE *table, uint idx, uint *used_key_pa
         key_part_end = key_part + table->key_info[table->s->primary_key].user_defined_key_parts;
         const_key_parts = table->const_key_parts[table->s->primary_key];
 
-        for (; const_key_parts & 1; const_key_parts >>= 1) key_part++;
+        for (; const_key_parts & 1; const_key_parts >>= 1)
+          key_part++;
         /*
          The primary and secondary key parts were all const (i.e. there's
          one row).  The sorting doesn't matter.
@@ -1555,7 +1559,8 @@ static bool is_ref_or_null_optimized(const JOIN_TAB *tab, uint ref_key)
   if (tab->keyuse())
   {
     const Key_use *keyuse = tab->keyuse();
-    while (keyuse->key != ref_key && keyuse->table_ref == tab->table_ref) keyuse++;
+    while (keyuse->key != ref_key && keyuse->table_ref == tab->table_ref)
+      keyuse++;
 
     const table_map const_tables = tab->join()->const_table_map;
     while (keyuse->key == ref_key && keyuse->table_ref == tab->table_ref)
@@ -1676,7 +1681,9 @@ class Plan_change_watchdog
   uint index;  ///< copy of tab->index
 #else          // in non-debug build, empty class
  public:
-  Plan_change_watchdog(const JOIN_TAB *tab_arg, const bool no_changes_arg) {}
+  Plan_change_watchdog(const JOIN_TAB *tab_arg, const bool no_changes_arg)
+  {
+  }
 #endif
 };
 
@@ -2094,7 +2101,8 @@ check_reverse_order:
         So we build tab->ref() from scratch here.
       */
       Key_use *keyuse = tab->keyuse();
-      while (keyuse->key != (uint)changed_key && keyuse->table_ref == tab->table_ref) keyuse++;
+      while (keyuse->key != (uint)changed_key && keyuse->table_ref == tab->table_ref)
+        keyuse++;
 
       if (create_ref_for_key(join, tab, keyuse, tab->prefix_tables()))
       {
@@ -2508,7 +2516,8 @@ static JOIN_TAB *alloc_jtab_array(THD *thd, uint table_count)
   if (!qs)
     return NULL; /* purecov: inspected */
 
-  for (uint i = 0; i < table_count; ++i) t[i].set_qs(qs++);
+  for (uint i = 0; i < table_count; ++i)
+    t[i].set_qs(qs++);
 
   return t;
 }
@@ -2753,7 +2762,8 @@ bool JOIN::get_best_combination()
   // sjm is no longer needed, trash it. To reuse it, reset its members!
   List_iterator< TABLE_LIST > sj_list_it(select_lex->sj_nests);
   TABLE_LIST *sj_nest;
-  while ((sj_nest = sj_list_it++)) TRASH(&sj_nest->nested_join->sjm, sizeof(sj_nest->nested_join->sjm));
+  while ((sj_nest = sj_list_it++))
+    TRASH(&sj_nest->nested_join->sjm, sizeof(sj_nest->nested_join->sjm));
 
   DBUG_RETURN(false);
 }
@@ -2784,7 +2794,8 @@ static void revise_cache_usage(JOIN_TAB *join_tab)
     for (first_inner = join_tab->first_inner(); first_inner != NO_PLAN_IDX;
          first_inner = join->best_ref[first_inner]->first_upper())
     {
-      for (plan_idx i = end_tab - 1; i >= first_inner; --i) join->best_ref[i]->set_use_join_cache(JOIN_CACHE::ALG_NONE);
+      for (plan_idx i = end_tab - 1; i >= first_inner; --i)
+        join->best_ref[i]->set_use_join_cache(JOIN_CACHE::ALG_NONE);
       end_tab = first_inner;
     }
   }
@@ -3108,7 +3119,10 @@ no_join_cache:
 class COND_CMP : public ilink< COND_CMP >
 {
  public:
-  static void *operator new(size_t size) { return sql_alloc(size); }
+  static void *operator new(size_t size)
+  {
+    return sql_alloc(size);
+  }
   static void operator delete(void *ptr MY_ATTRIBUTE((unused)), size_t size MY_ATTRIBUTE((unused)))
   {
     TRASH(ptr, size);
@@ -3116,7 +3130,9 @@ class COND_CMP : public ilink< COND_CMP >
 
   Item *and_level;
   Item_func *cmp_func;
-  COND_CMP(Item *a, Item_func *b) : and_level(a), cmp_func(b) {}
+  COND_CMP(Item *a, Item_func *b) : and_level(a), cmp_func(b)
+  {
+  }
 };
 
 /**
@@ -4495,7 +4511,8 @@ void JOIN::update_depend_map()
     TABLE_REF *const ref = &tab->ref();
     table_map depend_map = 0;
     Item **item = ref->items;
-    for (uint i = 0; i < ref->key_parts; i++, item++) depend_map |= (*item)->used_tables();
+    for (uint i = 0; i < ref->key_parts; i++, item++)
+      depend_map |= (*item)->used_tables();
     depend_map &= ~PSEUDO_TABLE_BITS;
     ref->depend_map = depend_map;
     for (JOIN_TAB **tab2 = map2table; depend_map; tab2++, depend_map >>= 1)
@@ -5332,7 +5349,8 @@ void JOIN::update_sargable_from_const(SARGABLE_PARAM *sargables)
     key_map possible_keys = field->key_start;
     possible_keys.intersect(field->table->keys_in_use_for_query);
     bool is_const = true;
-    for (uint j = 0; j < sargables->num_values; j++) is_const &= sargables->arg_value[j]->const_item();
+    for (uint j = 0; j < sargables->num_values; j++)
+      is_const &= sargables->arg_value[j]->const_item();
     if (is_const)
     {
       tab->const_keys.merge(possible_keys);
@@ -6898,8 +6916,10 @@ static void add_key_fields(JOIN *join, Key_field **key_fields, uint *and_level, 
     if (((Item_cond *)cond)->functype() == Item_func::COND_AND_FUNC)
     {
       Item *item;
-      while ((item = li++)) add_key_fields(join, key_fields, and_level, item, usable_tables, sargables);
-      for (; org_key_fields != *key_fields; org_key_fields++) org_key_fields->level = *and_level;
+      while ((item = li++))
+        add_key_fields(join, key_fields, and_level, item, usable_tables, sargables);
+      for (; org_key_fields != *key_fields; org_key_fields++)
+        org_key_fields->level = *and_level;
     }
     else
     {
@@ -6932,7 +6952,8 @@ static void add_key_fields(JOIN *join, Key_field **key_fields, uint *and_level, 
         Key_field *save = *key_fields;
         add_key_fields(join, key_fields, and_level, cond_arg, usable_tables, sargables);
         // Indicate that this ref access candidate is for subquery lookup:
-        for (; save != *key_fields; save++) save->cond_guard = ((Item_func_trig_cond *)cond)->get_trig_var();
+        for (; save != *key_fields; save++)
+          save->cond_guard = ((Item_func_trig_cond *)cond)->get_trig_var();
       }
       DBUG_VOID_RETURN;
     }
@@ -8355,7 +8376,8 @@ void JOIN::drop_unused_derived_keys()
         tab->const_keys.set_bit(0);
 
       const uint oldkey = keyuse->key;
-      for (; keyuse->table_ref == tab->table_ref && keyuse->key == oldkey; keyuse++) keyuse->key = 0;
+      for (; keyuse->table_ref == tab->table_ref && keyuse->key == oldkey; keyuse++)
+        keyuse->key = 0;
     }
   }
 }
@@ -9831,7 +9853,8 @@ static ORDER *create_distinct_group(THD *thd, Ref_ptr_array ref_pointer_array, O
   ORDER *order, *group, **prev;
 
   *all_order_by_fields_used = 1;
-  while ((item = li++)) item->marker = 0; /* Marker that field is not used */
+  while ((item = li++))
+    item->marker = 0; /* Marker that field is not used */
 
   prev = &group;
   group = 0;
@@ -10239,7 +10262,8 @@ static void calculate_materialization_costs(JOIN *join, TABLE_LIST *sj_nest, uin
     List_iterator< Item > it(*inner_expr_list);
     Item *item;
     table_map map = 0;
-    while ((item = it++)) map |= item->used_tables();
+    while ((item = it++))
+      map |= item->used_tables();
     map &= ~PSEUDO_TABLE_BITS;
     Table_map_iterator tm_it(map);
     int tableno;
@@ -10617,7 +10641,8 @@ bool JOIN::optimize_rollup()
   }
   for (uint i = 0; i < send_group_parts; i++)
   {
-    for (uint j = 0; j < fields_list.elements; j++) rollup.fields[i].push_back(rollup.null_items[i]);
+    for (uint j = 0; j < fields_list.elements; j++)
+      rollup.fields[i].push_back(rollup.null_items[i]);
   }
   return false;
 }

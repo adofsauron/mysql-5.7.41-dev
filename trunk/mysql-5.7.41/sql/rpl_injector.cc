@@ -243,16 +243,24 @@ int injector::transaction::update_row(server_id_type sid, table tbl, MY_BITMAP c
   return update_row(sid, tbl, cols, cols, colcnt, before, after, NULL);
 }
 
-injector::transaction::binlog_pos injector::transaction::start_pos() const { return m_start_pos; }
+injector::transaction::binlog_pos injector::transaction::start_pos() const
+{
+  return m_start_pos;
+}
 
-injector::transaction::binlog_pos injector::transaction::next_pos() const { return m_next_pos; }
+injector::transaction::binlog_pos injector::transaction::next_pos() const
+{
+  return m_next_pos;
+}
 
 /*
   injector - member definitions
 */
 
 /* This constructor is called below */
-inline injector::injector() {}
+inline injector::injector()
+{
+}
 
 static injector *s_injector = 0;
 injector *injector::instance()

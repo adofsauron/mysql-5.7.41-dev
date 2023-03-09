@@ -387,11 +387,12 @@ union yyalloc
 #if defined __GNUC__ && 1 < __GNUC__
 #define YYCOPY(Dst, Src, Count) __builtin_memcpy(Dst, Src, (Count) * sizeof(*(Src)))
 #else
-#define YYCOPY(Dst, Src, Count)                                  \
-  do                                                             \
-  {                                                              \
-    YYSIZE_T yyi;                                                \
-    for (yyi = 0; yyi < (Count); yyi++) (Dst)[yyi] = (Src)[yyi]; \
+#define YYCOPY(Dst, Src, Count)         \
+  do                                    \
+  {                                     \
+    YYSIZE_T yyi;                       \
+    for (yyi = 0; yyi < (Count); yyi++) \
+      (Dst)[yyi] = (Src)[yyi];          \
   } while (0)
 #endif
 #endif
@@ -758,7 +759,8 @@ int yydebug;
 static YYSIZE_T yystrlen(const char *yystr)
 {
   YYSIZE_T yylen;
-  for (yylen = 0; yystr[yylen]; yylen++) continue;
+  for (yylen = 0; yystr[yylen]; yylen++)
+    continue;
   return yylen;
 }
 #endif
@@ -775,7 +777,8 @@ static char *yystpcpy(char *yydest, const char *yysrc)
   char *yyd = yydest;
   const char *yys = yysrc;
 
-  while ((*yyd++ = *yys++) != '\0') continue;
+  while ((*yyd++ = *yys++) != '\0')
+    continue;
 
   return yyd - 1;
 }
@@ -797,7 +800,8 @@ static YYSIZE_T yytnamerr(char *yyres, const char *yystr)
     YYSIZE_T yyn = 0;
     char const *yyp = yystr;
 
-    for (;;) switch (*++yyp)
+    for (;;)
+      switch (*++yyp)
       {
         case '\'':
         case ',':

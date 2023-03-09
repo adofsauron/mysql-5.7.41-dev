@@ -100,7 +100,10 @@ void set_token(int tok, const char *str)
   compiled_token_array[tok].m_start_expr = false;
 }
 
-void set_start_expr_token(int tok) { compiled_token_array[tok].m_start_expr = true; }
+void set_start_expr_token(int tok)
+{
+  compiled_token_array[tok].m_start_expr = true;
+}
 
 void compute_tokens()
 {

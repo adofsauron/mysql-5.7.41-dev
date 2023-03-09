@@ -609,7 +609,8 @@ bool table_def::compatible_with(THD *thd, Relay_log_info *rli, TABLE *table, TAB
         /*
           Clear all fields up to, but not including, this column.
         */
-        for (unsigned int i = 0; i < col; ++i) tmp_table->field[i] = NULL;
+        for (unsigned int i = 0; i < col; ++i)
+          tmp_table->field[i] = NULL;
       }
 
       if (order == 0 && tmp_table != NULL)
@@ -945,7 +946,10 @@ static void hash_slave_rows_free_entry(HASH_ROW_ENTRY *entry)
   DBUG_VOID_RETURN;
 }
 
-bool Hash_slave_rows::is_empty(void) { return (m_hash.records == 0); }
+bool Hash_slave_rows::is_empty(void)
+{
+  return (m_hash.records == 0);
+}
 
 /**
    Hashing commodity structures and functions.
@@ -973,9 +977,15 @@ bool Hash_slave_rows::deinit(void)
   return 0;
 }
 
-int Hash_slave_rows::size() { return m_hash.records; }
+int Hash_slave_rows::size()
+{
+  return m_hash.records;
+}
 
-HASH_ROW_ENTRY *Hash_slave_rows::make_entry() { return make_entry(NULL, NULL); }
+HASH_ROW_ENTRY *Hash_slave_rows::make_entry()
+{
+  return make_entry(NULL, NULL);
+}
 
 HASH_ROW_ENTRY *Hash_slave_rows::make_entry(const uchar *bi_start, const uchar *bi_ends)
 {
@@ -1231,9 +1241,14 @@ my_hash_value_type Hash_slave_rows::make_hash_key(TABLE *table, MY_BITMAP *cols)
 
 #if defined(MYSQL_SERVER) && defined(HAVE_REPLICATION)
 
-Deferred_log_events::Deferred_log_events(Relay_log_info *rli) : m_array(key_memory_table_def_memory) {}
+Deferred_log_events::Deferred_log_events(Relay_log_info *rli) : m_array(key_memory_table_def_memory)
+{
+}
 
-Deferred_log_events::~Deferred_log_events() { m_array.clear(); }
+Deferred_log_events::~Deferred_log_events()
+{
+  m_array.clear();
+}
 
 int Deferred_log_events::add(Log_event *ev)
 {
@@ -1242,7 +1257,10 @@ int Deferred_log_events::add(Log_event *ev)
   return 0;
 }
 
-bool Deferred_log_events::is_empty() { return m_array.empty(); }
+bool Deferred_log_events::is_empty()
+{
+  return m_array.empty();
+}
 
 bool Deferred_log_events::execute(Relay_log_info *rli)
 {

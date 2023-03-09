@@ -119,7 +119,10 @@ NDB_SHARE_KEY *NDB_SHARE::create_key(const char *new_key)
   return allocated_key;
 }
 
-void NDB_SHARE::free_key(NDB_SHARE_KEY *key) { my_free(key); }
+void NDB_SHARE::free_key(NDB_SHARE_KEY *key)
+{
+  my_free(key);
+}
 
 const uchar *NDB_SHARE::key_get_key(NDB_SHARE_KEY *key)
 {

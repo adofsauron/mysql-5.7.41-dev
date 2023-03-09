@@ -114,7 +114,9 @@ class Stored_routine_creation_ctx : public Stored_program_creation_ctx, public S
   }
 
  private:
-  Stored_routine_creation_ctx(THD *thd) : Stored_program_creation_ctx(thd) {}
+  Stored_routine_creation_ctx(THD *thd) : Stored_program_creation_ctx(thd)
+  {
+  }
 
   Stored_routine_creation_ctx(const CHARSET_INFO *client_cs, const CHARSET_INFO *connection_cl,
                               const CHARSET_INFO *db_cl)
@@ -246,7 +248,10 @@ class Proc_table_intact : public Table_check_intact
   bool silence_error;
 
  public:
-  Proc_table_intact() : m_print_once(TRUE), silence_error(FALSE) { has_keys = TRUE; }
+  Proc_table_intact() : m_print_once(TRUE), silence_error(FALSE)
+  {
+    has_keys = TRUE;
+  }
 
   my_bool check_proc_table(TABLE *table);
 
@@ -670,7 +675,9 @@ static sp_head *sp_compile(THD *thd, String *defstr, sql_mode_t sql_mode, Stored
 class Bad_db_error_handler : public Internal_error_handler
 {
  public:
-  Bad_db_error_handler() : m_error_caught(false) {}
+  Bad_db_error_handler() : m_error_caught(false)
+  {
+  }
 
   virtual bool handle_condition(THD *thd, uint sql_errno, const char *sqlstate,
                                 Sql_condition::enum_severity_level *level, const char *message)
@@ -683,7 +690,10 @@ class Bad_db_error_handler : public Internal_error_handler
     return false;
   }
 
-  bool error_caught() const { return m_error_caught; }
+  bool error_caught() const
+  {
+    return m_error_caught;
+  }
 
  private:
   bool m_error_caught;

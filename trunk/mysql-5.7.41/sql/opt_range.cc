@@ -158,7 +158,9 @@ class RANGE_OPT_PARAM;
 class Range_optimizer_error_handler : public Internal_error_handler
 {
  public:
-  Range_optimizer_error_handler() : m_has_errors(false), m_is_mem_error(false) {}
+  Range_optimizer_error_handler() : m_has_errors(false), m_is_mem_error(false)
+  {
+  }
 
   virtual bool handle_condition(THD *thd, uint sql_errno, const char *sqlstate,
                                 Sql_condition::enum_severity_level *level, const char *msg)
@@ -183,7 +185,10 @@ class Range_optimizer_error_handler : public Internal_error_handler
     return false;
   }
 
-  bool has_errors() const { return m_has_errors; }
+  bool has_errors() const
+  {
+    return m_has_errors;
+  }
 
  private:
   bool m_has_errors;
@@ -490,7 +495,9 @@ class SEL_ARG : public Sql_alloc
     KEY_RANGE
   } type;
 
-  SEL_ARG() {}
+  SEL_ARG()
+  {
+  }
   SEL_ARG(SEL_ARG &);
   SEL_ARG(Field *, const uchar *, const uchar *);
   SEL_ARG(Field *field, uint8 part, uchar *min_value, uchar *max_value, uint8 min_flag, uint8 max_flag,
@@ -545,10 +552,19 @@ class SEL_ARG : public Sql_alloc
       return false;
     return true;
   }
-  inline void merge_flags(SEL_ARG *arg) { maybe_flag |= arg->maybe_flag; }
-  inline void maybe_smaller() { maybe_flag = 1; }
+  inline void merge_flags(SEL_ARG *arg)
+  {
+    maybe_flag |= arg->maybe_flag;
+  }
+  inline void maybe_smaller()
+  {
+    maybe_flag = 1;
+  }
   /* Return true iff it's a single-point null interval */
-  inline bool is_null_interval() { return maybe_null && max_value[0] == 1; }
+  inline bool is_null_interval()
+  {
+    return maybe_null && max_value[0] == 1;
+  }
   inline int cmp_min_to_min(const SEL_ARG *arg) const
   {
     return sel_cmp(field, min_value, arg->min_value, min_flag, arg->min_flag);
@@ -745,7 +761,10 @@ class SEL_ARG : public Sql_alloc
   const SEL_ARG *first() const;
   SEL_ARG *last();
   void make_root();
-  inline bool simple_key() { return !next_key_part && elements == 1; }
+  inline bool simple_key()
+  {
+    return !next_key_part && elements == 1;
+  }
   /**
     Update use_count of all SEL_ARG trees for later keyparts to
     reflect that this SEL_ARG tree is now referred to 'count' more
@@ -808,7 +827,10 @@ class SEL_ARG : public Sql_alloc
       }
   }
 
-  inline SEL_ARG **parent_ptr() { return parent->left == this ? &parent->left : &parent->right; }
+  inline SEL_ARG **parent_ptr()
+  {
+    return parent->left == this ? &parent->left : &parent->right;
+  }
 
   /*
     Check if this SEL_ARG object represents a single-point interval
@@ -905,7 +927,9 @@ class SEL_TREE : public Sql_alloc
   SEL_TREE(enum Type type_arg, MEM_ROOT *root, size_t num_keys) : type(type_arg), keys(root, num_keys), n_ror_scans(0)
   {
   }
-  SEL_TREE(MEM_ROOT *root, size_t num_keys) : type(KEY), keys(root, num_keys), n_ror_scans(0) {}
+  SEL_TREE(MEM_ROOT *root, size_t num_keys) : type(KEY), keys(root, num_keys), n_ror_scans(0)
+  {
+  }
   /**
     Constructor that performs deep-copy of the SEL_ARG trees in
     'keys[]' and the index merge alternatives in 'merges'.
@@ -1021,9 +1045,14 @@ class RANGE_OPT_PARAM
 
   Range_optimizer_error_handler error_handler;
 
-  bool has_errors() const { return (error_handler.has_errors()); }
+  bool has_errors() const
+  {
+    return (error_handler.has_errors());
+  }
 
-  virtual ~RANGE_OPT_PARAM() {}
+  virtual ~RANGE_OPT_PARAM()
+  {
+  }
 };
 
 class PARAM : public RANGE_OPT_PARAM
@@ -1158,7 +1187,9 @@ class SEL_IMERGE : public Sql_alloc
 
   SEL_ARG ***best_keys; /* best keys to read in SEL_TREEs */
 
-  SEL_IMERGE() : trees(&trees_prealloced[0]), trees_next(trees), trees_end(trees + PREALLOCED_TREES) {}
+  SEL_IMERGE() : trees(&trees_prealloced[0]), trees_next(trees), trees_end(trees + PREALLOCED_TREES)
+  {
+  }
   SEL_IMERGE(SEL_IMERGE *arg, RANGE_OPT_PARAM *param);
   int or_sel_tree(RANGE_OPT_PARAM *param, SEL_TREE *tree);
   int or_sel_tree_with_checks(RANGE_OPT_PARAM *param, SEL_TREE *new_tree);
@@ -1342,7 +1373,10 @@ mem_err:
   Perform AND operation on two index_merge lists and store result in *im1.
 */
 
-inline void imerge_list_and_list(List< SEL_IMERGE > *im1, List< SEL_IMERGE > *im2) { im1->concat(im2); }
+inline void imerge_list_and_list(List< SEL_IMERGE > *im1, List< SEL_IMERGE > *im2)
+{
+  im1->concat(im2);
+}
 
 /*
   Perform OR operation on 2 index_merge lists, storing result in first list.
@@ -1421,7 +1455,9 @@ static bool imerge_list_or_tree(RANGE_OPT_PARAM *param, List< SEL_IMERGE > *im1,
 
 #undef index  // Fix for Unixware 7
 
-QUICK_SELECT_I::QUICK_SELECT_I() : max_used_key_length(0), used_key_parts(0) {}
+QUICK_SELECT_I::QUICK_SELECT_I() : max_used_key_length(0), used_key_parts(0)
+{
+}
 
 void QUICK_SELECT_I::trace_quick_description(Opt_trace_context *trace)
 {
@@ -1477,7 +1513,10 @@ QUICK_RANGE_SELECT::QUICK_RANGE_SELECT(THD *thd, TABLE *table, uint key_nr, bool
   DBUG_VOID_RETURN;
 }
 
-void QUICK_RANGE_SELECT::need_sorted_output() { mrr_flags |= HA_MRR_SORTED; }
+void QUICK_RANGE_SELECT::need_sorted_output()
+{
+  mrr_flags |= HA_MRR_SORTED;
+}
 
 int QUICK_RANGE_SELECT::init()
 {
@@ -1562,7 +1601,8 @@ QUICK_INDEX_MERGE_SELECT::~QUICK_INDEX_MERGE_SELECT()
   DBUG_ENTER("QUICK_INDEX_MERGE_SELECT::~QUICK_INDEX_MERGE_SELECT");
   delete unique;
   quick_it.rewind();
-  while ((quick = quick_it++)) quick->file = NULL;
+  while ((quick = quick_it++))
+    quick->file = NULL;
   quick_selects.delete_elements();
   delete pk_quick_select;
   /* It's ok to call the next two even if they are already deinitialized */
@@ -1790,7 +1830,8 @@ int QUICK_ROR_INTERSECT_SELECT::reset()
   scans_inited = TRUE;
   List_iterator_fast< QUICK_RANGE_SELECT > it(quick_selects);
   QUICK_RANGE_SELECT *quick;
-  while ((quick = it++)) quick->reset();
+  while ((quick = it++))
+    quick->reset();
   DBUG_RETURN(0);
 }
 
@@ -1809,7 +1850,10 @@ int QUICK_ROR_INTERSECT_SELECT::reset()
     TRUE  Out of memory.
 */
 
-bool QUICK_ROR_INTERSECT_SELECT::push_quick_back(QUICK_RANGE_SELECT *quick) { return quick_selects.push_back(quick); }
+bool QUICK_ROR_INTERSECT_SELECT::push_quick_back(QUICK_RANGE_SELECT *quick)
+{
+  return quick_selects.push_back(quick);
+}
 
 QUICK_ROR_INTERSECT_SELECT::~QUICK_ROR_INTERSECT_SELECT()
 {
@@ -2107,18 +2151,23 @@ SEL_ARG *SEL_ARG::first()
   SEL_ARG *next_arg = this;
   if (!next_arg->left)
     return 0;  // MAYBE_KEY
-  while (next_arg->left != &null_element) next_arg = next_arg->left;
+  while (next_arg->left != &null_element)
+    next_arg = next_arg->left;
   return next_arg;
 }
 
-const SEL_ARG *SEL_ARG::first() const { return const_cast< SEL_ARG * >(this)->first(); }
+const SEL_ARG *SEL_ARG::first() const
+{
+  return const_cast< SEL_ARG * >(this)->first();
+}
 
 SEL_ARG *SEL_ARG::last()
 {
   SEL_ARG *next_arg = this;
   if (!next_arg->right)
     return 0;  // MAYBE_KEY
-  while (next_arg->right != &null_element) next_arg = next_arg->right;
+  while (next_arg->right != &null_element)
+    next_arg = next_arg->right;
   return next_arg;
 }
 
@@ -2222,12 +2271,20 @@ class TABLE_READ_PLAN
   virtual QUICK_SELECT_I *make_quick(PARAM *param, bool retrieve_full_rows, MEM_ROOT *parent_alloc = NULL) = 0;
 
   /* Table read plans are allocated on MEM_ROOT and are never deleted */
-  static void *operator new(size_t size, MEM_ROOT *mem_root) { return alloc_root(mem_root, size); }
-  static void operator delete(void *ptr, size_t size) { TRASH(ptr, size); }
+  static void *operator new(size_t size, MEM_ROOT *mem_root)
+  {
+    return alloc_root(mem_root, size);
+  }
+  static void operator delete(void *ptr, size_t size)
+  {
+    TRASH(ptr, size);
+  }
   static void operator delete(void *ptr, MEM_ROOT *mem_root)
   { /* Never called */
   }
-  virtual ~TABLE_READ_PLAN() {} /* Remove gcc warning */
+  virtual ~TABLE_READ_PLAN()
+  {
+  } /* Remove gcc warning */
 
   /**
      Add basic info for this TABLE_READ_PLAN to the optimizer trace.
@@ -2261,7 +2318,9 @@ class TRP_RANGE : public TABLE_READ_PLAN
       : key(key_arg), key_idx(idx_arg), mrr_flags(mrr_flags_arg)
   {
   }
-  virtual ~TRP_RANGE() {} /* Remove gcc warning */
+  virtual ~TRP_RANGE()
+  {
+  } /* Remove gcc warning */
 
   QUICK_SELECT_I *make_quick(PARAM *param, bool retrieve_full_rows, MEM_ROOT *parent_alloc)
   {
@@ -2332,8 +2391,12 @@ typedef struct st_ror_scan_info
 class TRP_ROR_INTERSECT : public TABLE_READ_PLAN
 {
  public:
-  TRP_ROR_INTERSECT() {}          /* Remove gcc warning */
-  virtual ~TRP_ROR_INTERSECT() {} /* Remove gcc warning */
+  TRP_ROR_INTERSECT()
+  {
+  } /* Remove gcc warning */
+  virtual ~TRP_ROR_INTERSECT()
+  {
+  } /* Remove gcc warning */
   QUICK_SELECT_I *make_quick(PARAM *param, bool retrieve_full_rows, MEM_ROOT *parent_alloc);
 
   /* Array of pointers to ROR range scans used in this intersection */
@@ -2390,8 +2453,12 @@ void TRP_ROR_INTERSECT::trace_basic_info(const PARAM *param, Opt_trace_object *t
 class TRP_ROR_UNION : public TABLE_READ_PLAN
 {
  public:
-  TRP_ROR_UNION() {}          /* Remove gcc warning */
-  virtual ~TRP_ROR_UNION() {} /* Remove gcc warning */
+  TRP_ROR_UNION()
+  {
+  } /* Remove gcc warning */
+  virtual ~TRP_ROR_UNION()
+  {
+  } /* Remove gcc warning */
   QUICK_SELECT_I *make_quick(PARAM *param, bool retrieve_full_rows, MEM_ROOT *parent_alloc);
   TABLE_READ_PLAN **first_ror; /* array of ptrs to plans for merged scans */
   TABLE_READ_PLAN **last_ror;  /* end of the above array */
@@ -2422,8 +2489,12 @@ void TRP_ROR_UNION::trace_basic_info(const PARAM *param, Opt_trace_object *trace
 class TRP_INDEX_MERGE : public TABLE_READ_PLAN
 {
  public:
-  TRP_INDEX_MERGE() {}          /* Remove gcc warning */
-  virtual ~TRP_INDEX_MERGE() {} /* Remove gcc warning */
+  TRP_INDEX_MERGE()
+  {
+  } /* Remove gcc warning */
+  virtual ~TRP_INDEX_MERGE()
+  {
+  } /* Remove gcc warning */
   QUICK_SELECT_I *make_quick(PARAM *param, bool retrieve_full_rows, MEM_ROOT *parent_alloc);
   TRP_RANGE **range_scans;     /* array of ptrs to plans of merged scans */
   TRP_RANGE **range_scans_end; /* end of the array */
@@ -2507,10 +2578,15 @@ class TRP_GROUP_MIN_MAX : public TABLE_READ_PLAN
     if (key_infix_len)
       memcpy(this->key_infix, key_infix_arg, key_infix_len);
   }
-  virtual ~TRP_GROUP_MIN_MAX() {} /* Remove gcc warning */
+  virtual ~TRP_GROUP_MIN_MAX()
+  {
+  } /* Remove gcc warning */
 
   QUICK_SELECT_I *make_quick(PARAM *param, bool retrieve_full_rows, MEM_ROOT *parent_alloc);
-  void use_index_scan() { is_index_scan = TRUE; }
+  void use_index_scan()
+  {
+    is_index_scan = TRUE;
+  }
 };
 
 void TRP_GROUP_MIN_MAX::trace_basic_info(const PARAM *param, Opt_trace_object *trace_object) const
@@ -2583,7 +2659,8 @@ static int fill_used_fields_bitmap(PARAM *param)
     /* The table uses clustered PK and it is not internally generated */
     KEY_PART_INFO *key_part = param->table->key_info[pk].key_part;
     KEY_PART_INFO *key_part_end = key_part + param->table->key_info[pk].user_defined_key_parts;
-    for (; key_part != key_part_end; ++key_part) bitmap_clear_bit(&param->needed_fields, key_part->fieldnr - 1);
+    for (; key_part != key_part_end; ++key_part)
+      bitmap_clear_bit(&param->needed_fields, key_part->fieldnr - 1);
   }
   return 0;
 }
@@ -3816,7 +3893,8 @@ static int find_used_partitions(PART_PRUNE_PARAM *ppar, SEL_ARG *key_tree)
         uint32 store_length_array[MAX_KEY];
         uint32 num_keys = ppar->part_fields;
 
-        for (i = 0; i < num_keys; i++) store_length_array[i] = ppar->key[i].store_length;
+        for (i = 0; i < num_keys; i++)
+          store_length_array[i] = ppar->key[i].store_length;
         res = ppar->part_info->get_part_iter_for_interval(
             ppar->part_info, FALSE, store_length_array, range_par->min_key, range_par->max_key,
             tmp_min_key - range_par->min_key, tmp_max_key - range_par->max_key, flag, &ppar->part_iter);
@@ -8131,7 +8209,8 @@ static SEL_ARG *key_or(RANGE_OPT_PARAM *param, SEL_ARG *key1, SEL_ARG *key2)
           key1->free_tree();
           key1->type = SEL_ARG::ALWAYS;
           key2->type = SEL_ARG::ALWAYS;
-          for (; cur_key2; cur_key2 = cur_key2->next) cur_key2->increment_use_count(-1);  // Free not used tree
+          for (; cur_key2; cur_key2 = cur_key2->next)
+            cur_key2->increment_use_count(-1);  // Free not used tree
           if (key1->maybe_flag)
             return new (param->mem_root) SEL_ARG(SEL_ARG::MAYBE_KEY);
           return 0;
@@ -8967,7 +9046,10 @@ class Sel_arg_range_sequence
   PARAM *const param;
   SEL_ARG *start; /* Root node of the traversed SEL_ARG* graph */
 
-  Sel_arg_range_sequence(PARAM *param_arg) : param(param_arg) { reset(); }
+  Sel_arg_range_sequence(PARAM *param_arg) : param(param_arg)
+  {
+    reset();
+  }
 
   void reset()
   {
@@ -8983,7 +9065,10 @@ class Sel_arg_range_sequence
     curr_kp = -1;
   }
 
-  bool stack_empty() const { return (curr_kp == -1); }
+  bool stack_empty() const
+  {
+    return (curr_kp == -1);
+  }
 
   void stack_push_range(SEL_ARG *key_tree);
 
@@ -8996,9 +9081,15 @@ class Sel_arg_range_sequence
       curr_kp--;
   }
 
-  int stack_size() const { return curr_kp + 1; }
+  int stack_size() const
+  {
+    return curr_kp + 1;
+  }
 
-  RANGE_SEQ_ENTRY *stack_top() { return stack_empty() ? NULL : &stack[curr_kp]; }
+  RANGE_SEQ_ENTRY *stack_top()
+  {
+    return stack_empty() ? NULL : &stack[curr_kp];
+  }
 };
 
 /*
@@ -9784,7 +9875,10 @@ static bool null_part_in_key(KEY_PART *key_part, const uchar *key, uint length)
   return 0;
 }
 
-bool QUICK_SELECT_I::is_keys_used(const MY_BITMAP *fields) { return is_key_used(head, index, fields); }
+bool QUICK_SELECT_I::is_keys_used(const MY_BITMAP *fields)
+{
+  return is_key_used(head, index, fields);
+}
 
 bool QUICK_INDEX_MERGE_SELECT::is_keys_used(const MY_BITMAP *fields)
 {
@@ -10720,7 +10814,8 @@ QUICK_SELECT_DESC::QUICK_SELECT_DESC(QUICK_RANGE_SELECT *q, uint used_key_parts_
 
   Quick_ranges::const_iterator pr = ranges.begin();
   Quick_ranges::const_iterator end_range = ranges.end();
-  for (; pr != end_range; pr++) rev_ranges.push_front(*pr);
+  for (; pr != end_range; pr++)
+    rev_ranges.push_front(*pr);
 
   /* Remove EQ_RANGE flag for keys that are not using the full key */
   for (r = rev_it++; r; r = rev_it++)
@@ -12606,7 +12701,8 @@ QUICK_SELECT_I *TRP_GROUP_MIN_MAX::make_quick(PARAM *param, bool retrieve_full_r
         min_max_range = min_max_range->next_key_part;
       }
       /* Scroll to the leftmost interval for the MIN/MAX argument. */
-      while (min_max_range && min_max_range->prev) min_max_range = min_max_range->prev;
+      while (min_max_range && min_max_range->prev)
+        min_max_range = min_max_range->prev;
       /* Create an array of QUICK_RANGEs for the MIN/MAX argument. */
       while (min_max_range)
       {
@@ -13571,7 +13667,8 @@ void QUICK_GROUP_MIN_MAX_SELECT::update_min_result()
   Item_sum *min_func;
 
   min_functions_it->rewind();
-  while ((min_func = (*min_functions_it)++)) min_func->reset_and_add();
+  while ((min_func = (*min_functions_it)++))
+    min_func->reset_and_add();
 }
 
 /*
@@ -13601,7 +13698,8 @@ void QUICK_GROUP_MIN_MAX_SELECT::update_max_result()
   Item_sum *max_func;
 
   max_functions_it->rewind();
-  while ((max_func = (*max_functions_it)++)) max_func->reset_and_add();
+  while ((max_func = (*max_functions_it)++))
+    max_func->reset_and_add();
 }
 
 /*
@@ -14237,7 +14335,8 @@ void QUICK_INDEX_MERGE_SELECT::dbug_dump(int indent, bool verbose)
   QUICK_RANGE_SELECT *quick;
   fprintf(DBUG_FILE, "%*squick index_merge select\n", indent, "");
   fprintf(DBUG_FILE, "%*smerged scans {\n", indent, "");
-  while ((quick = it++)) quick->dbug_dump(indent + 2, verbose);
+  while ((quick = it++))
+    quick->dbug_dump(indent + 2, verbose);
   if (pk_quick_select)
   {
     fprintf(DBUG_FILE, "%*sclustered PK quick:\n", indent, "");
@@ -14252,7 +14351,8 @@ void QUICK_ROR_INTERSECT_SELECT::dbug_dump(int indent, bool verbose)
   QUICK_RANGE_SELECT *quick;
   fprintf(DBUG_FILE, "%*squick ROR-intersect select, %scovering\n", indent, "", need_to_fetch_row ? "" : "non-");
   fprintf(DBUG_FILE, "%*smerged scans {\n", indent, "");
-  while ((quick = it++)) quick->dbug_dump(indent + 2, verbose);
+  while ((quick = it++))
+    quick->dbug_dump(indent + 2, verbose);
   if (cpk_quick)
   {
     fprintf(DBUG_FILE, "%*sclustered PK quick:\n", indent, "");
@@ -14267,7 +14367,8 @@ void QUICK_ROR_UNION_SELECT::dbug_dump(int indent, bool verbose)
   QUICK_SELECT_I *quick;
   fprintf(DBUG_FILE, "%*squick ROR-union select\n", indent, "");
   fprintf(DBUG_FILE, "%*smerged scans {\n", indent, "");
-  while ((quick = it++)) quick->dbug_dump(indent + 2, verbose);
+  while ((quick = it++))
+    quick->dbug_dump(indent + 2, verbose);
   fprintf(DBUG_FILE, "%*s}\n", indent, "");
 }
 

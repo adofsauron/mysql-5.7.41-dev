@@ -100,7 +100,8 @@ int table_mapping::expand()
 
   /* Find the end of this fresh new array of free entries */
   entry *e_end = tmp + TABLE_ID_CHUNK - 1;
-  for (entry *e = tmp; e < e_end; e++) e->next = e + 1;
+  for (entry *e = tmp; e < e_end; e++)
+    e->next = e + 1;
   e_end->next = m_free;
   m_free = tmp;
   return 0;

@@ -51,9 +51,15 @@ const char *MY_LOCALE_ERRMSGS::lookup(int mysql_errno)
   return "Invalid error code";
 }
 
-const char *ER_DEFAULT(int mysql_errno) { return my_default_lc_messages->errmsgs->lookup(mysql_errno); }
+const char *ER_DEFAULT(int mysql_errno)
+{
+  return my_default_lc_messages->errmsgs->lookup(mysql_errno);
+}
 
-const char *ER_THD(const THD *thd, int mysql_errno) { return thd->variables.lc_messages->errmsgs->lookup(mysql_errno); }
+const char *ER_THD(const THD *thd, int mysql_errno)
+{
+  return thd->variables.lc_messages->errmsgs->lookup(mysql_errno);
+}
 
 C_MODE_START
 static const char *get_server_errmsgs(int mysql_errno)
@@ -119,7 +125,8 @@ bool MY_LOCALE_ERRMSGS::read_texts()
   uint error_messages = 0;
   DBUG_ENTER("read_texts");
 
-  for (int i = 0; i < NUM_SECTIONS; i++) error_messages += errmsg_section_size[i];
+  for (int i = 0; i < NUM_SECTIONS; i++)
+    error_messages += errmsg_section_size[i];
 
   convert_dirname(lang_path, language, NullS);
   (void)my_load_path(lang_path, lang_path, lc_messages_dir);
@@ -208,7 +215,8 @@ bool MY_LOCALE_ERRMSGS::read_texts()
   DBUG_RETURN(false);
 
 read_err_init:
-  for (uint i = 0; i < error_messages; ++i) errmsgs[i] = "";
+  for (uint i = 0; i < error_messages; ++i)
+    errmsgs[i] = "";
 read_err:
   sql_print_error("Can't read from messagefile '%s'", name);
   (void)mysql_file_close(file, MYF(MY_WME));
@@ -221,10 +229,14 @@ open_err:
     */
     if ((errmsgs = (const char **)my_malloc(key_memory_errmsgs, error_messages * sizeof(char *), MYF(0))))
     {
-      for (uint i = 0; i < error_messages; ++i) errmsgs[i] = "";
+      for (uint i = 0; i < error_messages; ++i)
+        errmsgs[i] = "";
     }
   }
   DBUG_RETURN(true);
 } /* read_texts */
 
-void MY_LOCALE_ERRMSGS::destroy() { my_free(errmsgs); }
+void MY_LOCALE_ERRMSGS::destroy()
+{
+  my_free(errmsgs);
+}

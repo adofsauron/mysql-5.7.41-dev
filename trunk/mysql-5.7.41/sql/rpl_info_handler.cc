@@ -39,9 +39,15 @@ Rpl_info_handler::Rpl_info_handler(const int nparam)
   }
 }
 
-Rpl_info_handler::~Rpl_info_handler() { delete field_values; }
+Rpl_info_handler::~Rpl_info_handler()
+{
+  delete field_values;
+}
 
-void Rpl_info_handler::set_sync_period(uint period) { sync_period = period; }
+void Rpl_info_handler::set_sync_period(uint period)
+{
+  sync_period = period;
+}
 
 const char *Rpl_info_handler::get_rpl_info_type_str()
 {

@@ -39,7 +39,10 @@
     Created on THD's mem_root
 */
 
-Event_parse_data *Event_parse_data::new_instance(THD *thd) { return new (thd->mem_root) Event_parse_data; }
+Event_parse_data *Event_parse_data::new_instance(THD *thd)
+{
+  return new (thd->mem_root) Event_parse_data;
+}
 
 /*
   Constructor

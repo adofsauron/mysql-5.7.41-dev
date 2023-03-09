@@ -141,7 +141,10 @@ class Silence_log_table_errors : public Internal_error_handler
   char m_message[MYSQL_ERRMSG_SIZE];
 
  public:
-  Silence_log_table_errors() { m_message[0] = '\0'; }
+  Silence_log_table_errors()
+  {
+    m_message[0] = '\0';
+  }
 
   virtual bool handle_condition(THD *thd, uint sql_errno, const char *sql_state,
                                 Sql_condition::enum_severity_level *level, const char *msg)
@@ -150,7 +153,10 @@ class Silence_log_table_errors : public Internal_error_handler
     return true;
   }
 
-  const char *message() const { return m_message; }
+  const char *message() const
+  {
+    return m_message;
+  }
 };
 
 #ifndef _WIN32

@@ -77,10 +77,16 @@ class Session_sysvars_tracker : public State_tracker
       }
     }
 
-    uchar *search(const uchar *token, size_t length) { return (my_hash_search(&m_registered_sysvars, token, length)); }
+    uchar *search(const uchar *token, size_t length)
+    {
+      return (my_hash_search(&m_registered_sysvars, token, length));
+    }
 
    public:
-    vars_list(const CHARSET_INFO *char_set) { init(char_set); }
+    vars_list(const CHARSET_INFO *char_set)
+    {
+      init(char_set);
+    }
 
     void claim_memory_ownership()
     {
@@ -115,7 +121,10 @@ class Session_sysvars_tracker : public State_tracker
       return res;
     }
 
-    uchar *operator[](ulong idx) { return my_hash_element(&m_registered_sysvars, idx); }
+    uchar *operator[](ulong idx)
+    {
+      return my_hash_element(&m_registered_sysvars, idx);
+    }
     bool insert(sysvar_node_st *node, LEX_STRING var);
     void reset();
     bool update(vars_list *from, THD *thd);
@@ -191,10 +200,19 @@ class Current_schema_tracker : public State_tracker
 
  public:
   /** Constructor */
-  Current_schema_tracker() { schema_track_inited = false; }
+  Current_schema_tracker()
+  {
+    schema_track_inited = false;
+  }
 
-  bool enable(THD *thd) { return update(thd); }
-  bool check(THD *thd, set_var *var) { return false; }
+  bool enable(THD *thd)
+  {
+    return update(thd);
+  }
+  bool check(THD *thd, set_var *var)
+  {
+    return false;
+  }
   bool update(THD *thd);
   bool store(THD *thd, String &buf);
   void mark_as_changed(THD *thd, LEX_CSTRING *tracked_item_name);
@@ -220,7 +238,9 @@ static const unsigned int EXTRA_ALLOC = 1024;
 class Session_gtids_ctx_encoder
 {
  public:
-  Session_gtids_ctx_encoder() {}
+  Session_gtids_ctx_encoder()
+  {
+  }
   virtual ~Session_gtids_ctx_encoder(){};
 
   /*
@@ -251,10 +271,17 @@ class Session_gtids_ctx_encoder
 class Session_gtids_ctx_encoder_string : public Session_gtids_ctx_encoder
 {
  public:
-  Session_gtids_ctx_encoder_string() {}
-  ~Session_gtids_ctx_encoder_string() {}
+  Session_gtids_ctx_encoder_string()
+  {
+  }
+  ~Session_gtids_ctx_encoder_string()
+  {
+  }
 
-  ulonglong encoding_specification() { return 0; }
+  ulonglong encoding_specification()
+  {
+    return 0;
+  }
 
   bool encode(THD *thd, String &buf)
   {
@@ -325,7 +352,9 @@ class Session_gtids_tracker : public State_tracker, Session_consistency_gtids_ct
 
  public:
   /** Constructor */
-  Session_gtids_tracker() : Session_consistency_gtids_ctx::Ctx_change_listener(), m_encoder(NULL) {}
+  Session_gtids_tracker() : Session_consistency_gtids_ctx::Ctx_change_listener(), m_encoder(NULL)
+  {
+  }
 
   ~Session_gtids_tracker()
   {
@@ -339,14 +368,23 @@ class Session_gtids_tracker : public State_tracker, Session_consistency_gtids_ct
       delete m_encoder;
   }
 
-  bool enable(THD *thd) { return update(thd); }
-  bool check(THD *thd, set_var *var) { return false; }
+  bool enable(THD *thd)
+  {
+    return update(thd);
+  }
+  bool check(THD *thd, set_var *var)
+  {
+    return false;
+  }
   bool update(THD *thd);
   bool store(THD *thd, String &buf);
   void mark_as_changed(THD *thd, LEX_CSTRING *tracked_item_name);
 
   // implementation of the Session_gtids_ctx::Ctx_change_listener
-  void notify_session_gtids_ctx_change() { mark_as_changed(NULL, NULL); }
+  void notify_session_gtids_ctx_change()
+  {
+    mark_as_changed(NULL, NULL);
+  }
 };
 
 void Session_sysvars_tracker::vars_list::reset()
@@ -840,7 +878,10 @@ void Current_schema_tracker::mark_as_changed(THD *thd, LEX_CSTRING *tracked_item
   @return                   void
 */
 
-void Current_schema_tracker::reset() { m_changed = false; }
+void Current_schema_tracker::reset()
+{
+  m_changed = false;
+}
 
 ///////////////////////////////////////////////////////////////////////////////
 
@@ -1346,7 +1387,10 @@ void Transaction_state_tracker::set_isol_level(THD *thd, enum enum_tx_isol_level
 ///////////////////////////////////////////////////////////////////////////////
 
 /** Constructor */
-Session_state_change_tracker::Session_state_change_tracker() { m_changed = false; }
+Session_state_change_tracker::Session_state_change_tracker()
+{
+  m_changed = false;
+}
 
 /**
   @brief Initiate the value of m_enabled based on
@@ -1371,7 +1415,10 @@ bool Session_state_change_tracker::enable(THD *thd)
 
 **/
 
-bool Session_state_change_tracker::update(THD *thd) { return enable(thd); }
+bool Session_state_change_tracker::update(THD *thd)
+{
+  return enable(thd);
+}
 
 /**
   @brief Store the 1byte boolean flag in the specified buffer. Once the
@@ -1438,7 +1485,10 @@ void Session_state_change_tracker::mark_as_changed(THD *thd, LEX_CSTRING *tracke
   @return                   void
 */
 
-void Session_state_change_tracker::reset() { m_changed = false; }
+void Session_state_change_tracker::reset()
+{
+  m_changed = false;
+}
 
 /**
   @brief find if there is a session state change
@@ -1448,7 +1498,10 @@ void Session_state_change_tracker::reset() { m_changed = false; }
   false - if there is no session state change
 **/
 
-bool Session_state_change_tracker::is_state_changed(THD *thd) { return m_changed; }
+bool Session_state_change_tracker::is_state_changed(THD *thd)
+{
+  return m_changed;
+}
 
 ///////////////////////////////////////////////////////////////////////////////
 
@@ -1471,7 +1524,8 @@ void Session_tracker::init(const CHARSET_INFO *char_set)
 
 void Session_tracker::claim_memory_ownership()
 {
-  for (int i = 0; i <= SESSION_TRACKER_END; i++) m_trackers[i]->claim_memory_ownership();
+  for (int i = 0; i <= SESSION_TRACKER_END; i++)
+    m_trackers[i]->claim_memory_ownership();
 }
 
 /**
@@ -1483,7 +1537,8 @@ void Session_tracker::claim_memory_ownership()
 */
 void Session_tracker::enable(THD *thd)
 {
-  for (int i = 0; i <= SESSION_TRACKER_END; i++) m_trackers[i]->enable(thd);
+  for (int i = 0; i <= SESSION_TRACKER_END; i++)
+    m_trackers[i]->enable(thd);
 }
 
 /**
@@ -1514,7 +1569,10 @@ bool Session_tracker::server_boot_verify(const CHARSET_INFO *char_set, LEX_STRIN
   @return                   Pointer to the tracker object.
 */
 
-State_tracker *Session_tracker::get_tracker(enum_session_tracker tracker) const { return m_trackers[tracker]; }
+State_tracker *Session_tracker::get_tracker(enum_session_tracker tracker) const
+{
+  return m_trackers[tracker];
+}
 
 /**
   @brief Checks if m_enabled flag is set for any of the tracker objects.

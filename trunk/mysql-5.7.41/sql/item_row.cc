@@ -234,5 +234,6 @@ Item *Item_row::transform(Item_transformer transformer, uchar *arg)
 
 void Item_row::bring_value()
 {
-  for (uint i = 0; i < arg_count; i++) items[i]->bring_value();
+  for (uint i = 0; i < arg_count; i++)
+    items[i]->bring_value();
 }

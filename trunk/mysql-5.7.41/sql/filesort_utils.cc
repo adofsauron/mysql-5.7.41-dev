@@ -162,7 +162,9 @@ inline bool my_mem_compare_longkey(const uchar *s1, const uchar *s2, size_t len)
 class Mem_compare : public std::binary_function< const uchar *, const uchar *, bool >
 {
  public:
-  Mem_compare(size_t n) : m_size(n) {}
+  Mem_compare(size_t n) : m_size(n)
+  {
+  }
   bool operator()(const uchar *s1, const uchar *s2) const
   {
 #ifdef __sun
@@ -180,7 +182,9 @@ class Mem_compare : public std::binary_function< const uchar *, const uchar *, b
 class Mem_compare_longkey : public std::binary_function< const uchar *, const uchar *, bool >
 {
  public:
-  Mem_compare_longkey(size_t n) : m_size(n) {}
+  Mem_compare_longkey(size_t n) : m_size(n)
+  {
+  }
   bool operator()(const uchar *s1, const uchar *s2) const
   {
 #ifdef __sun

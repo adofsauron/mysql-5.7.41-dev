@@ -491,8 +491,10 @@ int ExceptionsTableWriter::init(const NdbDictionary::Table *mainTable, const Ndb
     int xncol = exceptionsTable->getNoOfColumns();
     int i, k;
     /* Initialize position arrays */
-    for (k = 0; k < nkey; k++) m_key_data_pos[k] = -1;
-    for (i = 0; i < xncol; i++) m_data_pos[i] = -1;
+    for (k = 0; k < nkey; k++)
+      m_key_data_pos[k] = -1;
+    for (i = 0; i < xncol; i++)
+      m_data_pos[i] = -1;
     /* Initialize nullability information */
     for (i = 0; i < ncol; i++)
     {
@@ -813,7 +815,10 @@ st_ndb_slave_state::st_ndb_slave_state()
   init_alloc_root(PSI_INSTRUMENT_ME, &conflict_mem_root, CONFLICT_MEMROOT_BLOCK_SIZE, 0);
 }
 
-st_ndb_slave_state::~st_ndb_slave_state() { free_root(&conflict_mem_root, 0); }
+st_ndb_slave_state::~st_ndb_slave_state()
+{
+  free_root(&conflict_mem_root, 0);
+}
 
 /**
    resetPerAttemptCounters
@@ -2111,7 +2116,8 @@ int parse_conflict_fn_spec(const char *conflict_fn_spec, const st_conflict_fn_de
   const char *ptr = conflict_fn_spec;
   const char *error_str = "unknown conflict resolution function";
   /* remove whitespace */
-  while (*ptr == ' ' && *ptr != '\0') ptr++;
+  while (*ptr == ' ' && *ptr != '\0')
+    ptr++;
 
   DBUG_PRINT("info", ("parsing %s", conflict_fn_spec));
 
@@ -2129,7 +2135,8 @@ int parse_conflict_fn_spec(const char *conflict_fn_spec, const st_conflict_fn_de
     ptr += len;
 
     /* remove whitespace */
-    while (*ptr == ' ' && *ptr != '\0') ptr++;
+    while (*ptr == ' ' && *ptr != '\0')
+      ptr++;
 
     /* next '(' */
     if (*ptr != '(')
@@ -2154,7 +2161,8 @@ int parse_conflict_fn_spec(const char *conflict_fn_spec, const st_conflict_fn_de
       enum enum_conflict_fn_arg_type type = conflict_fns[i].arg_defs[no_args].arg_type;
 
       /* remove whitespace */
-      while (*ptr == ' ' && *ptr != '\0') ptr++;
+      while (*ptr == ' ' && *ptr != '\0')
+        ptr++;
 
       if (type == CFAT_END)
       {
@@ -2166,7 +2174,8 @@ int parse_conflict_fn_spec(const char *conflict_fn_spec, const st_conflict_fn_de
       /* arg */
       /* Todo : Should support comma as an arg separator? */
       const char *start_arg = ptr;
-      while (*ptr != ')' && *ptr != ' ' && *ptr != '\0') ptr++;
+      while (*ptr != ')' && *ptr != ' ' && *ptr != '\0')
+        ptr++;
       const char *end_arg = ptr;
 
       bool optional_arg = conflict_fns[i].arg_defs[no_args].optional;
@@ -2238,7 +2247,8 @@ int parse_conflict_fn_spec(const char *conflict_fn_spec, const st_conflict_fn_de
       break;
 
     /* remove whitespace */
-    while (*ptr == ' ' && *ptr != '\0') ptr++;
+    while (*ptr == ' ' && *ptr != '\0')
+      ptr++;
 
     /* next ')' */
     if (*ptr != ')')
@@ -2249,7 +2259,8 @@ int parse_conflict_fn_spec(const char *conflict_fn_spec, const st_conflict_fn_de
     ptr++;
 
     /* remove whitespace */
-    while (*ptr == ' ' && *ptr != '\0') ptr++;
+    while (*ptr == ' ' && *ptr != '\0')
+      ptr++;
 
     /* garbage in the end? */
     if (*ptr != '\0')

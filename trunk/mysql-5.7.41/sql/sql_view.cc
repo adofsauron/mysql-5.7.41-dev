@@ -360,7 +360,10 @@ err:
 
 #else
 
-bool create_view_precheck(THD *thd, TABLE_LIST *tables, TABLE_LIST *view, enum_view_create_mode mode) { return FALSE; }
+bool create_view_precheck(THD *thd, TABLE_LIST *tables, TABLE_LIST *view, enum_view_create_mode mode)
+{
+  return FALSE;
+}
 
 #endif
 

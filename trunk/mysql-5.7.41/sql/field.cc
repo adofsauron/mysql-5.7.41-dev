@@ -2081,7 +2081,10 @@ void Field::evaluate_update_default_function()
   Field_null, a field that always return NULL
 ****************************************************************************/
 
-void Field_null::sql_type(String &res) const { res.set_ascii(STRING_WITH_LEN("null")); }
+void Field_null::sql_type(String &res) const
+{
+  res.set_ascii(STRING_WITH_LEN("null"));
+}
 
 /****************************************************************************
   Functions for the Field_decimal class
@@ -2202,7 +2205,8 @@ type_conversion_status Field_decimal::store(const char *from_arg, size_t len, co
     tmp_dec++;
 
   /* skip pre-space */
-  while (from != end && my_isspace(&my_charset_bin, *from)) from++;
+  while (from != end && my_isspace(&my_charset_bin, *from))
+    from++;
   if (from == end)
   {
     set_warning(Sql_condition::SL_WARNING, WARN_DATA_TRUNCATED, 1);
@@ -2371,12 +2375,15 @@ type_conversion_status Field_decimal::store(const char *from_arg, size_t len, co
   tmp_left_pos = pos = to + (uint)(field_length - tmp_uint);
 
   // Write all digits of the int_% parts
-  while (int_digits_from != int_digits_end) *pos++ = *int_digits_from++;
+  while (int_digits_from != int_digits_end)
+    *pos++ = *int_digits_from++;
 
   if (expo_sign_char == '+')
   {
-    while (int_digits_tail_from != frac_digits_from) *pos++ = *int_digits_tail_from++;
-    while (int_digits_added_zeros-- > 0) *pos++ = '0';
+    while (int_digits_tail_from != frac_digits_from)
+      *pos++ = *int_digits_tail_from++;
+    while (int_digits_added_zeros-- > 0)
+      *pos++ = '0';
   }
   /*
     Note the position where the rightmost digit of the int_% parts has been
@@ -2401,7 +2408,8 @@ type_conversion_status Field_decimal::store(const char *from_arg, size_t len, co
     left_wall = to + (sign_char != 0) - 1;
     if (!expo_sign_char)  // If exponent was specified, ignore prezeros
     {
-      for (; pos > left_wall && pre_zeros_from != pre_zeros_end; pre_zeros_from++) *pos-- = '0';
+      for (; pos > left_wall && pre_zeros_from != pre_zeros_end; pre_zeros_from++)
+        *pos-- = '0';
     }
     if (pos == tmp_right_pos - 1)
       *pos-- = '0';  // no 0 has ever been written, so write one
@@ -2411,7 +2419,8 @@ type_conversion_status Field_decimal::store(const char *from_arg, size_t len, co
       /* Write sign if possible (it is if sign is '-') */
       *pos-- = sign_char;
     }
-    while (pos != left_wall) *pos-- = ' ';  // fill with blanks
+    while (pos != left_wall)
+      *pos-- = ' ';  // fill with blanks
   }
 
   /*
@@ -2479,7 +2488,8 @@ type_conversion_status Field_decimal::store(const char *from_arg, size_t len, co
     *pos++ = tmp_char;
   }
 
-  while (pos != right_wall) *pos++ = '0';  // Fill with zeros at right of '.'
+  while (pos != right_wall)
+    *pos++ = '0';  // Fill with zeros at right of '.'
   return TYPE_OK;
 }
 
@@ -2514,7 +2524,8 @@ type_conversion_status Field_decimal::store(double nr)
   else
   {
     to = ptr;
-    for (i = field_length - length; i-- > 0;) *to++ = fyllchar;
+    for (i = field_length - length; i-- > 0;)
+      *to++ = fyllchar;
     memcpy(to, buff, length);
     return TYPE_OK;
   }
@@ -2544,7 +2555,8 @@ type_conversion_status Field_decimal::store(longlong nr, bool unsigned_val)
 
   fyllchar = zerofill ? '0' : ' ';
   to = ptr;
-  for (uint i = int_part - length; i-- > 0;) *to++ = fyllchar;
+  for (uint i = int_part - length; i-- > 0;)
+    *to++ = fyllchar;
   memcpy(to, buff, length);
   if (dec)
   {
@@ -2953,7 +2965,10 @@ bool Field_new_decimal::get_time(MYSQL_TIME *ltime)
   return my_decimal_to_time_with_warn(decimal_value, ltime);
 }
 
-int Field_new_decimal::cmp(const uchar *a, const uchar *b) { return memcmp(a, b, bin_size); }
+int Field_new_decimal::cmp(const uchar *a, const uchar *b)
+{
+  return memcmp(a, b, bin_size);
+}
 
 void Field_new_decimal::make_sort_key(uchar *buff, size_t length)
 {
@@ -4170,7 +4185,8 @@ uchar *Field_real::pack(uchar *to, const uchar *from, uint max_length, bool low_
   if (low_byte_first != table->s->db_low_byte_first)
   {
     const uchar *dptr = from + pack_length();
-    while (dptr-- > from) *to++ = *dptr;
+    while (dptr-- > from)
+      *to++ = *dptr;
     DBUG_RETURN(to);
   }
   else
@@ -4185,7 +4201,8 @@ const uchar *Field_real::unpack(uchar *to, const uchar *from, uint param_data, b
   if (low_byte_first != table->s->db_low_byte_first)
   {
     const uchar *dptr = from + pack_length();
-    while (dptr-- > from) *to++ = *dptr;
+    while (dptr-- > from)
+      *to++ = *dptr;
     DBUG_RETURN(from + pack_length());
   }
   else
@@ -4364,7 +4381,8 @@ void Field_float::make_sort_key(uchar *to, size_t length)
     if (tmp[0] & 128) /* Negative */
     {                 /* make complement */
       uint i;
-      for (i = 0; i < sizeof(nr); i++) tmp[i] = (uchar)(tmp[i] ^ (uchar)255);
+      for (i = 0; i < sizeof(nr); i++)
+        tmp[i] = (uchar)(tmp[i] ^ (uchar)255);
     }
     else
     {
@@ -4480,7 +4498,8 @@ bool Field_real::truncate(double *nr, double max_value)
     uint order = field_length - dec;
     uint step = array_elements(log_10) - 1;
     max_value = 1.0;
-    for (; order > step; order -= step) max_value *= log_10[step];
+    for (; order > step; order -= step)
+      max_value *= log_10[step];
     max_value *= log_10[order];
     max_value -= 1.0 / log_10[dec];
 
@@ -4580,7 +4599,10 @@ bool Field_real::get_date(MYSQL_TIME *ltime, my_time_flags_t fuzzydate)
   return my_double_to_datetime_with_warn(val_real(), ltime, fuzzydate);
 }
 
-bool Field_real::get_time(MYSQL_TIME *ltime) { return my_double_to_time_with_warn(val_real(), ltime); }
+bool Field_real::get_time(MYSQL_TIME *ltime)
+{
+  return my_double_to_time_with_warn(val_real(), ltime);
+}
 
 String *Field_double::val_str(String *val_buffer, String *val_ptr MY_ATTRIBUTE((unused)))
 {
@@ -5371,7 +5393,10 @@ void Field_timestamp::make_sort_key(uchar *to, size_t length MY_ATTRIBUTE((unuse
   }
 }
 
-void Field_timestamp::sql_type(String &res) const { res.set_ascii(STRING_WITH_LEN("timestamp")); }
+void Field_timestamp::sql_type(String &res) const
+{
+  res.set_ascii(STRING_WITH_LEN("timestamp"));
+}
 
 type_conversion_status Field_timestamp::validate_stored_val(THD *thd)
 {
@@ -5421,7 +5446,10 @@ type_conversion_status Field_timestampf::reset()
   return TYPE_OK;
 }
 
-void Field_timestampf::store_timestamp_internal(const struct timeval *tm) { my_timestamp_to_binary(tm, ptr, dec); }
+void Field_timestampf::store_timestamp_internal(const struct timeval *tm)
+{
+  my_timestamp_to_binary(tm, ptr, dec);
+}
 
 type_conversion_status Field_timestampf::store_internal(const MYSQL_TIME *ltime, int *warnings)
 {
@@ -5674,7 +5702,10 @@ void Field_time::make_sort_key(uchar *to, size_t length)
   to[2] = ptr[0];
 }
 
-void Field_time::sql_type(String &res) const { res.set_ascii(STRING_WITH_LEN("time")); }
+void Field_time::sql_type(String &res) const
+{
+  res.set_ascii(STRING_WITH_LEN("time"));
+}
 
 /****************************************************************************
 ** time type with fsp
@@ -5731,7 +5762,10 @@ void Field_timef::sql_type(String &res) const
   res.length(cs->cset->snprintf(cs, (char *)res.ptr(), res.alloced_length(), "time(%d)", dec));
 }
 
-type_conversion_status Field_timef::reset() { return store_packed(0); }
+type_conversion_status Field_timef::reset()
+{
+  return store_packed(0);
+}
 
 type_conversion_status Field_timef::store_packed(longlong nr)
 {
@@ -5868,7 +5902,10 @@ bool Field_year::send_binary(Protocol *protocol)
   return protocol->store_short(tmp);
 }
 
-double Field_year::val_real(void) { return (double)Field_year::val_int(); }
+double Field_year::val_real(void)
+{
+  return (double)Field_year::val_int();
+}
 
 longlong Field_year::val_int(void)
 {
@@ -6030,7 +6067,10 @@ void Field_newdate::make_sort_key(uchar *to, size_t length)
   to[2] = ptr[0];
 }
 
-void Field_newdate::sql_type(String &res) const { res.set_ascii(STRING_WITH_LEN("date")); }
+void Field_newdate::sql_type(String &res) const
+{
+  res.set_ascii(STRING_WITH_LEN("date"));
+}
 
 /****************************************************************************
 ** datetime type
@@ -6200,7 +6240,10 @@ void Field_datetime::make_sort_key(uchar *to, size_t length)
     copy_integer< false >(to, to_length, ptr, pack_length, true);
 }
 
-void Field_datetime::sql_type(String &res) const { res.set_ascii(STRING_WITH_LEN("datetime")); }
+void Field_datetime::sql_type(String &res) const
+{
+  res.set_ascii(STRING_WITH_LEN("datetime"));
+}
 
 /****************************************************************************
 ** datetimef type
@@ -6265,7 +6308,10 @@ type_conversion_status Field_datetimef::reset()
   return TYPE_OK;
 }
 
-longlong Field_datetimef::val_date_temporal() { return my_datetime_packed_from_binary(ptr, dec); }
+longlong Field_datetimef::val_date_temporal()
+{
+  return my_datetime_packed_from_binary(ptr, dec);
+}
 
 type_conversion_status Field_datetimef::store_packed(longlong nr)
 {
@@ -6468,7 +6514,10 @@ bool Field::gcol_expr_is_equal(const Create_field *field) const
   return ::is_equal(&gcol_info->expr_str, &field->gcol_info->expr_str);
 }
 
-uint Field::is_equal(Create_field *new_field) { return (new_field->sql_type == real_type()); }
+uint Field::is_equal(Create_field *new_field)
+{
+  return (new_field->sql_type == real_type());
+}
 
 uint Field_str::is_equal(Create_field *new_field)
 {
@@ -6493,7 +6542,10 @@ type_conversion_status Field_longstr::store_decimal(const my_decimal *d)
   return store(str.ptr(), str.length(), str.charset());
 }
 
-uint32 Field_longstr::max_data_length() const { return field_length + (field_length > 255 ? 2 : 1); }
+uint32 Field_longstr::max_data_length() const
+{
+  return field_length + (field_length > 255 ? 2 : 1);
+}
 
 double Field_string::val_real(void)
 {
@@ -6650,7 +6702,8 @@ uchar *Field_string::pack(uchar *to, const uchar *from, uint max_length, bool lo
   */
   if (field_charset->mbmaxlen == 1)
   {
-    while (length && from[length - 1] == field_charset->pad_char) length--;
+    while (length && from[length - 1] == field_charset->pad_char)
+      length--;
   }
   else
     length = field_charset->cset->lengthsp(field_charset, (const char *)from, length);
@@ -7883,7 +7936,10 @@ uint Field_geom::is_equal(Create_field *new_field)
   Get the type of this field (json).
   @param str  the string that receives the type
 */
-void Field_json::sql_type(String &str) const { str.set_ascii(STRING_WITH_LEN("json")); }
+void Field_json::sql_type(String &str) const
+{
+  str.set_ascii(STRING_WITH_LEN("json"));
+}
 
 /// Create a shallow clone of this field in the specified MEM_ROOT.
 Field_json *Field_json::clone(MEM_ROOT *mem_root) const
@@ -8028,16 +8084,28 @@ type_conversion_status Field_json::store_binary(const char *ptr, size_t length)
 }
 
 /// Store a double in a JSON field. Will raise an error for now.
-type_conversion_status Field_json::store(double nr) { return unsupported_conversion(); }
+type_conversion_status Field_json::store(double nr)
+{
+  return unsupported_conversion();
+}
 
 /// Store an integer in a JSON field. Will raise an error for now.
-type_conversion_status Field_json::store(longlong nr, bool unsigned_val) { return unsupported_conversion(); }
+type_conversion_status Field_json::store(longlong nr, bool unsigned_val)
+{
+  return unsupported_conversion();
+}
 
 /// Store a decimal in a JSON field. Will raise an error for now.
-type_conversion_status Field_json::store_decimal(const my_decimal *) { return unsupported_conversion(); }
+type_conversion_status Field_json::store_decimal(const my_decimal *)
+{
+  return unsupported_conversion();
+}
 
 /// Store a TIME value in a JSON field. Will raise an error for now.
-type_conversion_status Field_json::store_time(MYSQL_TIME *ltime, uint8 dec_arg) { return unsupported_conversion(); }
+type_conversion_status Field_json::store_time(MYSQL_TIME *ltime, uint8 dec_arg)
+{
+  return unsupported_conversion();
+}
 
 /**
   Store a JSON value as binary.
@@ -8343,7 +8411,10 @@ type_conversion_status Field_enum::store(const char *from, size_t length, const 
   return ret;
 }
 
-type_conversion_status Field_enum::store(double nr) { return Field_enum::store((longlong)nr, FALSE); }
+type_conversion_status Field_enum::store(double nr)
+{
+  return Field_enum::store((longlong)nr, FALSE);
+}
 
 type_conversion_status Field_enum::store(longlong nr, bool unsigned_val)
 {
@@ -8362,7 +8433,10 @@ type_conversion_status Field_enum::store(longlong nr, bool unsigned_val)
   return error;
 }
 
-double Field_enum::val_real(void) { return (double)Field_enum::val_int(); }
+double Field_enum::val_real(void)
+{
+  return (double)Field_enum::val_int();
+}
 
 my_decimal *Field_enum::val_decimal(my_decimal *decimal_value)
 {
@@ -8949,7 +9023,10 @@ type_conversion_status Field_bit::store(const char *from, size_t length, const C
   return TYPE_OK;
 }
 
-type_conversion_status Field_bit::store(double nr) { return Field_bit::store((longlong)nr, FALSE); }
+type_conversion_status Field_bit::store(double nr)
+{
+  return Field_bit::store((longlong)nr, FALSE);
+}
 
 type_conversion_status Field_bit::store(longlong nr, bool unsigned_val)
 {
@@ -8967,7 +9044,10 @@ type_conversion_status Field_bit::store_decimal(const my_decimal *val)
   return has_overflow ? TYPE_WARN_OUT_OF_RANGE : res;
 }
 
-double Field_bit::val_real(void) { return (double)Field_bit::val_int(); }
+double Field_bit::val_real(void)
+{
+  return (double)Field_bit::val_int();
+}
 
 longlong Field_bit::val_int(void)
 {
@@ -9871,7 +9951,8 @@ bool Create_field::init(THD *thd, const char *fld_name, enum_field_types fld_typ
 
       List_iterator< String > it(*fld_interval_list);
       String *tmp;
-      while ((tmp = it++)) interval_list.push_back(tmp);
+      while ((tmp = it++))
+        interval_list.push_back(tmp);
       /*
         Set fake length to 1 to pass the below conditions.
         Real length will be set in mysql_prepare_table()
@@ -9887,7 +9968,8 @@ bool Create_field::init(THD *thd, const char *fld_name, enum_field_types fld_typ
 
       List_iterator< String > it(*fld_interval_list);
       String *tmp;
-      while ((tmp = it++)) interval_list.push_back(tmp);
+      while ((tmp = it++))
+        interval_list.push_back(tmp);
       length = 1; /* See comment for MYSQL_TYPE_SET above. */
       break;
     }

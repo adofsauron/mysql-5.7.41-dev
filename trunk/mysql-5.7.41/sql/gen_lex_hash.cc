@@ -113,7 +113,8 @@ struct hash_lex_struct
   {
     if (first_char <= 0)
       return;
-    for (int i = 0, size = static_cast< uchar >(last_char) - first_char + 1; i < size; i++) char_tails[i].destroy();
+    for (int i = 0, size = static_cast< uchar >(last_char) - first_char + 1; i < size; i++)
+      char_tails[i].destroy();
     free(char_tails);
   }
 };
@@ -127,11 +128,14 @@ class hash_map_info
   char *hash_map;
   int size_hash_map;
 
-  hash_map_info() : root_by_len(NULL), max_len(0), hash_map(NULL), size_hash_map(0) {}
+  hash_map_info() : root_by_len(NULL), max_len(0), hash_map(NULL), size_hash_map(0)
+  {
+  }
 
   ~hash_map_info()
   {
-    for (int i = 0; i < max_len; i++) root_by_len[i].destroy();
+    for (int i = 0; i < max_len; i++)
+      root_by_len[i].destroy();
     free(root_by_len);
     free(hash_map);
   }
@@ -150,7 +154,8 @@ hash_lex_struct *hash_map_info::get_hash_struct_by_len(int len)
   {
     root_by_len = (hash_lex_struct *)realloc((char *)root_by_len, sizeof(hash_lex_struct) * len);
     hash_lex_struct *cur, *end = root_by_len + len;
-    for (cur = root_by_len + max_len; cur < end; cur++) cur->first_char = 0;
+    for (cur = root_by_len + max_len; cur < end; cur++)
+      cur->first_char = 0;
     max_len = len;
   }
   return root_by_len + len - 1;
@@ -191,7 +196,8 @@ void insert_into_hash(hash_lex_struct *root, const char *name, int len_from_begi
     root->char_tails = tails;
     memmove(tails + (new_size - real_size), tails, real_size * sizeof(hash_lex_struct));
     end = tails + new_size - real_size;
-    for (cur = tails; cur < end; cur++) cur->first_char = 0;
+    for (cur = tails; cur < end; cur++)
+      cur->first_char = 0;
     root->first_char = (int)(uchar)*name;
   }
 
@@ -204,7 +210,8 @@ void insert_into_hash(hash_lex_struct *root, const char *name, int len_from_begi
     tails = (hash_lex_struct *)realloc((char *)tails, sizeof(hash_lex_struct) * new_size);
     root->char_tails = tails;
     end = tails + new_size;
-    for (cur = tails + real_size; cur < end; cur++) cur->first_char = 0;
+    for (cur = tails + real_size; cur < end; cur++)
+      cur->first_char = 0;
     root->last_char = (*name);
   }
 
@@ -246,7 +253,8 @@ void hash_map_info::add_struct_to_map(hash_lex_struct *st)
 void hash_map_info::add_structs_to_map(hash_lex_struct *st, int len)
 {
   hash_lex_struct *cur, *end = st + len;
-  for (cur = st; cur < end; cur++) add_struct_to_map(cur);
+  for (cur = st; cur < end; cur++)
+    add_struct_to_map(cur);
   for (cur = st; cur < end; cur++)
   {
     if (cur->first_char && cur->first_char != -1)

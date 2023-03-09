@@ -284,15 +284,30 @@ class binlog_cache_data
     return pending() == NULL && pos == 0;
   }
 
-  bool is_finalized() const { return flags.finalized; }
+  bool is_finalized() const
+  {
+    return flags.finalized;
+  }
 
-  Rows_log_event *pending() const { return m_pending; }
+  Rows_log_event *pending() const
+  {
+    return m_pending;
+  }
 
-  void set_pending(Rows_log_event *const pending) { m_pending = pending; }
+  void set_pending(Rows_log_event *const pending)
+  {
+    m_pending = pending;
+  }
 
-  void set_incident(void) { flags.incident = true; }
+  void set_incident(void)
+  {
+    flags.incident = true;
+  }
 
-  bool has_incident(void) const { return flags.incident; }
+  bool has_incident(void) const
+  {
+    return flags.incident;
+  }
 
   /**
     Sets the binlog_cache_data::Flags::flush_error flag if there
@@ -319,7 +334,10 @@ class binlog_cache_data
     }
   }
 
-  bool get_flush_error(void) const { return flags.flush_error; }
+  bool get_flush_error(void) const
+  {
+    return flags.flush_error;
+  }
 
   bool has_xid() const
   {
@@ -328,9 +346,15 @@ class binlog_cache_data
     return flags.with_xid;
   }
 
-  bool is_trx_cache() const { return flags.transactional; }
+  bool is_trx_cache() const
+  {
+    return flags.transactional;
+  }
 
-  my_off_t get_byte_position() const { return my_b_tell(&cache_log); }
+  my_off_t get_byte_position() const
+  {
+    return my_b_tell(&cache_log);
+  }
 
   void cache_state_rollback(my_off_t pos_to_rollback)
   {
@@ -476,7 +500,10 @@ class binlog_cache_data
     @return true  The cache have SBR events or is empty.
     @return false The cache contains a transaction with no SBR events.
    */
-  bool may_have_sbr_stmts() { return flags.with_sbr || !flags.with_rbr; }
+  bool may_have_sbr_stmts()
+  {
+    return flags.with_sbr || !flags.with_rbr;
+  }
 
   /**
     Check if the binlog cache contains an empty transaction, which has
@@ -519,7 +546,10 @@ class binlog_cache_data
     @return true  The binlog cache is empty or contains an empty transaction.
     @return false Otherwise.
   */
-  bool is_empty_or_has_empty_transaction() { return is_binlog_empty() || has_empty_transaction(); }
+  bool is_empty_or_has_empty_transaction()
+  {
+    return is_binlog_empty() || has_empty_transaction();
+  }
 
  protected:
   /*
@@ -744,11 +774,20 @@ class binlog_trx_cache_data : public binlog_cache_data
     DBUG_VOID_RETURN;
   }
 
-  bool cannot_rollback() const { return m_cannot_rollback; }
+  bool cannot_rollback() const
+  {
+    return m_cannot_rollback;
+  }
 
-  void set_cannot_rollback() { m_cannot_rollback = TRUE; }
+  void set_cannot_rollback()
+  {
+    m_cannot_rollback = TRUE;
+  }
 
-  my_off_t get_prev_position() const { return before_stmt_pos; }
+  my_off_t get_prev_position() const
+  {
+    return before_stmt_pos;
+  }
 
   void set_prev_position(my_off_t pos)
   {
@@ -834,7 +873,10 @@ class binlog_cache_mngr
   /**
     Convenience method to check if both caches are empty.
    */
-  bool is_binlog_empty() const { return stmt_cache.is_binlog_empty() && trx_cache.is_binlog_empty(); }
+  bool is_binlog_empty() const
+  {
+    return stmt_cache.is_binlog_empty() && trx_cache.is_binlog_empty();
+  }
 
   /*
     clear stmt_cache and trx_cache if they are not empty
@@ -848,7 +890,10 @@ class binlog_cache_mngr
   }
 
 #ifndef NDEBUG
-  bool dbug_any_finalized() const { return stmt_cache.is_finalized() || trx_cache.is_finalized(); }
+  bool dbug_any_finalized() const
+  {
+    return stmt_cache.is_finalized() || trx_cache.is_finalized();
+  }
 #endif
 
   /*
@@ -965,7 +1010,10 @@ void check_binlog_stmt_cache_size(THD *thd)
 /**
  Check whether binlog_hton has valid slot and enabled
 */
-bool binlog_enabled() { return (binlog_hton && binlog_hton->slot != HA_SLOT_UNDEF); }
+bool binlog_enabled()
+{
+  return (binlog_hton && binlog_hton->slot != HA_SLOT_UNDEF);
+}
 
 /*
  Save position of binary log transaction cache.
@@ -994,7 +1042,10 @@ static void binlog_trans_log_savepos(THD *thd, my_off_t *pos)
   DBUG_VOID_RETURN;
 }
 
-static int binlog_dummy_recover(handlerton *hton, XID *xid, uint len) { return 0; }
+static int binlog_dummy_recover(handlerton *hton, XID *xid, uint len)
+{
+  return 0;
+}
 
 /**
   Auxiliary class to copy serialized events to the binary log and
@@ -2044,7 +2095,8 @@ bool Stage_manager::enroll_for(StageID stage, THD *thd, mysql_mutex_t *stage_mut
     if (leader_await_preempt_status)
       mysql_cond_signal(&m_cond_preempt);
 #endif
-    while (thd->get_transaction()->m_flags.pending) mysql_cond_wait(&m_cond_done, &m_lock_done);
+    while (thd->get_transaction()->m_flags.pending)
+      mysql_cond_wait(&m_cond_done, &m_lock_done);
     mysql_mutex_unlock(&m_lock_done);
   }
   return leader;
@@ -2094,7 +2146,8 @@ void Stage_manager::wait_count_or_timeout(ulong count, long usec, StageID stage)
 void Stage_manager::signal_done(THD *queue)
 {
   mysql_mutex_lock(&m_lock_done);
-  for (THD *thd = queue; thd; thd = thd->next_to_commit) thd->get_transaction()->m_flags.pending = false;
+  for (THD *thd = queue; thd; thd = thd->next_to_commit)
+    thd->get_transaction()->m_flags.pending = false;
   mysql_mutex_unlock(&m_lock_done);
   mysql_cond_broadcast(&m_cond_done);
 }
@@ -2565,7 +2618,9 @@ static bool binlog_savepoint_rollback_can_release_mdl(handlerton *hton, THD *thd
 class Adjust_offset : public Do_THD_Impl
 {
  public:
-  Adjust_offset(my_off_t value) : m_purge_offset(value) {}
+  Adjust_offset(my_off_t value) : m_purge_offset(value)
+  {
+  }
   virtual void operator()(THD *thd)
   {
     LOG_INFO *linfo;
@@ -2624,7 +2679,10 @@ static void adjust_linfo_offsets(my_off_t purge_offset)
 class Log_in_use : public Do_THD_Impl
 {
  public:
-  Log_in_use(const char *value) : m_log_name(value), m_count(0) { m_log_name_len = strlen(m_log_name) + 1; }
+  Log_in_use(const char *value) : m_log_name(value), m_count(0)
+  {
+    m_log_name_len = strlen(m_log_name) + 1;
+  }
   virtual void operator()(THD *thd)
   {
     LOG_INFO *linfo;
@@ -2642,7 +2700,10 @@ class Log_in_use : public Do_THD_Impl
     }
     mysql_mutex_unlock(&thd->LOCK_thd_data);
   }
-  int get_count() { return m_count; }
+  int get_count()
+  {
+    return m_count;
+  }
 
  private:
   const char *m_log_name;
@@ -2817,7 +2878,10 @@ bool trans_has_noop_dml(Ha_trx_info *ha_list)
   @return
     @c true if committing a transaction, otherwise @c false.
 */
-bool ending_trans(THD *thd, const bool all) { return (all || ending_single_stmt_trans(thd, all)); }
+bool ending_trans(THD *thd, const bool all)
+{
+  return (all || ending_single_stmt_trans(thd, all));
+}
 
 /**
   This function checks if a single statement transaction is about
@@ -2830,7 +2894,10 @@ bool ending_trans(THD *thd, const bool all) { return (all || ending_single_stmt_
     @c true if committing a single statement transaction, otherwise
     @c false.
 */
-bool ending_single_stmt_trans(THD *thd, const bool all) { return (!all && !thd->in_multi_stmt_transaction_mode()); }
+bool ending_single_stmt_trans(THD *thd, const bool all)
+{
+  return (!all && !thd->in_multi_stmt_transaction_mode());
+}
 
 /**
   This function checks if a transaction cannot be rolled back safely.
@@ -8137,7 +8204,9 @@ err:
 }
 
 /** This is called on shutdown, after ha_panic. */
-void MYSQL_BIN_LOG::close() {}
+void MYSQL_BIN_LOG::close()
+{
+}
 
 /*
   Prepare the transaction in the transaction coordinator.
@@ -9209,7 +9278,8 @@ int MYSQL_BIN_LOG::ordered_commit(THD *thd, bool all, bool skip_commit)
     THD *tmp_thd = final_queue;
     const char *binlog_file = NULL;
     my_off_t pos = 0;
-    while (tmp_thd->next_to_commit != NULL) tmp_thd = tmp_thd->next_to_commit;
+    while (tmp_thd->next_to_commit != NULL)
+      tmp_thd = tmp_thd->next_to_commit;
     if (flush_error == 0 && sync_error == 0)
     {
       tmp_thd->get_trans_fixed_pos(&binlog_file, &pos);

@@ -81,9 +81,14 @@ static inline bool check_lock_name(const char *name)
 class Release_all_locking_service_locks : public MDL_release_locks_visitor
 {
  public:
-  Release_all_locking_service_locks() {}
+  Release_all_locking_service_locks()
+  {
+  }
 
-  virtual bool release(MDL_ticket *ticket) { return ticket->get_key()->mdl_namespace() == MDL_key::LOCKING_SERVICE; }
+  virtual bool release(MDL_ticket *ticket)
+  {
+    return ticket->get_key()->mdl_namespace() == MDL_key::LOCKING_SERVICE;
+  }
 };
 
 class Release_locking_service_locks : public MDL_release_locks_visitor
@@ -92,7 +97,9 @@ class Release_locking_service_locks : public MDL_release_locks_visitor
   const char *m_lock_namespace;
 
  public:
-  explicit Release_locking_service_locks(const char *lock_namespace) : m_lock_namespace(lock_namespace) {}
+  explicit Release_locking_service_locks(const char *lock_namespace) : m_lock_namespace(lock_namespace)
+  {
+  }
 
   virtual bool release(MDL_ticket *ticket)
   {
