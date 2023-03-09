@@ -23,7 +23,7 @@
 #include "parse_tree_items.h"
 
 #include "parse_tree_nodes.h"
-#include "item_cmpfunc.h"          // Item_func_eq
+#include "item_cmpfunc.h"  // Item_func_eq
 
 /**
   Helper to resolve the SQL:2003 Syntax exception 1) in <in predicate>.
@@ -36,8 +36,7 @@
   @param expr first and only expression of the in value list
   @return an expression representing the IN predicate.
 */
-static Item* handle_sql2003_note184_exception(Parse_context *pc, Item* left,
-                                              bool equal, Item *expr)
+static Item *handle_sql2003_note184_exception(Parse_context *pc, Item *left, bool equal, Item *expr)
 {
   /*
     Relevant references for this issue:
@@ -67,11 +66,11 @@ static Item* handle_sql2003_note184_exception(Parse_context *pc, Item* left,
 
   if (expr->type() == Item::SUBSELECT_ITEM)
   {
-    Item_subselect *expr2 = (Item_subselect*) expr;
+    Item_subselect *expr2 = (Item_subselect *)expr;
 
     if (expr2->substype() == Item_subselect::SINGLEROW_SUBS)
     {
-      Item_singlerow_subselect *expr3 = (Item_singlerow_subselect*) expr2;
+      Item_singlerow_subselect *expr3 = (Item_singlerow_subselect *)expr2;
       st_select_lex *subselect;
 
       /*
@@ -82,10 +81,10 @@ static Item* handle_sql2003_note184_exception(Parse_context *pc, Item* left,
         which is represented as
           Item_in_subselect(left, subselect)
       */
-      subselect= expr3->invalidate_and_restore_select_lex();
-      result= new (pc->mem_root) Item_in_subselect(left, subselect);
+      subselect = expr3->invalidate_and_restore_select_lex();
+      result = new (pc->mem_root) Item_in_subselect(left, subselect);
 
-      if (! equal)
+      if (!equal)
         result = negate_expression(pc, result);
 
       DBUG_RETURN(result);
@@ -93,35 +92,30 @@ static Item* handle_sql2003_note184_exception(Parse_context *pc, Item* left,
   }
 
   if (equal)
-    result= new (pc->mem_root) Item_func_eq(left, expr);
+    result = new (pc->mem_root) Item_func_eq(left, expr);
   else
-    result= new (pc->mem_root) Item_func_ne(left, expr);
+    result = new (pc->mem_root) Item_func_ne(left, expr);
 
   DBUG_RETURN(result);
 }
 
-
 bool PTI_comp_op::itemize(Parse_context *pc, Item **res)
 {
-  if (super::itemize(pc, res) ||
-      left->itemize(pc, &left) || right->itemize(pc, &right))
+  if (super::itemize(pc, res) || left->itemize(pc, &left) || right->itemize(pc, &right))
     return true;
 
-  *res= (*boolfunc2creator)(0)->create(left, right);
+  *res = (*boolfunc2creator)(0)->create(left, right);
   return *res == NULL;
 }
 
-
 bool PTI_comp_op_all::itemize(Parse_context *pc, Item **res)
 {
-  if (super::itemize(pc, res) ||
-      left->itemize(pc, &left) || subselect->contextualize(pc))
+  if (super::itemize(pc, res) || left->itemize(pc, &left) || subselect->contextualize(pc))
     return true;
 
-  *res= all_any_subquery_creator(left, comp_op, is_all, subselect->value);
+  *res = all_any_subquery_creator(left, comp_op, is_all, subselect->value);
   return false;
 }
-
 
 bool PTI_udf_expr::itemize(Parse_context *pc, Item **res)
 {
@@ -135,51 +129,43 @@ bool PTI_udf_expr::itemize(Parse_context *pc, Item **res)
   */
   if (select_alias.str)
   {
-    expr->item_name.copy(select_alias.str, select_alias.length,
-                         system_charset_info, false);
+    expr->item_name.copy(select_alias.str, select_alias.length, system_charset_info, false);
   }
-  /* 
+  /*
      A field has to have its proper name in order for name
      resolution to work, something we are only guaranteed if we
      parse it out. If we hijack the input stream with
      [@1.cpp.start ... @1.cpp.end) we may get quoted or escaped names.
   */
-  else if (expr->type() != Item::FIELD_ITEM &&
-           expr->type() != Item::REF_ITEM /* For HAVING */ )
+  else if (expr->type() != Item::FIELD_ITEM && expr->type() != Item::REF_ITEM /* For HAVING */)
     expr->item_name.copy(expr_loc.start, expr_loc.length(), pc->thd->charset());
-  *res= expr;
+  *res = expr;
   return false;
 };
-
 
 bool PTI_singlerow_subselect::itemize(Parse_context *pc, Item **res)
 {
   if (super::itemize(pc, res) || subselect->contextualize(pc))
     return true;
-  *res= new (pc->mem_root) Item_singlerow_subselect(subselect->value);
+  *res = new (pc->mem_root) Item_singlerow_subselect(subselect->value);
   return *res == NULL;
 }
-
 
 bool PTI_exists_subselect::itemize(Parse_context *pc, Item **res)
 {
   if (super::itemize(pc, res) || subselect->contextualize(pc))
     return true;
-  *res= new (pc->mem_root) Item_exists_subselect(subselect->value);
+  *res = new (pc->mem_root) Item_exists_subselect(subselect->value);
   return *res == NULL;
 }
 
-
-bool PTI_handle_sql2003_note184_exception::itemize(Parse_context *pc,
-                                                   Item **res)
+bool PTI_handle_sql2003_note184_exception::itemize(Parse_context *pc, Item **res)
 {
-  if (super::itemize(pc, res) || left->itemize(pc, &left) ||
-      right->itemize(pc, &right))
+  if (super::itemize(pc, res) || left->itemize(pc, &left) || right->itemize(pc, &right))
     return true;
-  *res= handle_sql2003_note184_exception(pc, left, is_negation, right);
+  *res = handle_sql2003_note184_exception(pc, left, is_negation, right);
   return *res == NULL;
 }
-
 
 bool PTI_expr_with_alias::itemize(Parse_context *pc, Item **res)
 {
@@ -188,8 +174,7 @@ bool PTI_expr_with_alias::itemize(Parse_context *pc, Item **res)
 
   if (alias.str)
   {
-    if (pc->thd->lex->sql_command == SQLCOM_CREATE_VIEW &&
-        check_column_name(alias.str))
+    if (pc->thd->lex->sql_command == SQLCOM_CREATE_VIEW && check_column_name(alias.str))
     {
       my_error(ER_WRONG_COLUMN_NAME, MYF(0), alias.str);
       return true;
@@ -198,55 +183,47 @@ bool PTI_expr_with_alias::itemize(Parse_context *pc, Item **res)
   }
   else if (!expr->item_name.is_set())
   {
-    expr->item_name.copy(expr_loc.start, (uint) (expr_loc.end - expr_loc.start),
-                         pc->thd->charset());
+    expr->item_name.copy(expr_loc.start, (uint)(expr_loc.end - expr_loc.start), pc->thd->charset());
   }
-  *res= expr;
+  *res = expr;
   return false;
 }
-
 
 bool PTI_simple_ident_ident::itemize(Parse_context *pc, Item **res)
 {
   if (super::itemize(pc, res))
     return true;
 
-  THD *thd= pc->thd;
-  LEX *lex= thd->lex;
+  THD *thd = pc->thd;
+  LEX *lex = thd->lex;
   sp_pcontext *pctx = lex->get_sp_current_parsing_ctx();
   sp_variable *spv;
 
-  if (pctx && (spv= pctx->find_variable(ident, false)))
+  if (pctx && (spv = pctx->find_variable(ident, false)))
   {
-    sp_head *sp= lex->sphead;
+    sp_head *sp = lex->sphead;
 
     assert(sp);
 
     /* We're compiling a stored procedure and found a variable */
-    if (! lex->parsing_options.allows_variable)
+    if (!lex->parsing_options.allows_variable)
     {
       my_error(ER_VIEW_SELECT_VARIABLE, MYF(0));
       return true;
     }
 
-    *res=
-      create_item_for_sp_var(
-        thd, ident, spv,
-        sp->m_parser_data.get_current_stmt_start_ptr(),
-        raw.start,
-        raw.end);
-    lex->safe_to_cache_query= false;
+    *res = create_item_for_sp_var(thd, ident, spv, sp->m_parser_data.get_current_stmt_start_ptr(), raw.start, raw.end);
+    lex->safe_to_cache_query = false;
   }
   else
   {
-    if ((pc->select->parsing_place != CTX_HAVING) ||
-        (pc->select->get_in_sum_expr() > 0))
+    if ((pc->select->parsing_place != CTX_HAVING) || (pc->select->get_in_sum_expr() > 0))
     {
-      *res= new (pc->mem_root) Item_field(POS(), NullS, NullS, ident.str);
+      *res = new (pc->mem_root) Item_field(POS(), NullS, NullS, ident.str);
     }
     else
     {
-      *res= new (pc->mem_root) Item_ref(POS(), NullS, NullS, ident.str);
+      *res = new (pc->mem_root) Item_ref(POS(), NullS, NullS, ident.str);
     }
     if (*res == NULL || (*res)->itemize(pc, res))
       return true;
@@ -254,12 +231,11 @@ bool PTI_simple_ident_ident::itemize(Parse_context *pc, Item **res)
   return *res == NULL;
 }
 
-
 bool PTI_simple_ident_q_2d::itemize(Parse_context *pc, Item **res)
 {
-  THD *thd= pc->thd;
-  LEX *lex= thd->lex;
-  sp_head *sp= lex->sphead;
+  THD *thd = pc->thd;
+  LEX *lex = thd->lex;
+  sp_head *sp = lex->sphead;
 
   /*
     FIXME This will work ok in simple_ident_nospvar case because
@@ -267,40 +243,30 @@ bool PTI_simple_ident_q_2d::itemize(Parse_context *pc, Item **res)
     should be changed in future.
   */
   if (sp && sp->m_type == SP_TYPE_TRIGGER &&
-      (!my_strcasecmp(system_charset_info, table, "NEW") ||
-       !my_strcasecmp(system_charset_info, table, "OLD")))
+      (!my_strcasecmp(system_charset_info, table, "NEW") || !my_strcasecmp(system_charset_info, table, "OLD")))
   {
     if (Parse_tree_item::itemize(pc, res))
       return true;
 
-    bool new_row= (table[0]=='N' || table[0]=='n');
+    bool new_row = (table[0] == 'N' || table[0] == 'n');
 
-    if (sp->m_trg_chistics.event == TRG_EVENT_INSERT &&
-        !new_row)
+    if (sp->m_trg_chistics.event == TRG_EVENT_INSERT && !new_row)
     {
       my_error(ER_TRG_NO_SUCH_ROW_IN_TRG, MYF(0), "OLD", "on INSERT");
       return true;
     }
 
-    if (sp->m_trg_chistics.event == TRG_EVENT_DELETE &&
-        new_row)
+    if (sp->m_trg_chistics.event == TRG_EVENT_DELETE && new_row)
     {
       my_error(ER_TRG_NO_SUCH_ROW_IN_TRG, MYF(0), "NEW", "on DELETE");
       return true;
     }
 
-    assert(!new_row ||
-           (sp->m_trg_chistics.event == TRG_EVENT_INSERT ||
-            sp->m_trg_chistics.event == TRG_EVENT_UPDATE));
-    const bool read_only=
-      !(new_row && sp->m_trg_chistics.action_time == TRG_ACTION_BEFORE);
-    Item_trigger_field *trg_fld= new (pc->mem_root)
-               Item_trigger_field(POS(),
-                                  new_row ? TRG_NEW_ROW : TRG_OLD_ROW,
-                                  field,
-                                  SELECT_ACL,
-                                  read_only);
-    if (trg_fld == NULL || trg_fld->itemize(pc, (Item **) &trg_fld))
+    assert(!new_row || (sp->m_trg_chistics.event == TRG_EVENT_INSERT || sp->m_trg_chistics.event == TRG_EVENT_UPDATE));
+    const bool read_only = !(new_row && sp->m_trg_chistics.action_time == TRG_ACTION_BEFORE);
+    Item_trigger_field *trg_fld =
+        new (pc->mem_root) Item_trigger_field(POS(), new_row ? TRG_NEW_ROW : TRG_OLD_ROW, field, SELECT_ACL, read_only);
+    if (trg_fld == NULL || trg_fld->itemize(pc, (Item **)&trg_fld))
       return true;
     assert(trg_fld->type() == TRIGGER_FIELD_ITEM);
 
@@ -308,10 +274,9 @@ bool PTI_simple_ident_q_2d::itemize(Parse_context *pc, Item **res)
       Let us add this item to list of all Item_trigger_field objects
       in trigger.
     */
-    lex->sphead->m_cur_instr_trig_field_items.link_in_list(
-      trg_fld, &trg_fld->next_trg_field);
+    lex->sphead->m_cur_instr_trig_field_items.link_in_list(trg_fld, &trg_fld->next_trg_field);
 
-    *res= trg_fld;
+    *res = trg_fld;
   }
   else
   {

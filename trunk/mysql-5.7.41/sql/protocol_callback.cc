@@ -30,7 +30,6 @@
   service as proxy protocol.
 */
 
-
 /**
   Practically does nothing.
   Returns -1, error, for the case this will be called. It should happen.
@@ -43,10 +42,7 @@
   @return
     -1 failure
 */
-int Protocol_callback::read_packet()
-{
-  return -1;
-};
+int Protocol_callback::read_packet() { return -1; };
 
 /**
   Practically does nothing. See the comment of ::read_packet().
@@ -55,11 +51,7 @@ int Protocol_callback::read_packet()
   @return
     -1
 */
-int Protocol_callback::get_command(COM_DATA *com_data, enum_server_command *cmd)
-{
-  return read_packet();
-};
-
+int Protocol_callback::get_command(COM_DATA *com_data, enum_server_command *cmd) { return read_packet(); };
 
 /**
   Returns the type of the connection.
@@ -67,11 +59,7 @@ int Protocol_callback::get_command(COM_DATA *com_data, enum_server_command *cmd)
   @return
     VIO_TYPE_PLUGIN
 */
-enum enum_vio_type Protocol_callback::connection_type()
-{
-  return VIO_TYPE_PLUGIN;
-}
-
+enum enum_vio_type Protocol_callback::connection_type() { return VIO_TYPE_PLUGIN; }
 
 /**
   Sends null value
@@ -164,7 +152,7 @@ bool Protocol_callback::store_longlong(longlong from, bool is_unsigned)
     false  success
     true   failure
 */
-bool Protocol_callback::store_decimal(const my_decimal * d, uint prec, uint dec)
+bool Protocol_callback::store_decimal(const my_decimal *d, uint prec, uint dec)
 {
   if (callbacks.get_decimal)
     return callbacks.get_decimal(callbacks_ctx, d);
@@ -180,8 +168,7 @@ bool Protocol_callback::store_decimal(const my_decimal * d, uint prec, uint dec)
     false  success
     true   failure
 */
-bool Protocol_callback::store(const char *from, size_t length,
-                              const CHARSET_INFO *fromcs)
+bool Protocol_callback::store(const char *from, size_t length, const CHARSET_INFO *fromcs)
 {
   if (callbacks.get_string)
     return callbacks.get_string(callbacks_ctx, from, length, fromcs);
@@ -223,7 +210,6 @@ bool Protocol_callback::store(double from, uint32 decimals, String *buffer)
     return callbacks.get_double(callbacks_ctx, from, decimals);
   return false;
 }
-
 
 /**
   Sends DATETIME value
@@ -288,10 +274,10 @@ bool Protocol_callback::store(Proto_field *field)
 {
   switch (text_or_binary)
   {
-  case CS_TEXT_REPRESENTATION:
-    return field->send_text(this);
-  case CS_BINARY_REPRESENTATION:
-    return field->send_binary(this);
+    case CS_TEXT_REPRESENTATION:
+      return field->send_text(this);
+    case CS_BINARY_REPRESENTATION:
+      return field->send_binary(this);
   }
   return true;
 }
@@ -303,8 +289,8 @@ ulong Protocol_callback::get_client_capabilities()
 {
   if (!client_capabilities_set && callbacks.get_client_capabilities)
   {
-    client_capabilities_set= true;
-    client_capabilities= callbacks.get_client_capabilities(callbacks_ctx);
+    client_capabilities_set = true;
+    client_capabilities = callbacks.get_client_capabilities(callbacks_ctx);
   }
   return client_capabilities;
 }
@@ -321,7 +307,7 @@ ulong Protocol_callback::get_client_capabilities()
 bool Protocol_callback::has_client_capability(unsigned long capability)
 {
   if (!client_capabilities_set)
-    (void) get_client_capabilities();
+    (void)get_client_capabilities();
   return client_capabilities & capability;
 }
 
@@ -399,7 +385,7 @@ void Protocol_callback::end_partial_result_set()
 int Protocol_callback::shutdown(bool server_shutdown)
 {
   if (callbacks.shutdown)
-    callbacks.shutdown(callbacks_ctx, server_shutdown? 1 : 0);
+    callbacks.shutdown(callbacks_ctx, server_shutdown ? 1 : 0);
   return 0;
 }
 
@@ -412,10 +398,7 @@ int Protocol_callback::shutdown(bool server_shutdown)
   @return
     true  alive
 */
-bool Protocol_callback::connection_alive()
-{
-  return true;
-}
+bool Protocol_callback::connection_alive() { return true; }
 
 /**
   Should return protocol's reading/writing status. Returns 0 (idle) as it this
@@ -425,10 +408,7 @@ bool Protocol_callback::connection_alive()
   @return
     0
 */
-uint Protocol_callback::get_rw_status()
-{
-  return 0;
-}
+uint Protocol_callback::get_rw_status() { return 0; }
 
 /**
   Should check if compression is enabled. Returns always false (no compression)
@@ -436,10 +416,7 @@ uint Protocol_callback::get_rw_status()
   @return
     false disabled
 */
-bool Protocol_callback::get_compression()
-{
-  return false;
-}
+bool Protocol_callback::get_compression() { return false; }
 
 /**
   Called BEFORE sending metadata
@@ -448,13 +425,11 @@ bool Protocol_callback::get_compression()
     true  failure
     false success
 */
-bool Protocol_callback::start_result_metadata(uint num_cols, uint flags,
-                                              const CHARSET_INFO *resultcs)
+bool Protocol_callback::start_result_metadata(uint num_cols, uint flags, const CHARSET_INFO *resultcs)
 {
-  in_meta_sending= true;
+  in_meta_sending = true;
   if (callbacks.start_result_metadata)
-    return callbacks.start_result_metadata(callbacks_ctx, num_cols,
-                                           flags, resultcs);
+    return callbacks.start_result_metadata(callbacks_ctx, num_cols, flags, resultcs);
   return false;
 }
 
@@ -465,23 +440,22 @@ bool Protocol_callback::start_result_metadata(uint num_cols, uint flags,
     true  failure
     false success
 */
-bool Protocol_callback::send_field_metadata(Send_field *field,
-                                            const CHARSET_INFO *cs)
+bool Protocol_callback::send_field_metadata(Send_field *field, const CHARSET_INFO *cs)
 {
   if (callbacks.field_metadata)
   {
     struct st_send_field f;
 
-    f.db_name= field->db_name;
-    f.table_name= field->table_name;
-    f.org_table_name= field->org_table_name;
-    f.col_name= field->col_name;
-    f.org_col_name= field->org_col_name;
-    f.length= field->length;
-    f.charsetnr= field->charsetnr;
-    f.flags= field->flags;
-    f.decimals= field->decimals;
-    f.type= field->type;
+    f.db_name = field->db_name;
+    f.table_name = field->table_name;
+    f.org_table_name = field->org_table_name;
+    f.col_name = field->col_name;
+    f.org_col_name = field->org_col_name;
+    f.length = field->length;
+    f.charsetnr = field->charsetnr;
+    f.flags = field->flags;
+    f.decimals = field->decimals;
+    f.type = field->type;
 
     return callbacks.field_metadata(callbacks_ctx, &f, cs);
   }
@@ -497,13 +471,13 @@ bool Protocol_callback::send_field_metadata(Send_field *field,
 */
 bool Protocol_callback::end_result_metadata()
 {
-  in_meta_sending= false;
+  in_meta_sending = false;
 
   if (callbacks.end_result_metadata)
   {
-    THD *t= current_thd;
-    uint status= t->server_status;
-    uint warn_count= t->get_stmt_da()->current_statement_cond_count();
+    THD *t = current_thd;
+    uint status = t->server_status;
+    uint warn_count = t->get_stmt_da()->current_statement_cond_count();
 
     return callbacks.end_result_metadata(callbacks_ctx, status, warn_count);
   }
@@ -517,14 +491,11 @@ bool Protocol_callback::end_result_metadata()
     true  failure
     false success
 */
-bool Protocol_callback::send_ok(uint server_status, uint warn_count,
-                                ulonglong affected_rows,
-                                ulonglong last_insert_id,
+bool Protocol_callback::send_ok(uint server_status, uint warn_count, ulonglong affected_rows, ulonglong last_insert_id,
                                 const char *message)
 {
   if (callbacks.handle_ok)
-    callbacks.handle_ok(callbacks_ctx, server_status, warn_count,
-                        affected_rows, last_insert_id, message);
+    callbacks.handle_ok(callbacks_ctx, server_status, warn_count, affected_rows, last_insert_id, message);
   return false;
 }
 
@@ -549,8 +520,7 @@ bool Protocol_callback::send_eof(uint server_status, uint warn_count)
     true  failure
     false success
 */
-bool Protocol_callback::send_error(uint sql_errno, const char *err_msg,
-                                   const char *sql_state)
+bool Protocol_callback::send_error(uint sql_errno, const char *err_msg, const char *sql_state)
 {
   if (callbacks.handle_error)
     callbacks.handle_error(callbacks_ctx, sql_errno, err_msg, sql_state);

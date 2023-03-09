@@ -20,7 +20,6 @@
    along with this program; if not, write to the Free Software Foundation,
    51 Franklin Street, Suite 500, Boston, MA 02110-1335 USA */
 
-
 /**
   @file
 
@@ -39,7 +38,8 @@
 
 const char *Item_func_spatial_mbr_rel::func_name() const
 {
-  switch (spatial_rel) {
+  switch (spatial_rel)
+  {
     case SP_CONTAINS_FUNC:
       return "mbrcontains";
     case SP_WITHIN_FUNC:
@@ -66,71 +66,68 @@ const char *Item_func_spatial_mbr_rel::func_name() const
   }
 }
 
-
 longlong Item_func_spatial_mbr_rel::val_int()
 {
   assert(fixed == 1);
-  String *res1= args[0]->val_str(&cmp.value1);
-  String *res2= args[1]->val_str(&cmp.value2);
+  String *res1 = args[0]->val_str(&cmp.value1);
+  String *res2 = args[1]->val_str(&cmp.value2);
   Geometry_buffer buffer1, buffer2;
   Geometry *g1, *g2;
   MBR mbr1, mbr2;
 
-  if ((null_value= (!res1 || args[0]->null_value ||
-                    !res2 || args[1]->null_value)))
+  if ((null_value = (!res1 || args[0]->null_value || !res2 || args[1]->null_value)))
     return 0;
-  if (!(g1= Geometry::construct(&buffer1, res1)) ||
-      !(g2= Geometry::construct(&buffer2, res2)))
+  if (!(g1 = Geometry::construct(&buffer1, res1)) || !(g2 = Geometry::construct(&buffer2, res2)))
   {
     my_error(ER_GIS_INVALID_DATA, MYF(0), func_name());
     return error_int();
   }
-  if ((null_value= (g1->get_mbr(&mbr1) || g2->get_mbr(&mbr2))))
+  if ((null_value = (g1->get_mbr(&mbr1) || g2->get_mbr(&mbr2))))
     return 0;
 
   // The two geometry operands must be in the same coordinate system.
   if (g1->get_srid() != g2->get_srid())
   {
-    my_error(ER_GIS_DIFFERENT_SRIDS, MYF(0), func_name(),
-             g1->get_srid(), g2->get_srid());
-    null_value= true;
+    my_error(ER_GIS_DIFFERENT_SRIDS, MYF(0), func_name(), g1->get_srid(), g2->get_srid());
+    null_value = true;
     return 0;
   }
 
-  int ret= 0;
+  int ret = 0;
 
-  switch (spatial_rel) {
+  switch (spatial_rel)
+  {
     case SP_CONTAINS_FUNC:
-      ret= mbr1.contains(&mbr2);
+      ret = mbr1.contains(&mbr2);
       break;
     case SP_WITHIN_FUNC:
-      ret= mbr1.within(&mbr2);
+      ret = mbr1.within(&mbr2);
       break;
     case SP_EQUALS_FUNC:
-      ret= mbr1.equals(&mbr2);
+      ret = mbr1.equals(&mbr2);
       break;
     case SP_DISJOINT_FUNC:
-      ret= mbr1.disjoint(&mbr2);
+      ret = mbr1.disjoint(&mbr2);
       break;
     case SP_INTERSECTS_FUNC:
-      ret= mbr1.intersects(&mbr2);
+      ret = mbr1.intersects(&mbr2);
       break;
     case SP_TOUCHES_FUNC:
-      ret= mbr1.touches(&mbr2);
+      ret = mbr1.touches(&mbr2);
       break;
     case SP_OVERLAPS_FUNC:
-      ret= mbr1.overlaps(&mbr2);
+      ret = mbr1.overlaps(&mbr2);
       break;
     case SP_CROSSES_FUNC:
       assert(false);
-      ret= 0;
-      null_value= true;
+      ret = 0;
+      null_value = true;
       break;
     case SP_COVERS_FUNC:
-      ret= mbr1.covers(&mbr2);
+      ret = mbr1.covers(&mbr2);
       break;
     case SP_COVEREDBY_FUNC:
-      ret= mbr1.covered_by(&mbr2);
+      ret = mbr1.covered_by(&mbr2);
       break;
     default:
       break;
@@ -145,23 +142,18 @@ longlong Item_func_spatial_mbr_rel::val_int()
   return ret;
 }
 
-
-Item_func_spatial_rel::Item_func_spatial_rel(const POS &pos, Item *a,Item *b,
-                                             enum Functype sp_rel) :
-    Item_bool_func2(pos, a,b)
+Item_func_spatial_rel::Item_func_spatial_rel(const POS &pos, Item *a, Item *b, enum Functype sp_rel)
+    : Item_bool_func2(pos, a, b)
 {
-  spatial_rel= sp_rel;
+  spatial_rel = sp_rel;
 }
 
-
-Item_func_spatial_rel::~Item_func_spatial_rel()
-{
-}
-
+Item_func_spatial_rel::~Item_func_spatial_rel() {}
 
 const char *Item_func_spatial_rel::func_name() const
 {
-  switch (spatial_rel) {
+  switch (spatial_rel)
+  {
     case SP_CONTAINS_FUNC:
       return "st_contains";
     case SP_WITHIN_FUNC:
@@ -184,39 +176,35 @@ const char *Item_func_spatial_rel::func_name() const
   }
 }
 
-
 longlong Item_func_spatial_rel::val_int()
 {
   DBUG_ENTER("Item_func_spatial_rel::val_int");
   assert(fixed == 1);
-  String *res1= NULL;
-  String *res2= NULL;
+  String *res1 = NULL;
+  String *res2 = NULL;
   Geometry_buffer buffer1, buffer2;
-  Geometry *g1= NULL, *g2= NULL;
-  int tres= 0;
-  bool had_except= false;
-  my_bool had_error= false;
+  Geometry *g1 = NULL, *g2 = NULL;
+  int tres = 0;
+  bool had_except = false;
+  my_bool had_error = false;
   String wkt1, wkt2;
 
-  res1= args[0]->val_str(&tmp_value1);
-  res2= args[1]->val_str(&tmp_value2);
-  if ((null_value= (!res1 || args[0]->null_value ||
-                    !res2 || args[1]->null_value)))
+  res1 = args[0]->val_str(&tmp_value1);
+  res2 = args[1]->val_str(&tmp_value2);
+  if ((null_value = (!res1 || args[0]->null_value || !res2 || args[1]->null_value)))
     goto exit;
-  if (!(g1= Geometry::construct(&buffer1, res1)) ||
-      !(g2= Geometry::construct(&buffer2, res2)))
+  if (!(g1 = Geometry::construct(&buffer1, res1)) || !(g2 = Geometry::construct(&buffer2, res2)))
   {
     my_error(ER_GIS_INVALID_DATA, MYF(0), func_name());
-    tres= error_int();
+    tres = error_int();
     goto exit;
   }
 
   // The two geometry operands must be in the same coordinate system.
   if (g1->get_srid() != g2->get_srid())
   {
-    my_error(ER_GIS_DIFFERENT_SRIDS, MYF(0), func_name(),
-             g1->get_srid(), g2->get_srid());
-    tres= error_int();
+    my_error(ER_GIS_DIFFERENT_SRIDS, MYF(0), func_name(), g1->get_srid(), g2->get_srid());
+    tres = error_int();
     goto exit;
   }
 
@@ -228,19 +216,17 @@ longlong Item_func_spatial_rel::val_int()
   */
   try
   {
-    if (g1->get_type() != Geometry::wkb_geometrycollection &&
-        g2->get_type() != Geometry::wkb_geometrycollection)
+    if (g1->get_type() != Geometry::wkb_geometrycollection && g2->get_type() != Geometry::wkb_geometrycollection)
     {
       // Must use double, otherwise may lose valid result, not only precision.
-      tres= bg_geo_relation_check<bgcs::cartesian>
-        (g1, g2, spatial_rel, &had_error);
+      tres = bg_geo_relation_check< bgcs::cartesian >(g1, g2, spatial_rel, &had_error);
     }
     else
-      tres= geocol_relation_check<bgcs::cartesian>(g1, g2);
+      tres = geocol_relation_check< bgcs::cartesian >(g1, g2);
   }
   catch (...)
   {
-    had_except= true;
+    had_except = true;
     handle_gis_exception(func_name());
   }
 
@@ -250,7 +236,6 @@ longlong Item_func_spatial_rel::val_int()
 exit:
   DBUG_RETURN(tres);
 }
-
 
 /**
   Do geometry collection relation check. Boost geometry doesn't support
@@ -263,17 +248,17 @@ exit:
   @return whether g1 and g2 satisfy the specified relation, 0 for negative,
                 none 0 for positive.
  */
-template<typename Coordsys>
+template < typename Coordsys >
 int Item_func_spatial_rel::geocol_relation_check(Geometry *g1, Geometry *g2)
 {
   String gcbuf;
-  Geometry *tmpg= NULL;
-  int tres= 0;
-  const typename BG_geometry_collection::Geometry_list *gv1= NULL, *gv2= NULL;
+  Geometry *tmpg = NULL;
+  int tres = 0;
+  const typename BG_geometry_collection::Geometry_list *gv1 = NULL, *gv2 = NULL;
   BG_geometry_collection bggc1, bggc2;
-  bool empty1= is_empty_geocollection(g1);
-  bool empty2= is_empty_geocollection(g2);
-  Var_resetter<enum Functype> resetter;
+  bool empty1 = is_empty_geocollection(g1);
+  bool empty2 = is_empty_geocollection(g2);
+  Var_resetter< enum Functype > resetter;
 
   /*
     An empty geometry collection is an empty point set, according to OGC
@@ -282,18 +267,18 @@ int Item_func_spatial_rel::geocol_relation_check(Geometry *g1, Geometry *g2)
   if (empty1 || empty2)
   {
     if (spatial_rel == SP_DISJOINT_FUNC)
-      tres= 1;
+      tres = 1;
     else if (empty1 && empty2 && spatial_rel == SP_EQUALS_FUNC)
-      tres= 1;
+      tres = 1;
     return tres;
   }
 
   if (spatial_rel == SP_CONTAINS_FUNC)
   {
-    tmpg= g2;
-    g2= g1;
-    g1= tmpg;
-    spatial_rel= SP_WITHIN_FUNC;
+    tmpg = g2;
+    g2 = g1;
+    g1 = tmpg;
+    spatial_rel = SP_WITHIN_FUNC;
     resetter.set(&spatial_rel, SP_CONTAINS_FUNC);
   }
 
@@ -308,30 +293,28 @@ int Item_func_spatial_rel::geocol_relation_check(Geometry *g1, Geometry *g2)
     component of GC2.
    */
   if (spatial_rel != SP_WITHIN_FUNC)
-    bggc1.merge_components<Coordsys>(&null_value);
+    bggc1.merge_components< Coordsys >(&null_value);
   if (null_value)
     return tres;
-  bggc2.merge_components<Coordsys>(&null_value);
+  bggc2.merge_components< Coordsys >(&null_value);
   if (null_value)
     return tres;
 
-  gv1= &(bggc1.get_geometries());
-  gv2= &(bggc2.get_geometries());
+  gv1 = &(bggc1.get_geometries());
+  gv2 = &(bggc2.get_geometries());
 
   if (gv1->size() == 0 || gv2->size() == 0)
   {
-    null_value= true;
+    null_value = true;
     return tres;
   }
   else if (gv1->size() == 1 && gv2->size() == 1)
   {
-    tres= bg_geo_relation_check<Coordsys>
-      (*(gv1->begin()), *(gv2->begin()), spatial_rel, &null_value);
+    tres = bg_geo_relation_check< Coordsys >(*(gv1->begin()), *(gv2->begin()), spatial_rel, &null_value);
     return tres;
   }
 
-  if (spatial_rel == SP_OVERLAPS_FUNC ||
-      spatial_rel == SP_CROSSES_FUNC || spatial_rel == SP_TOUCHES_FUNC)
+  if (spatial_rel == SP_OVERLAPS_FUNC || spatial_rel == SP_CROSSES_FUNC || spatial_rel == SP_TOUCHES_FUNC)
   {
     /*
       OGC says this is not applicable, and we always return false for
@@ -341,11 +324,11 @@ int Item_func_spatial_rel::geocol_relation_check(Geometry *g1, Geometry *g2)
   }
 
   if (spatial_rel == SP_DISJOINT_FUNC || spatial_rel == SP_INTERSECTS_FUNC)
-    tres= geocol_relcheck_intersect_disjoint<Coordsys>(gv1, gv2);
+    tres = geocol_relcheck_intersect_disjoint< Coordsys >(gv1, gv2);
   else if (spatial_rel == SP_WITHIN_FUNC)
-    tres= geocol_relcheck_within<Coordsys>(gv1, gv2);
+    tres = geocol_relcheck_within< Coordsys >(gv1, gv2);
   else if (spatial_rel == SP_EQUALS_FUNC)
-    tres= geocol_equals_check<Coordsys>(gv1, gv2);
+    tres = geocol_equals_check< Coordsys >(gv1, gv2);
   else
     assert(false);
 
@@ -353,14 +336,13 @@ int Item_func_spatial_rel::geocol_relation_check(Geometry *g1, Geometry *g2)
   if (tmpg)
   {
     assert(spatial_rel == SP_WITHIN_FUNC);
-    tmpg= g2;
-    g2= g1;
-    g1= tmpg;
+    tmpg = g2;
+    g2 = g1;
+    g1 = tmpg;
   }
 
   return tres;
 }
-
 
 /**
   Geometry collection relation checks for disjoint and intersects operations.
@@ -372,56 +354,47 @@ int Item_func_spatial_rel::geocol_relation_check(Geometry *g1, Geometry *g2)
   @return whether g1 and g2 satisfy the specified relation, 0 for negative,
                 none 0 for positive.
  */
-template<typename Coordsys>
-int Item_func_spatial_rel::
-geocol_relcheck_intersect_disjoint(const typename BG_geometry_collection::
-                                   Geometry_list *gv1,
-                                   const typename BG_geometry_collection::
-                                   Geometry_list *gv2)
+template < typename Coordsys >
+int Item_func_spatial_rel::geocol_relcheck_intersect_disjoint(const typename BG_geometry_collection::Geometry_list *gv1,
+                                                              const typename BG_geometry_collection::Geometry_list *gv2)
 {
-  int tres= 0;
+  int tres = 0;
 
-  assert(spatial_rel == SP_DISJOINT_FUNC ||
-         spatial_rel == SP_INTERSECTS_FUNC);
-  const typename BG_geometry_collection::Geometry_list *gv= NULL, *gvr= NULL;
+  assert(spatial_rel == SP_DISJOINT_FUNC || spatial_rel == SP_INTERSECTS_FUNC);
+  const typename BG_geometry_collection::Geometry_list *gv = NULL, *gvr = NULL;
 
   if (gv1->size() > gv2->size())
   {
-    gv= gv2;
-    gvr= gv1;
+    gv = gv2;
+    gvr = gv1;
   }
   else
   {
-    gv= gv1;
-    gvr= gv2;
+    gv = gv1;
+    gvr = gv2;
   }
 
   Rtree_index rtree;
   make_rtree(*gvr, &rtree);
 
-  for (BG_geometry_collection::
-       Geometry_list::const_iterator i= gv->begin();
-       i != gv->end(); ++i)
+  for (BG_geometry_collection::Geometry_list::const_iterator i = gv->begin(); i != gv->end(); ++i)
   {
-    tres= 0;
+    tres = 0;
 
     BG_box box;
     make_bg_box(*i, &box);
-    for (Rtree_index::const_query_iterator
-         j= rtree.qbegin(bgi::intersects(box));
-         j != rtree.qend(); ++j)
+    for (Rtree_index::const_query_iterator j = rtree.qbegin(bgi::intersects(box)); j != rtree.qend(); ++j)
     {
-      bool had_except= false;
-      my_bool had_error= false;
+      bool had_except = false;
+      my_bool had_error = false;
 
       try
       {
-        tres= bg_geo_relation_check<Coordsys>
-          (*i, (*gvr)[j->second], spatial_rel, &had_error);
+        tres = bg_geo_relation_check< Coordsys >(*i, (*gvr)[j->second], spatial_rel, &had_error);
       }
       catch (...)
       {
-        had_except= true;
+        had_except = true;
         handle_gis_exception(func_name());
       }
 
@@ -436,8 +409,7 @@ geocol_relcheck_intersect_disjoint(const typename BG_geometry_collection::
         geometry collections intersect or don't disjoint, in both cases the
         check is completed.
        */
-      if ((spatial_rel == SP_INTERSECTS_FUNC && tres) ||
-          (spatial_rel == SP_DISJOINT_FUNC && !tres))
+      if ((spatial_rel == SP_INTERSECTS_FUNC && tres) || (spatial_rel == SP_DISJOINT_FUNC && !tres))
         return tres;
     }
   }
@@ -456,11 +428,9 @@ geocol_relcheck_intersect_disjoint(const typename BG_geometry_collection::
     tres can be either true or false for DISJOINT check because the inner
     loop may never executed and tres woule be false.
    */
-  assert(spatial_rel == SP_DISJOINT_FUNC ||
-         (!tres && spatial_rel == SP_INTERSECTS_FUNC));
+  assert(spatial_rel == SP_DISJOINT_FUNC || (!tres && spatial_rel == SP_INTERSECTS_FUNC));
   return tres;
 }
-
 
 /**
   Multipoint need special handling because for a multipoint MP to be
@@ -474,27 +444,22 @@ geocol_relcheck_intersect_disjoint(const typename BG_geometry_collection::
   This function is called where an rtree index on gv2 is already built so
   we want to pass it in to avoid unnecessarily build the same one again.
  */
-template<typename Coordsys>
-int Item_func_spatial_rel::
-multipoint_within_geometry_collection(Gis_multi_point *pmpts,
-                                      const typename BG_geometry_collection::
-                                      Geometry_list *gv2,
-                                      const void *prtree)
+template < typename Coordsys >
+int Item_func_spatial_rel::multipoint_within_geometry_collection(
+    Gis_multi_point *pmpts, const typename BG_geometry_collection::Geometry_list *gv2, const void *prtree)
 {
-  int has_inner= 0;
-  int tres= 0;
-  my_bool had_error= false;
+  int has_inner = 0;
+  int tres = 0;
+  my_bool had_error = false;
 
-  Rtree_index &rtree= *((Rtree_index *)prtree);
+  Rtree_index &rtree = *((Rtree_index *)prtree);
 
-  TYPENAME BG_models<Coordsys>::
-    Multipoint mpts(pmpts->get_data_ptr(), pmpts->get_data_size(),
-                    pmpts->get_flags(), pmpts->get_srid());
+  TYPENAME BG_models< Coordsys >::Multipoint mpts(pmpts->get_data_ptr(), pmpts->get_data_size(), pmpts->get_flags(),
+                                                  pmpts->get_srid());
 
-  for (TYPENAME BG_models<Coordsys>::Multipoint::iterator
-       k= mpts.begin(); k != mpts.end(); ++k)
+  for (TYPENAME BG_models< Coordsys >::Multipoint::iterator k = mpts.begin(); k != mpts.end(); ++k)
   {
-    bool already_in= false;
+    bool already_in = false;
     BG_box box;
     make_bg_box(&(*k), &box);
 
@@ -504,9 +469,7 @@ multipoint_within_geometry_collection(Gis_multi_point *pmpts,
       All geometries that possibly intersect *k point are given by the
       rtree iteration below.
     */
-    for (Rtree_index::const_query_iterator
-         j= rtree.qbegin(bgi::intersects(box));
-         j != rtree.qend(); ++j)
+    for (Rtree_index::const_query_iterator j = rtree.qbegin(bgi::intersects(box)); j != rtree.qend(); ++j)
     {
       /*
         If we don't have a point in mpts that's within a component of gv2 yet,
@@ -516,13 +479,12 @@ multipoint_within_geometry_collection(Gis_multi_point *pmpts,
       */
       if (!has_inner)
       {
-        tres= bg_geo_relation_check<Coordsys>
-          (&(*k), (*gv2)[j->second], SP_WITHIN_FUNC, &had_error);
+        tres = bg_geo_relation_check< Coordsys >(&(*k), (*gv2)[j->second], SP_WITHIN_FUNC, &had_error);
         if (had_error || null_value)
           return error_int();
-        if ((has_inner= tres))
+        if ((has_inner = tres))
         {
-          already_in= true;
+          already_in = true;
           break;
         }
       }
@@ -533,14 +495,13 @@ multipoint_within_geometry_collection(Gis_multi_point *pmpts,
         *k has to intersect one of the components in this loop, otherwise *k
         is out of gv2.
        */
-      tres= bg_geo_relation_check<Coordsys>
-        (&(*k), (*gv2)[j->second], SP_INTERSECTS_FUNC, &had_error);
+      tres = bg_geo_relation_check< Coordsys >(&(*k), (*gv2)[j->second], SP_INTERSECTS_FUNC, &had_error);
       if (had_error || null_value)
         return error_int();
 
       if (tres)
       {
-        already_in= true;
+        already_in = true;
         /*
           It's likely that *k is within another geometry, so only stop the
           iteration if we already have a point that's within gv2,
@@ -566,7 +527,6 @@ multipoint_within_geometry_collection(Gis_multi_point *pmpts,
   return has_inner;
 }
 
-
 /**
   Geometry collection relation checks for within and equals(half) checks.
 
@@ -577,14 +537,11 @@ multipoint_within_geometry_collection(Gis_multi_point *pmpts,
   @return whether g1 and g2 satisfy the specified relation, 0 for negative,
                 none 0 for positive.
  */
-template<typename Coordsys>
-int Item_func_spatial_rel::
-geocol_relcheck_within(const typename BG_geometry_collection::
-                       Geometry_list *gv1,
-                       const typename BG_geometry_collection::
-                       Geometry_list *gv2)
+template < typename Coordsys >
+int Item_func_spatial_rel::geocol_relcheck_within(const typename BG_geometry_collection::Geometry_list *gv1,
+                                                  const typename BG_geometry_collection::Geometry_list *gv2)
 {
-  int tres= 0;
+  int tres = 0;
 
   /*
     When this function is called by geocol_equals_check,this is true:
@@ -600,7 +557,7 @@ geocol_relcheck_within(const typename BG_geometry_collection::
   make_rtree(*gv2, &rtree);
 
   BG_geometry_collection bggc;
-  bool no_fill= true;
+  bool no_fill = true;
 
   /*
     We have to break any multi-geometry into its components before the within
@@ -612,40 +569,35 @@ geocol_relcheck_within(const typename BG_geometry_collection::
     geometry G, only one point in MP has to be 'within' G, the rest only need
     to intersect G.
   */
-  for (size_t i= 0; i < gv1->size(); i++)
+  for (size_t i = 0; i < gv1->size(); i++)
   {
-    Geometry::wkbType gtype= (*gv1)[i]->get_type();
-    if (gtype == Geometry::wkb_multipolygon ||
-        gtype == Geometry::wkb_multilinestring)
+    Geometry::wkbType gtype = (*gv1)[i]->get_type();
+    if (gtype == Geometry::wkb_multipolygon || gtype == Geometry::wkb_multilinestring)
     {
       if (no_fill)
       {
-        for (size_t j= 0; j < i; j++)
-          bggc.fill((*gv1)[j]);
-        no_fill= false;
+        for (size_t j = 0; j < i; j++) bggc.fill((*gv1)[j]);
+        no_fill = false;
       }
 
-      bggc.fill((*gv1)[i], true/* break multi-geometry. */);
+      bggc.fill((*gv1)[i], true /* break multi-geometry. */);
     }
     else if (!no_fill)
       bggc.fill((*gv1)[i]);
   }
 
   if (!no_fill)
-    gv1= &(bggc.get_geometries());
+    gv1 = &(bggc.get_geometries());
 
-  for (BG_geometry_collection::
-       Geometry_list::const_iterator i= gv1->begin();
-       i != gv1->end(); ++i)
+  for (BG_geometry_collection::Geometry_list::const_iterator i = gv1->begin(); i != gv1->end(); ++i)
   {
-    bool innerOK= false;
-    tres= 0;
+    bool innerOK = false;
+    tres = 0;
 
     if ((*i)->get_type() == Geometry::wkb_multipoint)
     {
-      Gis_multi_point *mpts= static_cast<Gis_multi_point *>(*i);
-      tres= multipoint_within_geometry_collection<Coordsys>
-        (mpts, gv2, &rtree);
+      Gis_multi_point *mpts = static_cast< Gis_multi_point * >(*i);
+      tres = multipoint_within_geometry_collection< Coordsys >(mpts, gv2, &rtree);
       if (null_value)
         return error_int();
       if (tres)
@@ -680,21 +632,18 @@ geocol_relcheck_within(const typename BG_geometry_collection::
       Above theory makes sure all results are in rtree search result, the logic
       here is sufficient when the result is empty.
     */
-    for (Rtree_index::const_query_iterator
-         j= rtree.qbegin(bgi::covers(box));
-         j != rtree.qend(); ++j)
+    for (Rtree_index::const_query_iterator j = rtree.qbegin(bgi::covers(box)); j != rtree.qend(); ++j)
     {
-      bool had_except= false;
-      my_bool had_error= false;
+      bool had_except = false;
+      my_bool had_error = false;
 
       try
       {
-        tres= bg_geo_relation_check<Coordsys>
-          (*i, (*gv2)[j->second], SP_WITHIN_FUNC, &had_error);
+        tres = bg_geo_relation_check< Coordsys >(*i, (*gv2)[j->second], SP_WITHIN_FUNC, &had_error);
       }
       catch (...)
       {
-        had_except= true;
+        had_except = true;
         handle_gis_exception(func_name());
       }
 
@@ -708,7 +657,7 @@ geocol_relcheck_within(const typename BG_geometry_collection::
        */
       if (tres)
       {
-        innerOK= true;
+        innerOK = true;
         break;
       }
     }
@@ -746,17 +695,16 @@ geocol_relcheck_within(const typename BG_geometry_collection::
   @return whether g1 and g2 satisfy the specified relation, 0 for negative,
                 none 0 for positive.
  */
-template<typename Coordsys>
-int Item_func_spatial_rel::
-geocol_equals_check(const typename BG_geometry_collection::Geometry_list *gv1,
-                    const typename BG_geometry_collection::Geometry_list *gv2)
+template < typename Coordsys >
+int Item_func_spatial_rel::geocol_equals_check(const typename BG_geometry_collection::Geometry_list *gv1,
+                                               const typename BG_geometry_collection::Geometry_list *gv2)
 {
-  int tres= 0, num_try= 0;
+  int tres = 0, num_try = 0;
   assert(spatial_rel == SP_EQUALS_FUNC);
 
   do
   {
-    tres= geocol_relcheck_within<Coordsys>(gv1, gv2);
+    tres = geocol_relcheck_within< Coordsys >(gv1, gv2);
     if (!tres || null_value)
       return tres;
     /*
@@ -766,12 +714,10 @@ geocol_equals_check(const typename BG_geometry_collection::Geometry_list *gv1,
      */
     std::swap(gv1, gv2);
     num_try++;
-  }
-  while (num_try < 2);
+  } while (num_try < 2);
 
   return tres;
 }
-
 
 /**
   Do within relation check of two geometries.
@@ -783,37 +729,30 @@ geocol_equals_check(const typename BG_geometry_collection::Geometry_list *gv1,
   @return 0 if specified relation doesn't hold for the given operands,
                 otherwise returns none 0.
 */
-template<typename Geom_types>
-int Item_func_spatial_rel::within_check(Geometry *g1, Geometry *g2,
-                                        my_bool *pnull_value)
+template < typename Geom_types >
+int Item_func_spatial_rel::within_check(Geometry *g1, Geometry *g2, my_bool *pnull_value)
 {
   Geometry::wkbType gt1;
-  int result= 0;
+  int result = 0;
 
-  gt1= g1->get_type();
+  gt1 = g1->get_type();
 
   if (gt1 == Geometry::wkb_point)
-    result= BG_wrap<Geom_types>::point_within_geometry(g1, g2, pnull_value);
+    result = BG_wrap< Geom_types >::point_within_geometry(g1, g2, pnull_value);
   else if (gt1 == Geometry::wkb_multipoint)
-    result= BG_wrap<Geom_types>::
-      multipoint_within_geometry(g1, g2, pnull_value);
+    result = BG_wrap< Geom_types >::multipoint_within_geometry(g1, g2, pnull_value);
   else if (gt1 == Geometry::wkb_linestring)
-    result= BG_wrap<Geom_types>::
-      linestring_within_geometry(g1, g2, pnull_value);
+    result = BG_wrap< Geom_types >::linestring_within_geometry(g1, g2, pnull_value);
   else if (gt1 == Geometry::wkb_multilinestring)
-    result= BG_wrap<Geom_types>::
-      multilinestring_within_geometry(g1, g2, pnull_value);
+    result = BG_wrap< Geom_types >::multilinestring_within_geometry(g1, g2, pnull_value);
   else if (gt1 == Geometry::wkb_polygon)
-    result= BG_wrap<Geom_types>::
-      polygon_within_geometry(g1, g2, pnull_value);
+    result = BG_wrap< Geom_types >::polygon_within_geometry(g1, g2, pnull_value);
   else if (gt1 == Geometry::wkb_multipolygon)
-    result= BG_wrap<Geom_types>::
-      multipolygon_within_geometry(g1, g2, pnull_value);
+    result = BG_wrap< Geom_types >::multipolygon_within_geometry(g1, g2, pnull_value);
   else
     assert(false);
   return result;
 }
-
 
 /**
   Do equals relation check of two geometries.
@@ -827,9 +766,8 @@ int Item_func_spatial_rel::within_check(Geometry *g1, Geometry *g2,
   @return 0 if specified relation doesn't hold for the given operands,
                 otherwise returns none 0.
 */
-template<typename Geom_types>
-int Item_func_spatial_rel::equals_check(Geometry *g1, Geometry *g2,
-                                        my_bool *pnull_value)
+template < typename Geom_types >
+int Item_func_spatial_rel::equals_check(Geometry *g1, Geometry *g2, my_bool *pnull_value)
 {
   typedef typename Geom_types::Point Point;
   typedef typename Geom_types::Linestring Linestring;
@@ -837,11 +775,11 @@ int Item_func_spatial_rel::equals_check(Geometry *g1, Geometry *g2,
   typedef typename Geom_types::Polygon Polygon;
   typedef typename Geom_types::Multipoint Multipoint;
   typedef typename Geom_types::Multipolygon Multipolygon;
-  typedef std::set<Point, bgpt_lt> Point_set;
+  typedef std::set< Point, bgpt_lt > Point_set;
 
-  int result= 0;
-  Geometry::wkbType gt1= g1->get_type();
-  Geometry::wkbType gt2= g2->get_type();
+  int result = 0;
+  Geometry::wkbType gt1 = g1->get_type();
+  Geometry::wkbType gt2 = g2->get_type();
 
   /*
     Only geometries of the same base type can be equal, any other
@@ -854,50 +792,39 @@ int Item_func_spatial_rel::equals_check(Geometry *g1, Geometry *g2,
       BGCALL(result, equals, Point, g1, Point, g2, pnull_value);
     else if (gt2 == Geometry::wkb_multipoint)
     {
-      Point pt(g1->get_data_ptr(),
-               g1->get_data_size(), g1->get_flags(), g1->get_srid());
-      Multipoint mpts(g2->get_data_ptr(),
-                      g2->get_data_size(), g2->get_flags(), g2->get_srid());
+      Point pt(g1->get_data_ptr(), g1->get_data_size(), g1->get_flags(), g1->get_srid());
+      Multipoint mpts(g2->get_data_ptr(), g2->get_data_size(), g2->get_flags(), g2->get_srid());
 
       Point_set ptset(mpts.begin(), mpts.end());
 
-      result= (ptset.size() == 1 &&
-               boost::geometry::equals(pt, *ptset.begin()));
+      result = (ptset.size() == 1 && boost::geometry::equals(pt, *ptset.begin()));
     }
     else
-      result= 0;
+      result = 0;
   }
   else if (gt1 == Geometry::wkb_multipoint)
-    result= BG_wrap<Geom_types>::
-      multipoint_equals_geometry(g1, g2, pnull_value);
-  else if (gt1 == Geometry::wkb_linestring &&
-           gt2 == Geometry::wkb_linestring)
+    result = BG_wrap< Geom_types >::multipoint_equals_geometry(g1, g2, pnull_value);
+  else if (gt1 == Geometry::wkb_linestring && gt2 == Geometry::wkb_linestring)
     BGCALL(result, equals, Linestring, g1, Linestring, g2, pnull_value);
-  else if (gt1 == Geometry::wkb_linestring &&
-           gt2 == Geometry::wkb_multilinestring)
+  else if (gt1 == Geometry::wkb_linestring && gt2 == Geometry::wkb_multilinestring)
     BGCALL(result, equals, Linestring, g1, Multilinestring, g2, pnull_value);
-  else if (gt2 == Geometry::wkb_linestring &&
-           gt1 == Geometry::wkb_multilinestring)
+  else if (gt2 == Geometry::wkb_linestring && gt1 == Geometry::wkb_multilinestring)
     BGCALL(result, equals, Multilinestring, g1, Linestring, g2, pnull_value);
-  else if (gt2 == Geometry::wkb_multilinestring &&
-           gt1 == Geometry::wkb_multilinestring)
-    BGCALL(result, equals, Multilinestring, g1, Multilinestring,
-           g2, pnull_value);
+  else if (gt2 == Geometry::wkb_multilinestring && gt1 == Geometry::wkb_multilinestring)
+    BGCALL(result, equals, Multilinestring, g1, Multilinestring, g2, pnull_value);
   else if (gt1 == Geometry::wkb_polygon && gt2 == Geometry::wkb_polygon)
     BGCALL(result, equals, Polygon, g1, Polygon, g2, pnull_value);
-  else if (gt1 == Geometry::wkb_polygon && gt2 ==Geometry::wkb_multipolygon)
+  else if (gt1 == Geometry::wkb_polygon && gt2 == Geometry::wkb_multipolygon)
     BGCALL(result, equals, Polygon, g1, Multipolygon, g2, pnull_value);
-  else if (gt1 == Geometry::wkb_multipolygon && gt2 ==Geometry::wkb_polygon)
+  else if (gt1 == Geometry::wkb_multipolygon && gt2 == Geometry::wkb_polygon)
     BGCALL(result, equals, Multipolygon, g1, Polygon, g2, pnull_value);
-  else if (gt1 == Geometry::wkb_multipolygon &&
-           gt2 == Geometry::wkb_multipolygon)
+  else if (gt1 == Geometry::wkb_multipolygon && gt2 == Geometry::wkb_multipolygon)
     BGCALL(result, equals, Multipolygon, g1, Multipolygon, g2, pnull_value);
   else
     /* This branch covers all the unequal dimension combinations. */
-    result= 0;
+    result = 0;
   return result;
 }
-
 
 /**
   Do disjoint relation check of two geometries.
@@ -911,44 +838,37 @@ int Item_func_spatial_rel::equals_check(Geometry *g1, Geometry *g2,
   @return 0 if specified relation doesn't hold for the given operands,
                 otherwise returns none 0.
 */
-template<typename Geom_types>
-int Item_func_spatial_rel::disjoint_check(Geometry *g1, Geometry *g2,
-                                          my_bool *pnull_value)
+template < typename Geom_types >
+int Item_func_spatial_rel::disjoint_check(Geometry *g1, Geometry *g2, my_bool *pnull_value)
 {
   Geometry::wkbType gt1;
-  int result= 0;
+  int result = 0;
 
-  gt1= g1->get_type();
+  gt1 = g1->get_type();
 
   switch (gt1)
   {
-  case Geometry::wkb_point:
-    result= BG_wrap<Geom_types>::
-      point_disjoint_geometry(g1, g2, pnull_value);
-    break;
-  case Geometry::wkb_multipoint:
-    result= BG_wrap<Geom_types>::
-      multipoint_disjoint_geometry(g1, g2, pnull_value);
-    break;
-  case Geometry::wkb_linestring:
-    result= BG_wrap<Geom_types>::
-      linestring_disjoint_geometry(g1, g2, pnull_value);
-    break;
-  case Geometry::wkb_multilinestring:
-    result= BG_wrap<Geom_types>::
-      multilinestring_disjoint_geometry(g1, g2, pnull_value);
-    break;
-  case Geometry::wkb_polygon:
-    result= BG_wrap<Geom_types>::
-      polygon_disjoint_geometry(g1, g2, pnull_value);
-    break;
-  case Geometry::wkb_multipolygon:
-    result= BG_wrap<Geom_types>::
-      multipolygon_disjoint_geometry(g1, g2, pnull_value);
-    break;
-  default:
-    assert(false);
-    break;
+    case Geometry::wkb_point:
+      result = BG_wrap< Geom_types >::point_disjoint_geometry(g1, g2, pnull_value);
+      break;
+    case Geometry::wkb_multipoint:
+      result = BG_wrap< Geom_types >::multipoint_disjoint_geometry(g1, g2, pnull_value);
+      break;
+    case Geometry::wkb_linestring:
+      result = BG_wrap< Geom_types >::linestring_disjoint_geometry(g1, g2, pnull_value);
+      break;
+    case Geometry::wkb_multilinestring:
+      result = BG_wrap< Geom_types >::multilinestring_disjoint_geometry(g1, g2, pnull_value);
+      break;
+    case Geometry::wkb_polygon:
+      result = BG_wrap< Geom_types >::polygon_disjoint_geometry(g1, g2, pnull_value);
+      break;
+    case Geometry::wkb_multipolygon:
+      result = BG_wrap< Geom_types >::multipolygon_disjoint_geometry(g1, g2, pnull_value);
+      break;
+    default:
+      assert(false);
+      break;
   }
 
   /*
@@ -956,7 +876,6 @@ int Item_func_spatial_rel::disjoint_check(Geometry *g1, Geometry *g2,
    */
   return result;
 }
-
 
 /**
   Do interesects relation check of two geometries.
@@ -970,14 +889,13 @@ int Item_func_spatial_rel::disjoint_check(Geometry *g1, Geometry *g2,
   @return 0 if specified relation doesn't hold for the given operands,
                 otherwise returns none 0.
 */
-template<typename Geom_types>
-int Item_func_spatial_rel::intersects_check(Geometry *g1, Geometry *g2,
-                                            my_bool *pnull_value)
+template < typename Geom_types >
+int Item_func_spatial_rel::intersects_check(Geometry *g1, Geometry *g2, my_bool *pnull_value)
 {
   Geometry::wkbType gt1;
-  int result= 0;
+  int result = 0;
 
-  gt1= g1->get_type();
+  gt1 = g1->get_type();
   /*
     According to OGC SFA, intersects is identical to !disjoint, but
     boost geometry has functions to compute intersects, so we still call
@@ -985,40 +903,33 @@ int Item_func_spatial_rel::intersects_check(Geometry *g1, Geometry *g2,
    */
   switch (gt1)
   {
-  case Geometry::wkb_point:
-    result= BG_wrap<Geom_types>::
-      point_intersects_geometry(g1, g2, pnull_value);
-    break;
-  case Geometry::wkb_multipoint:
-    result= BG_wrap<Geom_types>::
-      multipoint_intersects_geometry(g1, g2, pnull_value);
-    break;
-  case Geometry::wkb_linestring:
-    result= BG_wrap<Geom_types>::
-      linestring_intersects_geometry(g1, g2, pnull_value);
-    break;
-  case Geometry::wkb_multilinestring:
-    result= BG_wrap<Geom_types>::
-      multilinestring_intersects_geometry(g1, g2, pnull_value);
-    break;
-  case Geometry::wkb_polygon:
-    result= BG_wrap<Geom_types>::
-      polygon_intersects_geometry(g1, g2, pnull_value);
-    break;
-  case Geometry::wkb_multipolygon:
-    result= BG_wrap<Geom_types>::
-      multipolygon_intersects_geometry(g1, g2, pnull_value);
-    break;
-  default:
-    assert(false);
-    break;
+    case Geometry::wkb_point:
+      result = BG_wrap< Geom_types >::point_intersects_geometry(g1, g2, pnull_value);
+      break;
+    case Geometry::wkb_multipoint:
+      result = BG_wrap< Geom_types >::multipoint_intersects_geometry(g1, g2, pnull_value);
+      break;
+    case Geometry::wkb_linestring:
+      result = BG_wrap< Geom_types >::linestring_intersects_geometry(g1, g2, pnull_value);
+      break;
+    case Geometry::wkb_multilinestring:
+      result = BG_wrap< Geom_types >::multilinestring_intersects_geometry(g1, g2, pnull_value);
+      break;
+    case Geometry::wkb_polygon:
+      result = BG_wrap< Geom_types >::polygon_intersects_geometry(g1, g2, pnull_value);
+      break;
+    case Geometry::wkb_multipolygon:
+      result = BG_wrap< Geom_types >::multipolygon_intersects_geometry(g1, g2, pnull_value);
+      break;
+    default:
+      assert(false);
+      break;
   }
   /*
     Note: need intersects(pnt, lstr), (lstr, plgn)
    */
   return result;
 }
-
 
 /**
   Do overlaps relation check of two geometries.
@@ -1032,9 +943,8 @@ int Item_func_spatial_rel::intersects_check(Geometry *g1, Geometry *g2,
   @return 0 if specified relation doesn't hold for the given operands,
                 otherwise returns none 0.
 */
-template<typename Geom_types>
-int Item_func_spatial_rel::overlaps_check(Geometry *g1, Geometry *g2,
-                                          my_bool *pnull_value)
+template < typename Geom_types >
+int Item_func_spatial_rel::overlaps_check(Geometry *g1, Geometry *g2, my_bool *pnull_value)
 {
   typedef typename Geom_types::Point Point;
   typedef typename Geom_types::Multipoint Multipoint;
@@ -1042,12 +952,12 @@ int Item_func_spatial_rel::overlaps_check(Geometry *g1, Geometry *g2,
   typedef typename Geom_types::Multilinestring Multilinestring;
   typedef typename Geom_types::Polygon Polygon;
   typedef typename Geom_types::Multipolygon Multipolygon;
-  typedef std::set<Point, bgpt_lt> Point_set;
-  typedef std::vector<Point> Point_vector;
+  typedef std::set< Point, bgpt_lt > Point_set;
+  typedef std::vector< Point > Point_vector;
 
-  int result= 0;
-  Geometry::wkbType gt1= g1->get_type();
-  Geometry::wkbType gt2= g2->get_type();
+  int result = 0;
+  Geometry::wkbType gt1 = g1->get_type();
+  Geometry::wkbType gt2 = g2->get_type();
 
   if (g1->feature_dimension() != g2->feature_dimension())
   {
@@ -1063,85 +973,83 @@ int Item_func_spatial_rel::overlaps_check(Geometry *g1, Geometry *g2,
 
   if (gt1 == Geometry::wkb_multipoint && gt2 == Geometry::wkb_multipoint)
   {
-    result= BG_wrap<Geom_types>::
-      multipoint_overlaps_multipoint(g1, g2, pnull_value);
+    result = BG_wrap< Geom_types >::multipoint_overlaps_multipoint(g1, g2, pnull_value);
     return result;
   }
 
   switch (gt1)
   {
-  case Geometry::wkb_linestring:
-  {
-    switch (gt2)
-    {
     case Geometry::wkb_linestring:
-      BGCALL(result, overlaps, Linestring, g1, Linestring, g2, pnull_value);
+    {
+      switch (gt2)
+      {
+        case Geometry::wkb_linestring:
+          BGCALL(result, overlaps, Linestring, g1, Linestring, g2, pnull_value);
+          break;
+        case Geometry::wkb_multilinestring:
+          BGCALL(result, overlaps, Linestring, g1, Multilinestring, g2, pnull_value);
+          break;
+        default:
+          assert(false);
+          break;
+      }
       break;
+    }
     case Geometry::wkb_multilinestring:
-      BGCALL(result, overlaps, Linestring, g1, Multilinestring, g2, pnull_value);
-      break;
-    default:
-      assert(false);
+    {
+      switch (gt2)
+      {
+        case Geometry::wkb_linestring:
+          BGCALL(result, overlaps, Multilinestring, g1, Linestring, g2, pnull_value);
+          break;
+        case Geometry::wkb_multilinestring:
+          BGCALL(result, overlaps, Multilinestring, g1, Multilinestring, g2, pnull_value);
+          break;
+        default:
+          assert(false);
+          break;
+      }
       break;
     }
-    break;
-  }
-  case Geometry::wkb_multilinestring:
-  {
-    switch (gt2)
-    {
-    case Geometry::wkb_linestring:
-      BGCALL(result, overlaps, Multilinestring, g1, Linestring, g2, pnull_value);
-      break;
-    case Geometry::wkb_multilinestring:
-      BGCALL(result, overlaps, Multilinestring, g1, Multilinestring, g2, pnull_value);
-      break;
-    default:
-      assert(false);
-      break;
-    }
-    break;
-  }
-  case Geometry::wkb_polygon:
-  {
-    switch (gt2)
-    {
     case Geometry::wkb_polygon:
-      BGCALL(result, overlaps, Polygon, g1, Polygon, g2, pnull_value);
-      break;
-    case Geometry::wkb_multipolygon:
-      BGCALL(result, overlaps, Polygon, g1, Multipolygon, g2, pnull_value);
-      break;
-    default:
-      assert(false);
-      break;
-    }
-    break;
-  }
-  case Geometry::wkb_multipolygon:
-  {
-    switch (gt2)
     {
-    case Geometry::wkb_polygon:
-      BGCALL(result, overlaps, Multipolygon, g1, Polygon, g2, pnull_value);
+      switch (gt2)
+      {
+        case Geometry::wkb_polygon:
+          BGCALL(result, overlaps, Polygon, g1, Polygon, g2, pnull_value);
+          break;
+        case Geometry::wkb_multipolygon:
+          BGCALL(result, overlaps, Polygon, g1, Multipolygon, g2, pnull_value);
+          break;
+        default:
+          assert(false);
+          break;
+      }
       break;
+    }
     case Geometry::wkb_multipolygon:
-      BGCALL(result, overlaps, Multipolygon, g1, Multipolygon, g2, pnull_value);
+    {
+      switch (gt2)
+      {
+        case Geometry::wkb_polygon:
+          BGCALL(result, overlaps, Multipolygon, g1, Polygon, g2, pnull_value);
+          break;
+        case Geometry::wkb_multipolygon:
+          BGCALL(result, overlaps, Multipolygon, g1, Multipolygon, g2, pnull_value);
+          break;
+        default:
+          assert(false);
+          break;
+      }
       break;
+    }
     default:
       assert(false);
       break;
-    }
-    break;
-  }
-  default:
-    assert(false);
-    break;
   }
 
   return result;
 }
-
 
 /**
   Do touches relation check of two geometries.
@@ -1155,18 +1063,17 @@ int Item_func_spatial_rel::overlaps_check(Geometry *g1, Geometry *g2,
   @return 0 if specified relation doesn't hold for the given operands,
                 otherwise returns none 0.
 */
-template<typename Geom_types>
-int Item_func_spatial_rel::touches_check(Geometry *g1, Geometry *g2,
-                                         my_bool *pnull_value)
+template < typename Geom_types >
+int Item_func_spatial_rel::touches_check(Geometry *g1, Geometry *g2, my_bool *pnull_value)
 {
   typedef typename Geom_types::Linestring Linestring;
   typedef typename Geom_types::Multilinestring Multilinestring;
   typedef typename Geom_types::Polygon Polygon;
   typedef typename Geom_types::Multipolygon Multipolygon;
 
-  int result= 0;
-  Geometry::wkbType gt1= g1->get_type();
-  Geometry::wkbType gt2= g2->get_type();
+  int result = 0;
+  Geometry::wkbType gt1 = g1->get_type();
+  Geometry::wkbType gt2 = g2->get_type();
 
   if ((gt1 == Geometry::wkb_point || gt1 == Geometry::wkb_multipoint) &&
       (gt2 == Geometry::wkb_point || gt2 == Geometry::wkb_multipoint))
@@ -1182,37 +1089,30 @@ int Item_func_spatial_rel::touches_check(Geometry *g1, Geometry *g2,
    */
   switch (gt1)
   {
-  case Geometry::wkb_point:
-    result= BG_wrap<Geom_types>::
-      point_touches_geometry(g1, g2, pnull_value);
-    break;
-  case Geometry::wkb_multipoint:
-    result= BG_wrap<Geom_types>::
-      multipoint_touches_geometry(g1, g2, pnull_value);
-    break;
-  case Geometry::wkb_linestring:
-    result= BG_wrap<Geom_types>::
-      linestring_touches_geometry(g1, g2, pnull_value);
-    break;
-  case Geometry::wkb_multilinestring:
-    result= BG_wrap<Geom_types>::
-      multilinestring_touches_geometry(g1, g2, pnull_value);
-    break;
-  case Geometry::wkb_polygon:
-    result= BG_wrap<Geom_types>::
-      polygon_touches_geometry(g1, g2, pnull_value);
-    break;
-  case Geometry::wkb_multipolygon:
-    result= BG_wrap<Geom_types>::
-      multipolygon_touches_geometry(g1, g2, pnull_value);
-    break;
-  default:
-    assert(false);
-    break;
+    case Geometry::wkb_point:
+      result = BG_wrap< Geom_types >::point_touches_geometry(g1, g2, pnull_value);
+      break;
+    case Geometry::wkb_multipoint:
+      result = BG_wrap< Geom_types >::multipoint_touches_geometry(g1, g2, pnull_value);
+      break;
+    case Geometry::wkb_linestring:
+      result = BG_wrap< Geom_types >::linestring_touches_geometry(g1, g2, pnull_value);
+      break;
+    case Geometry::wkb_multilinestring:
+      result = BG_wrap< Geom_types >::multilinestring_touches_geometry(g1, g2, pnull_value);
+      break;
+    case Geometry::wkb_polygon:
+      result = BG_wrap< Geom_types >::polygon_touches_geometry(g1, g2, pnull_value);
+      break;
+    case Geometry::wkb_multipolygon:
+      result = BG_wrap< Geom_types >::multipolygon_touches_geometry(g1, g2, pnull_value);
+      break;
+    default:
+      assert(false);
+      break;
   }
   return result;
 }
-
 
 /**
   Do crosses relation check of two geometries.
@@ -1226,13 +1126,12 @@ int Item_func_spatial_rel::touches_check(Geometry *g1, Geometry *g2,
   @return 0 if specified relation doesn't hold for the given operands,
                 otherwise returns none 0.
 */
-template<typename Geom_types>
-int Item_func_spatial_rel::crosses_check(Geometry *g1, Geometry *g2,
-                                         my_bool *pnull_value)
+template < typename Geom_types >
+int Item_func_spatial_rel::crosses_check(Geometry *g1, Geometry *g2, my_bool *pnull_value)
 {
-  int result= 0;
-  Geometry::wkbType gt1= g1->get_type();
-  Geometry::wkbType gt2= g2->get_type();
+  int result = 0;
+  Geometry::wkbType gt1 = g1->get_type();
+  Geometry::wkbType gt2 = g2->get_type();
 
   if (gt1 == Geometry::wkb_polygon || gt2 == Geometry::wkb_point ||
       (gt1 == Geometry::wkb_multipolygon || gt2 == Geometry::wkb_multipoint))
@@ -1246,32 +1145,28 @@ int Item_func_spatial_rel::crosses_check(Geometry *g1, Geometry *g2,
 
   if (gt1 == Geometry::wkb_point)
   {
-    result= 0;
+    result = 0;
     return result;
   }
 
   switch (gt1)
   {
-  case Geometry::wkb_multipoint:
-    result= BG_wrap<Geom_types>::
-      multipoint_crosses_geometry(g1, g2, pnull_value);
-    break;
-  case Geometry::wkb_linestring:
-    result= BG_wrap<Geom_types>::
-      linestring_crosses_geometry(g1, g2, pnull_value);
-    break;
-  case Geometry::wkb_multilinestring:
-    result= BG_wrap<Geom_types>::
-      multilinestring_crosses_geometry(g1, g2, pnull_value);
-    break;
-  default:
-    assert(false);
-    break;
+    case Geometry::wkb_multipoint:
+      result = BG_wrap< Geom_types >::multipoint_crosses_geometry(g1, g2, pnull_value);
+      break;
+    case Geometry::wkb_linestring:
+      result = BG_wrap< Geom_types >::linestring_crosses_geometry(g1, g2, pnull_value);
+      break;
+    case Geometry::wkb_multilinestring:
+      result = BG_wrap< Geom_types >::multilinestring_crosses_geometry(g1, g2, pnull_value);
+      break;
+    default:
+      assert(false);
+      break;
   }
 
   return result;
 }
-
 
 /**
   Entry point to call Boost Geometry functions to check geometry relations.
@@ -1288,14 +1183,12 @@ int Item_func_spatial_rel::crosses_check(Geometry *g1, Geometry *g2,
   @return 0 if specified relation doesn't hold for the given operands,
                 otherwise returns none 0.
  */
-template<typename Coordsys>
-int Item_func_spatial_rel::bg_geo_relation_check(Geometry *g1, Geometry *g2,
-                                                 Functype relchk_type,
-                                                 my_bool *pnull_value)
+template < typename Coordsys >
+int Item_func_spatial_rel::bg_geo_relation_check(Geometry *g1, Geometry *g2, Functype relchk_type, my_bool *pnull_value)
 {
-  int result= 0;
+  int result = 0;
 
-  typedef BG_models<Coordsys> Geom_types;
+  typedef BG_models< Coordsys > Geom_types;
 
   /*
     Dispatch calls to all specific type combinations for each relation check
@@ -1308,34 +1201,35 @@ int Item_func_spatial_rel::bg_geo_relation_check(Geometry *g1, Geometry *g2,
     The checking functions should set null_value to true if there is error.
    */
 
-  switch (relchk_type) {
-  case SP_CONTAINS_FUNC:
-    result= within_check<Geom_types>(g2, g1, pnull_value);
-    break;
-  case SP_WITHIN_FUNC:
-    result= within_check<Geom_types>(g1, g2, pnull_value);
-    break;
-  case SP_EQUALS_FUNC:
-    result= equals_check<Geom_types>(g1, g2, pnull_value);
-    break;
-  case SP_DISJOINT_FUNC:
-    result= disjoint_check<Geom_types>(g1, g2, pnull_value);
-    break;
-  case SP_INTERSECTS_FUNC:
-    result= intersects_check<Geom_types>(g1, g2, pnull_value);
-    break;
-  case SP_OVERLAPS_FUNC:
-    result= overlaps_check<Geom_types>(g1, g2, pnull_value);
-    break;
-  case SP_TOUCHES_FUNC:
-    result= touches_check<Geom_types>(g1, g2, pnull_value);
-    break;
-  case SP_CROSSES_FUNC:
-    result= crosses_check<Geom_types>(g1, g2, pnull_value);
-    break;
-  default:
-    assert(FALSE);
-    break;
+  switch (relchk_type)
+  {
+    case SP_CONTAINS_FUNC:
+      result = within_check< Geom_types >(g2, g1, pnull_value);
+      break;
+    case SP_WITHIN_FUNC:
+      result = within_check< Geom_types >(g1, g2, pnull_value);
+      break;
+    case SP_EQUALS_FUNC:
+      result = equals_check< Geom_types >(g1, g2, pnull_value);
+      break;
+    case SP_DISJOINT_FUNC:
+      result = disjoint_check< Geom_types >(g1, g2, pnull_value);
+      break;
+    case SP_INTERSECTS_FUNC:
+      result = intersects_check< Geom_types >(g1, g2, pnull_value);
+      break;
+    case SP_OVERLAPS_FUNC:
+      result = overlaps_check< Geom_types >(g1, g2, pnull_value);
+      break;
+    case SP_TOUCHES_FUNC:
+      result = touches_check< Geom_types >(g1, g2, pnull_value);
+      break;
+    case SP_CROSSES_FUNC:
+      result = crosses_check< Geom_types >(g1, g2, pnull_value);
+      break;
+    default:
+      assert(FALSE);
+      break;
   }
 
   return result;

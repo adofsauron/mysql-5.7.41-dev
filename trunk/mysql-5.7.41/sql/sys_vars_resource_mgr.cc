@@ -37,10 +37,8 @@
 
 uchar *Session_sysvar_resource_manager::find(void *key, size_t length)
 {
-  return (my_hash_search(&m_sysvar_string_alloc_hash, (const uchar *) key,
-	                 length));
+  return (my_hash_search(&m_sysvar_string_alloc_hash, (const uchar *)key, length));
 }
-
 
 /**
   Allocates memory for Sys_var_charptr session variable during session
@@ -54,7 +52,7 @@ uchar *Session_sysvar_resource_manager::find(void *key, size_t length)
   Failure - true
 */
 
-bool Session_sysvar_resource_manager::init(char **var, const CHARSET_INFO * charset)
+bool Session_sysvar_resource_manager::init(char **var, const CHARSET_INFO *charset)
 {
   if (*var)
   {
@@ -62,28 +60,22 @@ bool Session_sysvar_resource_manager::init(char **var, const CHARSET_INFO * char
     char *ptr;
 
     if (!my_hash_inited(&m_sysvar_string_alloc_hash))
-      my_hash_init(&m_sysvar_string_alloc_hash,
-	           const_cast<CHARSET_INFO *> (charset),
-		   4, 0, 0, (my_hash_get_key) sysvars_mgr_get_key,
-		   my_free, HASH_UNIQUE,
+      my_hash_init(&m_sysvar_string_alloc_hash, const_cast< CHARSET_INFO * >(charset), 4, 0, 0,
+                   (my_hash_get_key)sysvars_mgr_get_key, my_free, HASH_UNIQUE,
                    key_memory_THD_Session_sysvar_resource_manager);
     /* Create a new node & add it to the hash. */
-    if ( !(element=
-           (sys_var_ptr *) my_malloc(key_memory_THD_Session_sysvar_resource_manager,
-                                     sizeof(sys_var_ptr), MYF(MY_WME))) ||
-         !(ptr=
-           (char *) my_memdup(key_memory_THD_Session_sysvar_resource_manager,
-                              *var, strlen(*var) + 1, MYF(MY_WME))))
-      return true;                            /* Error */
-    element->data= (void *) ptr;
-    my_hash_insert(&m_sysvar_string_alloc_hash, (uchar *) element);
+    if (!(element = (sys_var_ptr *)my_malloc(key_memory_THD_Session_sysvar_resource_manager, sizeof(sys_var_ptr),
+                                             MYF(MY_WME))) ||
+        !(ptr = (char *)my_memdup(key_memory_THD_Session_sysvar_resource_manager, *var, strlen(*var) + 1, MYF(MY_WME))))
+      return true; /* Error */
+    element->data = (void *)ptr;
+    my_hash_insert(&m_sysvar_string_alloc_hash, (uchar *)element);
 
     /* Update the variable to point to the newly alloced copy. */
-    *var= ptr;
+    *var = ptr;
   }
   return false;
 }
-
 
 /**
   Frees the old alloced memory, memdup()'s the given val to a new memory
@@ -98,12 +90,11 @@ bool Session_sysvar_resource_manager::init(char **var, const CHARSET_INFO * char
   Failure - true
 */
 
-bool Session_sysvar_resource_manager::update(char **var, char *val,
-                                             size_t val_len)
+bool Session_sysvar_resource_manager::update(char **var, char *val, size_t val_len)
 {
-  sys_var_ptr *element= NULL;
-  char *ptr= NULL;
-  char *old_key= NULL;
+  sys_var_ptr *element = NULL;
+  char *ptr = NULL;
+  char *old_key = NULL;
 
   /*
     Memory allocation for the new value of the variable and
@@ -111,19 +102,17 @@ bool Session_sysvar_resource_manager::update(char **var, char *val,
   */
   if (val)
   {
-    if ( !(ptr=
-           (char *) my_memdup(PSI_NOT_INSTRUMENTED,
-                              val, val_len + 1, MYF(MY_WME))))
+    if (!(ptr = (char *)my_memdup(PSI_NOT_INSTRUMENTED, val, val_len + 1, MYF(MY_WME))))
       return true;
-    ptr[val_len]= 0;
+    ptr[val_len] = 0;
   }
 
   /* Get the handle for existing value in hash. */
   if (*var)
   {
-    element= (sys_var_ptr *) find(*var, strlen(*var));
+    element = (sys_var_ptr *)find(*var, strlen(*var));
     if (element)
-      old_key= (char *) element->data;
+      old_key = (char *)element->data;
   }
 
   /*
@@ -133,9 +122,8 @@ bool Session_sysvar_resource_manager::update(char **var, char *val,
   if (val && *var)
   {
     /* Free the existing one & update the current address. */
-    element->data= ptr;
-    my_hash_update(&m_sysvar_string_alloc_hash, (uchar *) element,
-	           (uchar *)old_key, strlen(old_key));
+    element->data = ptr;
+    my_hash_update(&m_sysvar_string_alloc_hash, (uchar *)element, (uchar *)old_key, strlen(old_key));
     if (old_key)
       my_free(old_key);
   }
@@ -149,7 +137,7 @@ bool Session_sysvar_resource_manager::update(char **var, char *val,
     {
       my_hash_delete(&m_sysvar_string_alloc_hash, (uchar *)element);
       if (old_key)
-	my_free(old_key);
+        my_free(old_key);
     }
   }
 
@@ -160,22 +148,21 @@ bool Session_sysvar_resource_manager::update(char **var, char *val,
   else if ((*var == NULL) && val)
   {
     /* Create a new node & add it to the list. */
-    if( !(element=
-          (sys_var_ptr*) my_malloc(key_memory_THD_Session_sysvar_resource_manager,
-				   sizeof(sys_var_ptr), MYF(MY_WME))))
-      return true;                            /* Error */
-    element->data= ptr;
-    my_hash_insert(&m_sysvar_string_alloc_hash, (uchar *) element);
+    if (!(element = (sys_var_ptr *)my_malloc(key_memory_THD_Session_sysvar_resource_manager, sizeof(sys_var_ptr),
+                                             MYF(MY_WME))))
+      return true; /* Error */
+    element->data = ptr;
+    my_hash_insert(&m_sysvar_string_alloc_hash, (uchar *)element);
   }
 
   /*
     Update the variable to point to the newly alloced copy.
-    
+
     When current value and the new value are both NULL,
     the control directly reaches here. In that case this
     function effectively does nothing.
   */
-  *var= ptr;
+  *var = ptr;
   return false;
 }
 
@@ -183,8 +170,8 @@ void Session_sysvar_resource_manager::claim_memory_ownership()
 {
   /* Release Sys_var_charptr resources here. */
   sys_var_ptr *ptr;
-  int i= 0;
-  while ((ptr= (sys_var_ptr*)my_hash_element(&m_sysvar_string_alloc_hash, i)))
+  int i = 0;
+  while ((ptr = (sys_var_ptr *)my_hash_element(&m_sysvar_string_alloc_hash, i)))
   {
     if (ptr->data)
       my_claim(ptr->data);
@@ -197,7 +184,6 @@ void Session_sysvar_resource_manager::claim_memory_ownership()
   }
 }
 
-
 /**
   @brief Frees the memory allocated for Sys_var_charptr session variables.
 */
@@ -206,10 +192,10 @@ void Session_sysvar_resource_manager::deinit()
 {
   /* Release Sys_var_charptr resources here. */
   sys_var_ptr *ptr;
-  int i= 0;
-  while ((ptr= (sys_var_ptr*)my_hash_element(&m_sysvar_string_alloc_hash, i)))
+  int i = 0;
+  while ((ptr = (sys_var_ptr *)my_hash_element(&m_sysvar_string_alloc_hash, i)))
   {
-    if(ptr->data)
+    if (ptr->data)
       my_free(ptr->data);
     i++;
   }
@@ -220,12 +206,11 @@ void Session_sysvar_resource_manager::deinit()
   }
 }
 
-uchar *Session_sysvar_resource_manager::sysvars_mgr_get_key(const char *entry,
-							    size_t *length,
-							    my_bool not_used MY_ATTRIBUTE((unused)))
+uchar *Session_sysvar_resource_manager::sysvars_mgr_get_key(const char *entry, size_t *length,
+                                                            my_bool not_used MY_ATTRIBUTE((unused)))
 {
   char *key;
-  key= (char *) ((sys_var_ptr *) entry)->data;
-  *length= strlen(key);
-  return (uchar *) key;
+  key = (char *)((sys_var_ptr *)entry)->data;
+  *length = strlen(key);
+  return (uchar *)key;
 }

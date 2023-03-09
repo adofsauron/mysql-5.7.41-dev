@@ -37,22 +37,20 @@
 #include "sql_union.h"
 #include "sql_select.h"
 #include "sql_cursor.h"
-#include "sql_base.h"                           // fill_record
-#include "filesort.h"                           // filesort_free_buffers
-#include "sql_tmp_table.h"                      // tmp tables
-#include "sql_optimizer.h"                      // JOIN
-#include "opt_explain.h"                        // explain_no_table
+#include "sql_base.h"       // fill_record
+#include "filesort.h"       // filesort_free_buffers
+#include "sql_tmp_table.h"  // tmp tables
+#include "sql_optimizer.h"  // JOIN
+#include "opt_explain.h"    // explain_no_table
 #include "opt_explain_format.h"
 
-
-int Query_result_union::prepare(List<Item> &list, SELECT_LEX_UNIT *u)
+int Query_result_union::prepare(List< Item > &list, SELECT_LEX_UNIT *u)
 {
-  unit= u;
+  unit = u;
   return 0;
 }
 
-
-bool Query_result_union::send_data(List<Item> &values)
+bool Query_result_union::send_data(List< Item > &values)
 {
   // Skip "offset" number of rows before producing rows
   if (unit->offset_limit_cnt > 0)
@@ -61,19 +59,18 @@ bool Query_result_union::send_data(List<Item> &values)
     return false;
   }
   if (fill_record(thd, table, table->visible_field_ptr(), values, NULL, NULL))
-    return true;                /* purecov: inspected */
+    return true; /* purecov: inspected */
 
   if (!check_unique_constraint(table))
     return false;
 
-  const int error= table->file->ha_write_row(table->record[0]);
+  const int error = table->file->ha_write_row(table->record[0]);
   if (error)
   {
     // create_ondisk_from_heap will generate error if needed
     if (!table->file->is_ignorable_error(error) &&
-        create_ondisk_from_heap(thd, table, tmp_table_param.start_recinfo, 
-                                &tmp_table_param.recinfo, error, true, NULL))
-      return true;            /* purecov: inspected */
+        create_ondisk_from_heap(thd, table, tmp_table_param.start_recinfo, &tmp_table_param.recinfo, error, true, NULL))
+      return true; /* purecov: inspected */
     // Table's engine changed, index is not initialized anymore
     if (table->hash_field)
       table->file->ha_index_init(0, false);
@@ -81,16 +78,11 @@ bool Query_result_union::send_data(List<Item> &values)
   return false;
 }
 
-
-bool Query_result_union::send_eof()
-{
-  return false;
-}
-
+bool Query_result_union::send_eof() { return false; }
 
 bool Query_result_union::flush()
 {
-  const int error= table->file->extra(HA_EXTRA_NO_CACHE);
+  const int error = table->file->extra(HA_EXTRA_NO_CACHE);
   if (error)
   {
     table->file->print_error(error, MYF(0)); /* purecov: inspected */
@@ -118,25 +110,19 @@ bool Query_result_union::flush()
   @returns false if table created, true if error
 */
 
-bool Query_result_union::create_result_table(THD *thd_arg,
-                                             List<Item> *column_types,
-                                             bool is_union_distinct,
-                                             ulonglong options,
-                                             const char *table_alias,
-                                             bool bit_fields_as_long,
+bool Query_result_union::create_result_table(THD *thd_arg, List< Item > *column_types, bool is_union_distinct,
+                                             ulonglong options, const char *table_alias, bool bit_fields_as_long,
                                              bool create_table)
 {
   assert(table == NULL);
-  tmp_table_param= Temp_table_param();
-  count_field_types(thd_arg->lex->current_select(), &tmp_table_param,
-                    *column_types, false, true);
-  tmp_table_param.skip_create_table= !create_table;
-  tmp_table_param.bit_fields_as_long= bit_fields_as_long;
-  tmp_table_param.can_use_pk_for_unique= !is_union_mixed_with_union_all;
+  tmp_table_param = Temp_table_param();
+  count_field_types(thd_arg->lex->current_select(), &tmp_table_param, *column_types, false, true);
+  tmp_table_param.skip_create_table = !create_table;
+  tmp_table_param.bit_fields_as_long = bit_fields_as_long;
+  tmp_table_param.can_use_pk_for_unique = !is_union_mixed_with_union_all;
 
-  if (! (table= create_tmp_table(thd_arg, &tmp_table_param, *column_types,
-                                 NULL, is_union_distinct, true,
-                                 options, HA_POS_ERROR, (char*) table_alias)))
+  if (!(table = create_tmp_table(thd_arg, &tmp_table_param, *column_types, NULL, is_union_distinct, true, options,
+                                 HA_POS_ERROR, (char *)table_alias)))
     return true;
   if (create_table)
   {
@@ -147,7 +133,6 @@ bool Query_result_union::create_result_table(THD *thd_arg,
   }
   return false;
 }
-
 
 /**
   Reset and empty the temporary table that stores the materialized query result.
@@ -165,9 +150,8 @@ void Query_result_union::cleanup()
     table->file->ha_index_or_rnd_end();
   table->file->ha_delete_all_rows();
   free_io_cache(table);
-  filesort_free_buffers(table,0);
+  filesort_free_buffers(table, 0);
 }
-
 
 /**
   UNION result that is passed directly to the receiving Query_result
@@ -181,9 +165,9 @@ void Query_result_union::cleanup()
   This Query_result is used when a UNION is not DISTINCT and doesn't
   have a global ORDER BY clause. @see st_select_lex_unit::prepare().
 */
-class Query_result_union_direct :public Query_result_union
+class Query_result_union_direct : public Query_result_union
 {
-private:
+ private:
   /// Result object that receives all rows
   Query_result *result;
   /// The last query block of the union
@@ -202,39 +186,36 @@ private:
   /// Number of rows limit + offset, @see Query_result_union_direct::send_data()
   ha_rows limit;
 
-public:
+ public:
   Query_result_union_direct(Query_result *result, SELECT_LEX *last_select_lex)
-    :result(result), last_select_lex(last_select_lex),
-    done_send_result_set_metadata(false), done_initialize_tables(false),
-    current_found_rows(0)
-  {}
+      : result(result),
+        last_select_lex(last_select_lex),
+        done_send_result_set_metadata(false),
+        done_initialize_tables(false),
+        current_found_rows(0)
+  {
+  }
   bool change_query_result(Query_result *new_result);
-  uint field_count(List<Item> &fields) const
+  uint field_count(List< Item > &fields) const
   {
     // Only called for top-level Query_results, usually Query_result_send
     assert(false); /* purecov: inspected */
-    return 0; /* purecov: inspected */
+    return 0;      /* purecov: inspected */
   }
-  bool postponed_prepare(List<Item> &types);
-  bool send_result_set_metadata(List<Item> &list, uint flags);
-  bool send_data(List<Item> &items);
-  bool initialize_tables (JOIN *join= NULL);
-  void send_error(uint errcode, const char *err)
-  {
-    result->send_error(errcode, err); /* purecov: inspected */
-  }
+  bool postponed_prepare(List< Item > &types);
+  bool send_result_set_metadata(List< Item > &list, uint flags);
+  bool send_data(List< Item > &items);
+  bool initialize_tables(JOIN *join = NULL);
+  void send_error(uint errcode, const char *err) { result->send_error(errcode, err); /* purecov: inspected */ }
   bool send_eof();
   bool flush() { return false; }
   bool check_simple_select() const
   {
     // Only called for top-level Query_results, usually Query_result_send
     assert(false); /* purecov: inspected */
-    return false; /* purecov: inspected */
+    return false;  /* purecov: inspected */
   }
-  void abort_result_set()
-  {
-    result->abort_result_set(); /* purecov: inspected */
-  }
+  void abort_result_set() { result->abort_result_set(); /* purecov: inspected */ }
   void cleanup() {}
   void set_thd(THD *thd_arg)
   {
@@ -252,9 +233,8 @@ public:
   }
 };
 
-
 /**
-  Replace the current query result with new_result and prepare it.  
+  Replace the current query result with new_result and prepare it.
 
   @param new_result New query result
 
@@ -262,12 +242,11 @@ public:
 */
 bool Query_result_union_direct::change_query_result(Query_result *new_result)
 {
-  result= new_result;
+  result = new_result;
   return (result->prepare(unit->types, unit) || result->prepare2());
 }
 
-
-bool Query_result_union_direct::postponed_prepare(List<Item> &types)
+bool Query_result_union_direct::postponed_prepare(List< Item > &types)
 {
   if (result != NULL)
     return (result->prepare(types, unit) || result->prepare2());
@@ -275,31 +254,28 @@ bool Query_result_union_direct::postponed_prepare(List<Item> &types)
     return false;
 }
 
-
-bool Query_result_union_direct::send_result_set_metadata(List<Item> &list,
-                                                         uint flags)
+bool Query_result_union_direct::send_result_set_metadata(List< Item > &list, uint flags)
 {
   if (done_send_result_set_metadata)
     return false;
-  done_send_result_set_metadata= true;
+  done_send_result_set_metadata = true;
 
   /*
     Set global offset and limit to be used in send_data(). These can
     be variables in prepared statements or stored programs, so they
     must be reevaluated for each execution.
    */
-  offset= unit->global_parameters()->get_offset();
-  limit= unit->global_parameters()->get_limit();
+  offset = unit->global_parameters()->get_offset();
+  limit = unit->global_parameters()->get_limit();
   if (limit + offset >= limit)
-    limit+= offset;
+    limit += offset;
   else
-    limit= HA_POS_ERROR; /* purecov: inspected */
+    limit = HA_POS_ERROR; /* purecov: inspected */
 
   return result->send_result_set_metadata(unit->types, flags);
 }
 
-
-bool Query_result_union_direct::send_data(List<Item> &items)
+bool Query_result_union_direct::send_data(List< Item > &items)
 {
   if (limit == 0)
     return false;
@@ -316,16 +292,14 @@ bool Query_result_union_direct::send_data(List<Item> &items)
   return result->send_data(unit->item_list);
 }
 
-
 bool Query_result_union_direct::initialize_tables(JOIN *join)
 {
   if (done_initialize_tables)
     return false;
-  done_initialize_tables= true;
+  done_initialize_tables = true;
 
   return result->initialize_tables(join);
 }
-
 
 bool Query_result_union_direct::send_eof()
 {
@@ -333,9 +307,8 @@ bool Query_result_union_direct::send_eof()
     Accumulate the found_rows count for the current query block into the UNION.
     Number of rows returned from a query block is always non-negative.
   */
-  ulonglong offset= thd->lex->current_select()->get_offset();
-  current_found_rows+= thd->current_found_rows > offset ?
-                       thd->current_found_rows - offset : 0;
+  ulonglong offset = thd->lex->current_select()->get_offset();
+  current_found_rows += thd->current_found_rows > offset ? thd->current_found_rows - offset : 0;
 
   if (unit->thd->lex->current_select() == last_select_lex)
   {
@@ -345,31 +318,30 @@ bool Query_result_union_direct::send_eof()
     */
     if (!(unit->first_select()->active_options() & OPTION_FOUND_ROWS))
     {
-      ha_rows global_limit= unit->global_parameters()->get_limit();
-      ha_rows global_offset= unit->global_parameters()->get_offset();
+      ha_rows global_limit = unit->global_parameters()->get_limit();
+      ha_rows global_offset = unit->global_parameters()->get_offset();
 
       if (global_limit != HA_POS_ERROR)
       {
         if (global_offset != HA_POS_ERROR)
-          global_limit+= global_offset;
+          global_limit += global_offset;
 
         if (current_found_rows > global_limit)
-          current_found_rows= global_limit;
+          current_found_rows = global_limit;
       }
     }
-    thd->current_found_rows= current_found_rows;
+    thd->current_found_rows = current_found_rows;
 
     // Reset and make ready for re-execution
     // @todo: Dangerous if we have an error midway?
-    done_send_result_set_metadata= false;
-    done_initialize_tables= false;
+    done_send_result_set_metadata = false;
+    done_initialize_tables = false;
 
     return result->send_eof();
   }
   else
     return false;
 }
-
 
 /**
   Prepare the fake_select_lex query block
@@ -386,27 +358,18 @@ bool st_select_lex_unit::prepare_fake_select_lex(THD *thd_arg)
   assert(thd_arg->lex->current_select() == fake_select_lex);
 
   // The UNION result table is input table for this query block
-  fake_select_lex->table_list.link_in_list(&result_table_list,
-                                           &result_table_list.next_local);
+  fake_select_lex->table_list.link_in_list(&result_table_list, &result_table_list.next_local);
 
   // Set up the result table for name resolution
-  fake_select_lex->context.table_list= 
-    fake_select_lex->context.first_name_resolution_table= 
-    fake_select_lex->get_table_list();
+  fake_select_lex->context.table_list = fake_select_lex->context.first_name_resolution_table =
+      fake_select_lex->get_table_list();
   if (!fake_select_lex->first_execution)
   {
-    for (ORDER *order= fake_select_lex->order_list.first;
-         order;
-         order= order->next)
-      order->item= &order->item_ptr;
+    for (ORDER *order = fake_select_lex->order_list.first; order; order = order->next) order->item = &order->item_ptr;
   }
-  for (ORDER *order= fake_select_lex->order_list.first;
-       order;
-       order=order->next)
+  for (ORDER *order = fake_select_lex->order_list.first; order; order = order->next)
   {
-    (*order->item)->walk(&Item::change_context_processor,
-                         Item::WALK_POSTFIX,
-                         (uchar*) &fake_select_lex->context);
+    (*order->item)->walk(&Item::change_context_processor, Item::WALK_POSTFIX, (uchar *)&fake_select_lex->context);
   }
   fake_select_lex->set_query_result(query_result());
 
@@ -417,11 +380,8 @@ bool st_select_lex_unit::prepare_fake_select_lex(THD *thd_arg)
     the contents in it may vary from one subquery execution to another.
   */
   fake_select_lex->make_active_options(
-     (first_select()->active_options() & OPTION_FOUND_ROWS) |
-     OPTION_NO_CONST_TABLES |
-     SELECT_NO_UNLOCK,
-     0);
-  fake_select_lex->fields_list= item_list;
+      (first_select()->active_options() & OPTION_FOUND_ROWS) | OPTION_NO_CONST_TABLES | SELECT_NO_UNLOCK, 0);
+  fake_select_lex->fields_list = item_list;
 
   /*
     We need to add up n_sum_items in order to make the correct
@@ -430,12 +390,10 @@ bool st_select_lex_unit::prepare_fake_select_lex(THD *thd_arg)
     for this (with a different join object)
   */
   if (fake_select_lex->ref_pointer_array.is_null())
-    fake_select_lex->n_child_sum_items+= fake_select_lex->n_sum_items;
+    fake_select_lex->n_child_sum_items += fake_select_lex->n_sum_items;
 
-  assert(fake_select_lex->with_wild == 0 &&
-         fake_select_lex->master_unit() == this &&
-         !fake_select_lex->group_list.elements &&
-         fake_select_lex->where_cond() == NULL &&
+  assert(fake_select_lex->with_wild == 0 && fake_select_lex->master_unit() == this &&
+         !fake_select_lex->group_list.elements && fake_select_lex->where_cond() == NULL &&
          fake_select_lex->having_cond() == NULL);
 
   if (fake_select_lex->prepare(thd_arg))
@@ -443,7 +401,6 @@ bool st_select_lex_unit::prepare_fake_select_lex(THD *thd_arg)
 
   DBUG_RETURN(false);
 }
-
 
 /**
   Prepares all query blocks of a query expression, including fake_select_lex
@@ -455,22 +412,20 @@ bool st_select_lex_unit::prepare_fake_select_lex(THD *thd_arg)
 
   @returns false if success, true if error
  */
-bool st_select_lex_unit::prepare(THD *thd_arg, Query_result *sel_result,
-                                 ulonglong added_options,
+bool st_select_lex_unit::prepare(THD *thd_arg, Query_result *sel_result, ulonglong added_options,
                                  ulonglong removed_options)
 {
   DBUG_ENTER("st_select_lex_unit::prepare");
 
   assert(!is_prepared());
 
-  SELECT_LEX *lex_select_save= thd_arg->lex->current_select();
+  SELECT_LEX *lex_select_save = thd_arg->lex->current_select();
 
   Query_result *tmp_result;
-  bool instantiate_tmp_table= false;
+  bool instantiate_tmp_table = false;
 
-  SELECT_LEX *last_select= first_select();
-  while (last_select->next_select())
-    last_select= last_select->next_select();
+  SELECT_LEX *last_select = first_select();
+  while (last_select->next_select()) last_select = last_select->next_select();
 
   set_query_result(sel_result);
 
@@ -478,52 +433,51 @@ bool st_select_lex_unit::prepare(THD *thd_arg, Query_result *sel_result,
 
   // Save fake_select_lex in case we don't need it for anything but
   // global parameters.
-  if (saved_fake_select_lex == NULL && // Don't overwrite on PS second prepare
+  if (saved_fake_select_lex == NULL &&  // Don't overwrite on PS second prepare
       fake_select_lex != NULL)
   {
     thd->lock_query_plan();
-    saved_fake_select_lex= fake_select_lex;
+    saved_fake_select_lex = fake_select_lex;
     thd->unlock_query_plan();
   }
 
-  const bool simple_query_expression= is_simple();
+  const bool simple_query_expression = is_simple();
 
   // Create query result object for use by underlying query blocks
   if (!simple_query_expression)
   {
     if (is_union() && !union_needs_tmp_table())
     {
-      if (!(tmp_result= union_result=
-              new Query_result_union_direct(sel_result, last_select)))
+      if (!(tmp_result = union_result = new Query_result_union_direct(sel_result, last_select)))
         goto err; /* purecov: inspected */
       if (fake_select_lex != NULL)
       {
         thd->lock_query_plan();
-        fake_select_lex= NULL;
+        fake_select_lex = NULL;
         thd->unlock_query_plan();
       }
-      instantiate_tmp_table= false;
+      instantiate_tmp_table = false;
     }
     else
     {
-      if (!(tmp_result= union_result= new Query_result_union()))
+      if (!(tmp_result = union_result = new Query_result_union()))
         goto err; /* purecov: inspected */
-      instantiate_tmp_table= true;
+      instantiate_tmp_table = true;
     }
   }
   else
   {
     // Only one query block, and no "fake" object: No extra result needed:
-    tmp_result= sel_result;
+    tmp_result = sel_result;
   }
 
-  first_select()->context.resolve_in_select_list= true;
+  first_select()->context.resolve_in_select_list = true;
 
-  for (SELECT_LEX *sl= first_select(); sl; sl= sl->next_select())
+  for (SELECT_LEX *sl = first_select(); sl; sl = sl->next_select())
   {
     sl->set_query_result(tmp_result);
     sl->make_active_options(added_options | SELECT_NO_UNLOCK, removed_options);
-    sl->fields_list= sl->item_list;
+    sl->fields_list = sl->item_list;
 
     /*
       setup_tables_done_option should be set only for very first SELECT,
@@ -531,7 +485,7 @@ bool st_select_lex_unit::prepare(THD *thd_arg, Query_result *sel_result,
       select commands (DELETE/INSERT/...) and they use only very first
       SELECT (for union it can be only INSERT ... SELECT).
     */
-    added_options&= ~OPTION_SETUP_TABLES_DONE;
+    added_options &= ~OPTION_SETUP_TABLES_DONE;
 
     thd_arg->lex->set_current_select(sl);
 
@@ -543,13 +497,13 @@ bool st_select_lex_unit::prepare(THD *thd_arg, Query_result *sel_result,
       information about fields lengths and exact types
     */
     if (simple_query_expression)
-      types= first_select()->item_list;
+      types = first_select()->item_list;
     else if (sl == first_select())
     {
       types.empty();
-      List_iterator_fast<Item> it(sl->item_list);
+      List_iterator_fast< Item > it(sl->item_list);
       Item *item_tmp;
-      while ((item_tmp= it++))
+      while ((item_tmp = it++))
       {
         /*
           If the outer query has a GROUP BY clause, an outer reference to this
@@ -557,34 +511,31 @@ bool st_select_lex_unit::prepare(THD *thd_arg, Query_result *sel_result,
           been fixed yet. An Item_type_holder must be created based on a fixed
           Item, so use the inner Item instead.
         */
-        assert(item_tmp->fixed ||
-               (item_tmp->type() == Item::REF_ITEM &&
-                down_cast<Item_ref *>(item_tmp)->ref_type() ==
-                Item_ref::OUTER_REF));
+        assert(item_tmp->fixed || (item_tmp->type() == Item::REF_ITEM &&
+                                   down_cast< Item_ref * >(item_tmp)->ref_type() == Item_ref::OUTER_REF));
         if (!item_tmp->fixed)
-          item_tmp= item_tmp->real_item();
+          item_tmp = item_tmp->real_item();
 
-	/* Error's in 'new' will be detected after loop */
-	types.push_back(new Item_type_holder(thd_arg, item_tmp));
+        /* Error's in 'new' will be detected after loop */
+        types.push_back(new Item_type_holder(thd_arg, item_tmp));
       }
       if (thd_arg->is_error())
-	goto err; // out of memory
+        goto err;  // out of memory
     }
     else
     {
       if (types.elements != sl->item_list.elements)
       {
-	my_message(ER_WRONG_NUMBER_OF_COLUMNS_IN_SELECT,
-		   ER(ER_WRONG_NUMBER_OF_COLUMNS_IN_SELECT),MYF(0));
-	goto err;
+        my_message(ER_WRONG_NUMBER_OF_COLUMNS_IN_SELECT, ER(ER_WRONG_NUMBER_OF_COLUMNS_IN_SELECT), MYF(0));
+        goto err;
       }
-      List_iterator_fast<Item> it(sl->item_list);
-      List_iterator_fast<Item> tp(types);	
+      List_iterator_fast< Item > it(sl->item_list);
+      List_iterator_fast< Item > tp(types);
       Item *type, *item_tmp;
-      while ((type= tp++, item_tmp= it++))
+      while ((type = tp++, item_tmp = it++))
       {
-        if (((Item_type_holder*)type)->join_types(thd_arg, item_tmp))
-	  DBUG_RETURN(true);
+        if (((Item_type_holder *)type)->join_types(thd_arg, item_tmp))
+          DBUG_RETURN(true);
       }
     }
   }
@@ -605,20 +556,18 @@ bool st_select_lex_unit::prepare(THD *thd_arg, Query_result *sel_result,
 
       TODO: consider removing this test in case of UNION ALL.
     */
-    List_iterator_fast<Item> tp(types);
+    List_iterator_fast< Item > tp(types);
     Item *type;
 
-    while ((type= tp++))
+    while ((type = tp++))
     {
-      if (type->result_type() == STRING_RESULT &&
-          type->collation.derivation == DERIVATION_NONE)
+      if (type->result_type() == STRING_RESULT && type->collation.derivation == DERIVATION_NONE)
       {
         my_error(ER_CANT_AGGREGATE_NCOLLATIONS, MYF(0), "UNION");
         goto err;
       }
     }
-    ulonglong create_options= first_select()->active_options() |
-                              TMP_TABLE_ALL_COLUMNS;
+    ulonglong create_options = first_select()->active_options() | TMP_TABLE_ALL_COLUMNS;
     /*
       Force the temporary table to be a MyISAM table if we're going to use
       fulltext functions (MATCH ... AGAINST .. IN BOOLEAN MODE) when reading
@@ -626,25 +575,23 @@ bool st_select_lex_unit::prepare(THD *thd_arg, Query_result *sel_result,
       out of MyISAM).
     */
     if (fake_select_lex && fake_select_lex->ftfunc_list->elements)
-      create_options|= TMP_TABLE_FORCE_MYISAM;
+      create_options |= TMP_TABLE_FORCE_MYISAM;
 
     if (union_distinct)
     {
       // Mixed UNION and UNION ALL
       if (union_distinct != last_select)
-        union_result->is_union_mixed_with_union_all= true;
+        union_result->is_union_mixed_with_union_all = true;
     }
-    if (union_result->create_result_table(thd, &types, MY_TEST(union_distinct),
-                                          create_options, "", false,
+    if (union_result->create_result_table(thd, &types, MY_TEST(union_distinct), create_options, "", false,
                                           instantiate_tmp_table))
       goto err;
     new (&result_table_list) TABLE_LIST;
-    result_table_list.db= (char*) "";
-    result_table_list.table_name= result_table_list.alias= (char*) "union";
-    result_table_list.table= table= union_result->table;
-    table->pos_in_table_list= &result_table_list;
-    result_table_list.select_lex= fake_select_lex ?
-                                     fake_select_lex : saved_fake_select_lex;
+    result_table_list.db = (char *)"";
+    result_table_list.table_name = result_table_list.alias = (char *)"union";
+    result_table_list.table = table = union_result->table;
+    table->pos_in_table_list = &result_table_list;
+    result_table_list.select_lex = fake_select_lex ? fake_select_lex : saved_fake_select_lex;
     result_table_list.set_tableno(0);
 
     result_table_list.set_privileges(SELECT_ACL);
@@ -653,7 +600,7 @@ bool st_select_lex_unit::prepare(THD *thd_arg, Query_result *sel_result,
     {
       Prepared_stmt_arena_holder ps_arena_holder(thd);
       if (table->fill_item_list(&item_list))
-        goto err;            /* purecov: inspected */
+        goto err; /* purecov: inspected */
     }
     else
     {
@@ -674,15 +621,14 @@ bool st_select_lex_unit::prepare(THD *thd_arg, Query_result *sel_result,
 
   thd_arg->lex->set_current_select(lex_select_save);
 
-  set_prepared();          // All query blocks prepared, update the state
+  set_prepared();  // All query blocks prepared, update the state
 
   DBUG_RETURN(false);
 
 err:
-  (void) cleanup(false);
+  (void)cleanup(false);
   DBUG_RETURN(true);
 }
-
 
 /**
   Optimize all query blocks of a query expression, including fake_select_lex
@@ -698,9 +644,9 @@ bool st_select_lex_unit::optimize(THD *thd)
 
   assert(is_prepared() && !is_optimized());
 
-  SELECT_LEX *save_select= thd->lex->current_select();
+  SELECT_LEX *save_select = thd->lex->current_select();
 
-  for (SELECT_LEX *sl= first_select(); sl; sl= sl->next_select())
+  for (SELECT_LEX *sl = first_select(); sl; sl = sl->next_select())
   {
     thd->lex->set_current_select(sl);
 
@@ -718,10 +664,8 @@ bool st_select_lex_unit::optimize(THD *thd)
          query produces at most one row.
     */
     if (query_result())
-      query_result()->estimated_rowcount+=
-        sl->is_implicitly_grouped() || sl->join->group_optimized_away ?
-          1 :  sl->join->best_rowcount;
-
+      query_result()->estimated_rowcount +=
+          sl->is_implicitly_grouped() || sl->join->group_optimized_away ? 1 : sl->join->best_rowcount;
   }
   if (fake_select_lex)
   {
@@ -735,25 +679,21 @@ bool st_select_lex_unit::optimize(THD *thd)
        - 1st time is a real evaluation to get the subquery value
        - 2nd time is to produce EXPLAIN output rows.
       1st execution sets certain members (e.g. Query_result) to perform
-      subquery execution rather than EXPLAIN line production. In order 
+      subquery execution rather than EXPLAIN line production. In order
       to reset them back, we re-do all of the actions (yes it is ugly).
     */
-    assert(fake_select_lex->with_wild == 0 &&
-           fake_select_lex->master_unit() == this &&
-           !fake_select_lex->group_list.elements &&
-           fake_select_lex->get_table_list() == &result_table_list &&
-           fake_select_lex->where_cond() == NULL &&
-           fake_select_lex->having_cond() == NULL);
+    assert(fake_select_lex->with_wild == 0 && fake_select_lex->master_unit() == this &&
+           !fake_select_lex->group_list.elements && fake_select_lex->get_table_list() == &result_table_list &&
+           fake_select_lex->where_cond() == NULL && fake_select_lex->having_cond() == NULL);
 
     if (fake_select_lex->optimize(thd))
       DBUG_RETURN(true);
   }
-  set_optimized();    // All query blocks optimized, update the state
+  set_optimized();  // All query blocks optimized, update the state
   thd->lex->set_current_select(save_select);
 
   DBUG_RETURN(false);
 }
-
 
 /**
   Explain query starting from this unit.
@@ -768,11 +708,11 @@ bool st_select_lex_unit::explain(THD *ethd)
   DBUG_ENTER("st_select_lex_unit::explain");
 
 #ifndef NDEBUG
-  SELECT_LEX *lex_select_save= thd->lex->current_select();
+  SELECT_LEX *lex_select_save = thd->lex->current_select();
 #endif
-  Explain_format *fmt= ethd->lex->explain_format;
-  const bool other= (thd != ethd);
-  bool ret= false;
+  Explain_format *fmt = ethd->lex->explain_format;
+  const bool other = (thd != ethd);
+  bool ret = false;
 
   if (!other)
   {
@@ -783,19 +723,18 @@ bool st_select_lex_unit::explain(THD *ethd)
   if (fmt->begin_context(CTX_UNION))
     DBUG_RETURN(true);
 
-  for (SELECT_LEX *sl= first_select(); sl; sl= sl->next_select())
+  for (SELECT_LEX *sl = first_select(); sl; sl = sl->next_select())
   {
     if (fmt->begin_context(CTX_QUERY_SPEC))
       DBUG_RETURN(true);
-    if (explain_query_specification(ethd, sl, CTX_JOIN) ||
-        fmt->end_context(CTX_QUERY_SPEC))
+    if (explain_query_specification(ethd, sl, CTX_JOIN) || fmt->end_context(CTX_QUERY_SPEC))
       DBUG_RETURN(true);
   }
 
   if (fake_select_lex != NULL)
   {
     // Don't save result as it's needed only for consequent exec.
-    ret= explain_query_specification(ethd, fake_select_lex, CTX_UNION_RESULT);
+    ret = explain_query_specification(ethd, fake_select_lex, CTX_UNION_RESULT);
   }
   if (!other)
     assert(thd->lex->current_select() == lex_select_save);
@@ -806,7 +745,6 @@ bool st_select_lex_unit::explain(THD *ethd)
 
   DBUG_RETURN(false);
 }
-
 
 /**
   Execute a query expression that may be a UNION and/or have an ordered result.
@@ -824,20 +762,20 @@ bool st_select_lex_unit::execute(THD *thd)
   if (is_executed() && !uncacheable)
     DBUG_RETURN(false);
 
-  SELECT_LEX *lex_select_save= thd->lex->current_select();
+  SELECT_LEX *lex_select_save = thd->lex->current_select();
 
-  bool status= false;          // Execution error status
+  bool status = false;  // Execution error status
 
   // Set "executed" state, even though execution may end with an error
   set_executed();
-  
+
   if (item)
   {
     item->reset_value_registration();
 
     if (item->assigned())
     {
-      item->assigned(false); // Prepare for re-execution of this unit
+      item->assigned(false);  // Prepare for re-execution of this unit
       item->reset();
       if (table->is_created())
       {
@@ -847,10 +785,10 @@ bool st_select_lex_unit::execute(THD *thd)
     }
     // re-enable indexes for next subquery execution
     if (union_distinct && table->file->ha_enable_indexes(HA_KEY_SWITCH_ALL))
-      DBUG_RETURN(true);       /* purecov: inspected */
+      DBUG_RETURN(true); /* purecov: inspected */
   }
 
-  for (SELECT_LEX *sl= first_select(); sl; sl= sl->next_select())
+  for (SELECT_LEX *sl = first_select(); sl; sl = sl->next_select())
   {
     thd->lex->set_current_select(sl);
 
@@ -862,7 +800,7 @@ bool st_select_lex_unit::execute(THD *thd)
 
     // Execute this query block
     sl->join->exec();
-    status= sl->join->error != 0;
+    status = sl->join->error != 0;
 
     if (sl == union_distinct)
     {
@@ -870,7 +808,7 @@ bool st_select_lex_unit::execute(THD *thd)
       assert(fake_select_lex != NULL);
       if (table->file->ha_disable_indexes(HA_KEY_SWITCH_ALL))
         DBUG_RETURN(true); /* purecov: inspected */
-      table->no_keyread= 1;
+      table->no_keyread = 1;
     }
     if (status)
       DBUG_RETURN(true);
@@ -883,7 +821,7 @@ bool st_select_lex_unit::execute(THD *thd)
   {
     thd->lex->set_current_select(fake_select_lex);
 
-    int error= table->file->info(HA_STATUS_VARIABLE);
+    int error = table->file->info(HA_STATUS_VARIABLE);
     if (error)
     {
       table->file->print_error(error, MYF(0)); /* purecov: inspected */
@@ -892,18 +830,17 @@ bool st_select_lex_unit::execute(THD *thd)
     // Index might have been used to weedout duplicates for UNION DISTINCT
     table->file->ha_index_or_rnd_end();
     set_limit(fake_select_lex);
-    JOIN *join= fake_select_lex->join;
+    JOIN *join = fake_select_lex->join;
     join->reset();
     join->exec();
-    status= join->error != 0;
+    status = join->error != 0;
     fake_select_lex->table_list.empty();
-    thd->current_found_rows= (ulonglong)table->file->stats.records;
+    thd->current_found_rows = (ulonglong)table->file->stats.records;
   }
 
   thd->lex->set_current_select(lex_select_save);
   DBUG_RETURN(status);
 }
-
 
 /**
   Cleanup this query expression object after preparation or one round
@@ -923,24 +860,23 @@ bool st_select_lex_unit::cleanup(bool full)
   if (cleaned >= (full ? UC_CLEAN : UC_PART_CLEAN))
     DBUG_RETURN(false);
 
-  cleaned= (full ? UC_CLEAN : UC_PART_CLEAN);
+  cleaned = (full ? UC_CLEAN : UC_PART_CLEAN);
 
-  bool error= false;
-  for (SELECT_LEX *sl= first_select(); sl; sl= sl->next_select())
-    error|= sl->cleanup(full);
+  bool error = false;
+  for (SELECT_LEX *sl = first_select(); sl; sl = sl->next_select()) error |= sl->cleanup(full);
 
   if (fake_select_lex)
-    error|= fake_select_lex->cleanup(full);
+    error |= fake_select_lex->cleanup(full);
 
   // fake_select_lex's table depends on Temp_table_param inside union_result
   if (full && union_result)
   {
     union_result->cleanup();
     delete union_result;
-    union_result= NULL; // Safety
+    union_result = NULL;  // Safety
     if (table)
       free_tmp_table(thd, table);
-    table= NULL; // Safety
+    table = NULL;  // Safety
   }
 
   /*
@@ -951,53 +887,49 @@ bool st_select_lex_unit::cleanup(bool full)
   DBUG_RETURN(error);
 }
 
-
 #ifndef NDEBUG
 void st_select_lex_unit::assert_not_fully_clean()
 {
   assert(cleaned < UC_CLEAN);
-  SELECT_LEX *sl= first_select();
+  SELECT_LEX *sl = first_select();
   for (;;)
   {
     if (!sl)
     {
-      sl= fake_select_lex;
+      sl = fake_select_lex;
       if (!sl)
         break;
     }
-    for (SELECT_LEX_UNIT *lex_unit= sl->first_inner_unit(); lex_unit ;
-         lex_unit= lex_unit->next_unit())
+    for (SELECT_LEX_UNIT *lex_unit = sl->first_inner_unit(); lex_unit; lex_unit = lex_unit->next_unit())
       lex_unit->assert_not_fully_clean();
     if (sl == fake_select_lex)
       break;
     else
-      sl= sl->next_select();
+      sl = sl->next_select();
   }
 }
 #endif
 
-
 void st_select_lex_unit::reinit_exec_mechanism()
 {
-  prepared= optimized= executed= false;
+  prepared = optimized = executed = false;
 #ifndef NDEBUG
   if (is_union())
   {
-    List_iterator_fast<Item> it(item_list);
+    List_iterator_fast< Item > it(item_list);
     Item *field;
-    while ((field= it++))
+    while ((field = it++))
     {
       /*
-	we can't cleanup here, because it broke link to temporary table field,
-	but have to drop fixed flag to allow next fix_field of this field
-	during re-executing
+        we can't cleanup here, because it broke link to temporary table field,
+        but have to drop fixed flag to allow next fix_field of this field
+        during re-executing
       */
-      field->fixed= 0;
+      field->fixed = 0;
     }
   }
 #endif
 }
-
 
 /**
   Change the query result object used to return the final result of
@@ -1010,11 +942,9 @@ void st_select_lex_unit::reinit_exec_mechanism()
   @retval true  Error
 */
 
-bool
-st_select_lex_unit::change_query_result(Query_result_interceptor *new_result,
-                                        Query_result_interceptor *old_result)
+bool st_select_lex_unit::change_query_result(Query_result_interceptor *new_result, Query_result_interceptor *old_result)
 {
-  for (SELECT_LEX *sl= first_select(); sl; sl= sl->next_select())
+  for (SELECT_LEX *sl = first_select(); sl; sl = sl->next_select())
   {
     if (sl->query_result() && sl->change_query_result(new_result, old_result))
       return true; /* purecov: inspected */
@@ -1040,13 +970,12 @@ st_select_lex_unit::change_query_result(Query_result_interceptor *new_result,
   @returns List of items as specified in function description
 */
 
-List<Item> *st_select_lex_unit::get_unit_column_types()
+List< Item > *st_select_lex_unit::get_unit_column_types()
 {
   assert(is_prepared());
 
   return is_union() ? &types : &first_select()->item_list;
 }
-
 
 /**
   Get field list for this query expression.
@@ -1058,13 +987,12 @@ List<Item> *st_select_lex_unit::get_unit_column_types()
   @returns List containing fields of the query expression.
 */
 
-List<Item> *st_select_lex_unit::get_field_list()
+List< Item > *st_select_lex_unit::get_field_list()
 {
   assert(is_optimized());
 
   return is_union() ? &types : first_select()->join->fields;
 }
-
 
 /**
   Cleanup after preparation or one round of execution.
@@ -1076,38 +1004,35 @@ bool st_select_lex::cleanup(bool full)
 {
   DBUG_ENTER("st_select_lex::cleanup()");
 
-  bool error= false;
+  bool error = false;
   if (join)
   {
     if (full)
     {
       assert(join->select_lex == this);
-      error= join->destroy();
+      error = join->destroy();
       delete join;
-      join= NULL;
+      join = NULL;
     }
     else
       join->cleanup();
   }
 
-  for (SELECT_LEX_UNIT *lex_unit= first_inner_unit(); lex_unit ;
-       lex_unit= lex_unit->next_unit())
+  for (SELECT_LEX_UNIT *lex_unit = first_inner_unit(); lex_unit; lex_unit = lex_unit->next_unit())
   {
-    error|= lex_unit->cleanup(full);
+    error |= lex_unit->cleanup(full);
   }
   inner_refs_list.empty();
   DBUG_RETURN(error);
 }
-
 
 void st_select_lex::cleanup_all_joins()
 {
   if (join)
     join->cleanup();
 
-  for (SELECT_LEX_UNIT *unit= first_inner_unit(); unit; unit= unit->next_unit())
+  for (SELECT_LEX_UNIT *unit = first_inner_unit(); unit; unit = unit->next_unit())
   {
-    for (SELECT_LEX *sl= unit->first_select(); sl; sl= sl->next_select())
-      sl->cleanup_all_joins();
+    for (SELECT_LEX *sl = unit->first_select(); sl; sl = sl->next_select()) sl->cleanup_all_joins();
   }
 }

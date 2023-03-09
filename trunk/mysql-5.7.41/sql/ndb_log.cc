@@ -30,7 +30,6 @@
 // can be extended with a my_log_message(level, prefix, message, ...) function
 #include "log.h"
 
-
 /*
   Print message to MySQL Server's error log(s)
 
@@ -43,9 +42,7 @@
 
 */
 
-void
-ndb_log_print(enum ndb_log_loglevel loglevel,
-              const char* prefix, const char* fmt, va_list args)
+void ndb_log_print(enum ndb_log_loglevel loglevel, const char *prefix, const char *fmt, va_list args)
 {
   assert(fmt);
 
@@ -77,9 +74,7 @@ ndb_log_print(enum ndb_log_loglevel loglevel,
   }
 }
 
-
-void
-ndb_log_info(const char* fmt, ...)
+void ndb_log_info(const char *fmt, ...)
 {
   assert(fmt);
 
@@ -89,9 +84,7 @@ ndb_log_info(const char* fmt, ...)
   va_end(args);
 }
 
-
-void
-ndb_log_warning(const char* fmt, ...)
+void ndb_log_warning(const char *fmt, ...)
 {
   assert(fmt);
 
@@ -101,9 +94,7 @@ ndb_log_warning(const char* fmt, ...)
   va_end(args);
 }
 
-
-void
-ndb_log_error(const char* fmt, ...)
+void ndb_log_error(const char *fmt, ...)
 {
   assert(fmt);
 
@@ -113,19 +104,12 @@ ndb_log_error(const char* fmt, ...)
   va_end(args);
 }
 
-
 // the verbose level is currently controlled by "ndb_extra_logging"
 extern ulong opt_ndb_extra_logging;
 
-unsigned
-ndb_log_get_verbose_level(void)
-{
-  return opt_ndb_extra_logging;
-}
+unsigned ndb_log_get_verbose_level(void) { return opt_ndb_extra_logging; }
 
-
-void
-ndb_log_verbose(unsigned verbose_level, const char* fmt, ...)
+void ndb_log_verbose(unsigned verbose_level, const char *fmt, ...)
 {
   assert(fmt);
 
@@ -138,4 +122,3 @@ ndb_log_verbose(unsigned verbose_level, const char* fmt, ...)
   ndb_log_print(NDB_LOG_INFORMATION_LEVEL, NULL, fmt, args);
   va_end(args);
 }
-

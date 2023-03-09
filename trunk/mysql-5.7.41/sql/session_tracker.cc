@@ -39,15 +39,18 @@ static void store_lenenc_string(String &to, const char *from, size_t length);
   statement.
 */
 
-class Session_sysvars_tracker : public State_tracker {
-private:
-  struct sysvar_node_st {
+class Session_sysvars_tracker : public State_tracker
+{
+ private:
+  struct sysvar_node_st
+  {
     LEX_STRING m_sysvar_name;
     bool m_changed;
   };
 
-  class vars_list {
-  private:
+  class vars_list
+  {
+   private:
     /**
       Registered system variables. (@@session_track_system_variables)
       A hash to store the name of all the system variables specified by the
@@ -60,33 +63,36 @@ private:
       is to be tracked.
     */
     bool track_all;
-    void init(const CHARSET_INFO *char_set) {
+    void init(const CHARSET_INFO *char_set)
+    {
       variables_list = NULL;
-      my_hash_init(&m_registered_sysvars, const_cast<CHARSET_INFO *>(char_set),
-                   4, 0, 0, (my_hash_get_key)sysvars_get_key, my_free,
-                   HASH_UNIQUE, key_memory_THD_Session_tracker);
+      my_hash_init(&m_registered_sysvars, const_cast< CHARSET_INFO * >(char_set), 4, 0, 0,
+                   (my_hash_get_key)sysvars_get_key, my_free, HASH_UNIQUE, key_memory_THD_Session_tracker);
     }
-    void free_hash() {
-      if (my_hash_inited(&m_registered_sysvars)) {
+    void free_hash()
+    {
+      if (my_hash_inited(&m_registered_sysvars))
+      {
         my_hash_free(&m_registered_sysvars);
       }
     }
 
-    uchar *search(const uchar *token, size_t length) {
-      return (my_hash_search(&m_registered_sysvars, token, length));
-    }
+    uchar *search(const uchar *token, size_t length) { return (my_hash_search(&m_registered_sysvars, token, length)); }
 
-  public:
+   public:
     vars_list(const CHARSET_INFO *char_set) { init(char_set); }
 
-    void claim_memory_ownership() {
+    void claim_memory_ownership()
+    {
       my_claim(variables_list);
       my_hash_claim(&m_registered_sysvars);
     }
 
-    ~vars_list() {
+    ~vars_list()
+    {
       /* free the allocated hash. */
-      if (my_hash_inited(&m_registered_sysvars)) {
+      if (my_hash_inited(&m_registered_sysvars))
+      {
         my_hash_free(&m_registered_sysvars);
       }
       if (variables_list)
@@ -94,11 +100,14 @@ private:
       variables_list = NULL;
     }
 
-    uchar *search(sysvar_node_st *node, LEX_STRING tmp) {
+    uchar *search(sysvar_node_st *node, LEX_STRING tmp)
+    {
       uchar *res;
       res = search((const uchar *)tmp.str, tmp.length);
-      if (!res) {
-        if (track_all) {
+      if (!res)
+      {
+        if (track_all)
+        {
           insert(node, tmp);
           return search((const uchar *)tmp.str, tmp.length);
         }
@@ -106,14 +115,12 @@ private:
       return res;
     }
 
-    uchar *operator[](ulong idx) {
-      return my_hash_element(&m_registered_sysvars, idx);
-    }
+    uchar *operator[](ulong idx) { return my_hash_element(&m_registered_sysvars, idx); }
     bool insert(sysvar_node_st *node, LEX_STRING var);
     void reset();
     bool update(vars_list *from, THD *thd);
-    bool parse_var_list(THD *thd, LEX_STRING var_list, bool throw_error,
-                        const CHARSET_INFO *char_set, bool session_created);
+    bool parse_var_list(THD *thd, LEX_STRING var_list, bool throw_error, const CHARSET_INFO *char_set,
+                        bool session_created);
   };
   /**
     Two objects of vars_list type are maintained to manage
@@ -121,15 +128,17 @@ private:
   */
   vars_list *orig_list, *tool_list;
 
-public:
+ public:
   /** Constructor */
-  Session_sysvars_tracker(const CHARSET_INFO *char_set) {
+  Session_sysvars_tracker(const CHARSET_INFO *char_set)
+  {
     orig_list = new (std::nothrow) vars_list(char_set);
     tool_list = new (std::nothrow) vars_list(char_set);
   }
 
   /** Destructor */
-  ~Session_sysvars_tracker() {
+  ~Session_sysvars_tracker()
+  {
     if (orig_list)
       delete orig_list;
     if (tool_list)
@@ -141,8 +150,8 @@ public:
     for session_track_system_variables during the server
     startup.
   */
-  static bool server_init_check(const CHARSET_INFO *char_set,
-                                LEX_STRING var_list) {
+  static bool server_init_check(const CHARSET_INFO *char_set, LEX_STRING var_list)
+  {
     vars_list dummy(char_set);
     bool result;
     result = dummy.parse_var_list(NULL, var_list, false, char_set, true);
@@ -156,10 +165,10 @@ public:
   bool store(THD *thd, String &buf);
   void mark_as_changed(THD *thd, LEX_CSTRING *tracked_item_name);
   /* callback */
-  static uchar *sysvars_get_key(const char *entry, size_t *length,
-                                my_bool not_used MY_ATTRIBUTE((unused)));
+  static uchar *sysvars_get_key(const char *entry, size_t *length, my_bool not_used MY_ATTRIBUTE((unused)));
 
-  virtual void claim_memory_ownership() {
+  virtual void claim_memory_ownership()
+  {
     if (orig_list != NULL)
       orig_list->claim_memory_ownership();
     if (tool_list != NULL)
@@ -174,12 +183,13 @@ public:
   schema for a particular connection.
 */
 
-class Current_schema_tracker : public State_tracker {
-private:
+class Current_schema_tracker : public State_tracker
+{
+ private:
   bool schema_track_inited;
   void reset();
 
-public:
+ public:
   /** Constructor */
   Current_schema_tracker() { schema_track_inited = false; }
 
@@ -207,8 +217,9 @@ static const unsigned int EXTRA_ALLOC = 1024;
   New encoders can extend this interface/abstract class or extend
   other encoders in the hierarchy.
 */
-class Session_gtids_ctx_encoder {
-public:
+class Session_gtids_ctx_encoder
+{
+ public:
   Session_gtids_ctx_encoder() {}
   virtual ~Session_gtids_ctx_encoder(){};
 
@@ -231,41 +242,39 @@ public:
    */
   virtual ulonglong encoding_specification() = 0;
 
-private:
+ private:
   // not implemented
   Session_gtids_ctx_encoder(const Session_gtids_ctx_encoder &rsc);
   Session_gtids_ctx_encoder &operator=(const Session_gtids_ctx_encoder &rsc);
 };
 
-class Session_gtids_ctx_encoder_string : public Session_gtids_ctx_encoder {
-public:
+class Session_gtids_ctx_encoder_string : public Session_gtids_ctx_encoder
+{
+ public:
   Session_gtids_ctx_encoder_string() {}
   ~Session_gtids_ctx_encoder_string() {}
 
   ulonglong encoding_specification() { return 0; }
 
-  bool encode(THD *thd, String &buf) {
+  bool encode(THD *thd, String &buf)
+  {
     const Gtid_set *state = thd->rpl_thd_ctx.session_gtids_ctx().state();
 
-    if (!state->is_empty()) {
+    if (!state->is_empty())
+    {
       /*
         No need to use net_length_size in the following two fields.
         These are constants in this class and will both be encoded using
         only 1 byte.
       */
-      ulonglong tracker_type_enclen =
-          1 /* net_length_size((ulonglong)SESSION_TRACK_GTIDS); */;
-      ulonglong encoding_spec_enclen =
-          1 /* net_length_size(encoding_specification()); */;
-      ulonglong gtids_string_len =
-          state->get_string_length(&Gtid_set::default_string_format);
+      ulonglong tracker_type_enclen = 1 /* net_length_size((ulonglong)SESSION_TRACK_GTIDS); */;
+      ulonglong encoding_spec_enclen = 1 /* net_length_size(encoding_specification()); */;
+      ulonglong gtids_string_len = state->get_string_length(&Gtid_set::default_string_format);
       ulonglong gtids_string_len_enclen = net_length_size(gtids_string_len);
-      ulonglong entity_len =
-          encoding_spec_enclen + gtids_string_len_enclen + gtids_string_len;
+      ulonglong entity_len = encoding_spec_enclen + gtids_string_len_enclen + gtids_string_len;
       ulonglong entity_len_enclen = net_length_size(entity_len);
-      ulonglong total_enclen = tracker_type_enclen + entity_len_enclen +
-                               encoding_spec_enclen + gtids_string_len_enclen +
-                               gtids_string_len;
+      ulonglong total_enclen =
+          tracker_type_enclen + entity_len_enclen + encoding_spec_enclen + gtids_string_len_enclen + gtids_string_len;
 
       /* prepare the buffer */
       uchar *to = (uchar *)buf.prep_append(total_enclen, EXTRA_ALLOC);
@@ -294,11 +303,10 @@ public:
     return false;
   }
 
-private:
+ private:
   // not implemented
   Session_gtids_ctx_encoder_string(const Session_gtids_ctx_encoder_string &rsc);
-  Session_gtids_ctx_encoder_string &
-  operator=(const Session_gtids_ctx_encoder_string &rsc);
+  Session_gtids_ctx_encoder_string &operator=(const Session_gtids_ctx_encoder_string &rsc);
 };
 
 /**
@@ -309,26 +317,24 @@ private:
   consistency.
 */
 
-class Session_gtids_tracker
-    : public State_tracker,
-      Session_consistency_gtids_ctx::Ctx_change_listener {
-private:
+class Session_gtids_tracker : public State_tracker, Session_consistency_gtids_ctx::Ctx_change_listener
+{
+ private:
   void reset();
   Session_gtids_ctx_encoder *m_encoder;
 
-public:
+ public:
   /** Constructor */
-  Session_gtids_tracker()
-      : Session_consistency_gtids_ctx::Ctx_change_listener(), m_encoder(NULL) {}
+  Session_gtids_tracker() : Session_consistency_gtids_ctx::Ctx_change_listener(), m_encoder(NULL) {}
 
-  ~Session_gtids_tracker() {
+  ~Session_gtids_tracker()
+  {
     /*
      Unregister the listener if the tracker is being freed. This is needed
      since this may happen after a change user command.
      */
     if (m_enabled && current_thd)
-      current_thd->rpl_thd_ctx.session_gtids_ctx()
-          .unregister_ctx_change_listener(this);
+      current_thd->rpl_thd_ctx.session_gtids_ctx().unregister_ctx_change_listener(this);
     if (m_encoder)
       delete m_encoder;
   }
@@ -343,10 +349,12 @@ public:
   void notify_session_gtids_ctx_change() { mark_as_changed(NULL, NULL); }
 };
 
-void Session_sysvars_tracker::vars_list::reset() {
+void Session_sysvars_tracker::vars_list::reset()
+{
   if (m_registered_sysvars.records)
     my_hash_reset(&m_registered_sysvars);
-  if (variables_list) {
+  if (variables_list)
+  {
     my_free(variables_list);
     variables_list = NULL;
   }
@@ -363,7 +371,8 @@ void Session_sysvars_tracker::vars_list::reset() {
               Else the value of track_all.
 */
 
-bool Session_sysvars_tracker::vars_list::update(vars_list *from, THD *thd) {
+bool Session_sysvars_tracker::vars_list::update(vars_list *from, THD *thd)
+{
   reset();
   variables_list = from->variables_list;
   track_all = from->track_all;
@@ -382,11 +391,12 @@ bool Session_sysvars_tracker::vars_list::update(vars_list *from, THD *thd) {
   @@return  false  success
             true   error
 */
-bool Session_sysvars_tracker::vars_list::insert(sysvar_node_st *node,
-                                                LEX_STRING var) {
-  if (!node) {
-    if (!(node = (sysvar_node_st *)my_malloc(key_memory_THD_Session_tracker,
-                                             sizeof(sysvar_node_st), MY_WME))) {
+bool Session_sysvars_tracker::vars_list::insert(sysvar_node_st *node, LEX_STRING var)
+{
+  if (!node)
+  {
+    if (!(node = (sysvar_node_st *)my_malloc(key_memory_THD_Session_tracker, sizeof(sysvar_node_st), MY_WME)))
+    {
       reset();
       return true; /* Error */
     }
@@ -395,7 +405,8 @@ bool Session_sysvars_tracker::vars_list::insert(sysvar_node_st *node,
   node->m_sysvar_name.str = var.str;
   node->m_sysvar_name.length = var.length;
   node->m_changed = false;
-  if (my_hash_insert(&m_registered_sysvars, (uchar *)node)) {
+  if (my_hash_insert(&m_registered_sysvars, (uchar *)node))
+  {
     /* Duplicate entry. */
     my_error(ER_DUP_LIST_ENTRY, MYF(0), var.str);
     reset();
@@ -433,13 +444,14 @@ bool Session_sysvars_tracker::vars_list::insert(sysvar_node_st *node,
     true                    Error
     false                   Success
 */
-bool Session_sysvars_tracker::vars_list::parse_var_list(
-    THD *thd, LEX_STRING var_list, bool throw_error,
-    const CHARSET_INFO *char_set, bool session_created) {
+bool Session_sysvars_tracker::vars_list::parse_var_list(THD *thd, LEX_STRING var_list, bool throw_error,
+                                                        const CHARSET_INFO *char_set, bool session_created)
+{
   const char *separator = ",";
   char *token, *lasts = NULL; /* strtok_r */
 
-  if (!var_list.str) {
+  if (!var_list.str)
+  {
     variables_list = NULL;
     return false;
   }
@@ -448,10 +460,11 @@ bool Session_sysvars_tracker::vars_list::parse_var_list(
     Storing of the session_track_system_variables option
     string to be used by strtok_r().
   */
-  variables_list = my_strndup(key_memory_THD_Session_tracker, var_list.str,
-                              var_list.length, MYF(0));
-  if (variables_list) {
-    if (!strcmp(variables_list, (const char *)"*")) {
+  variables_list = my_strndup(key_memory_THD_Session_tracker, var_list.str, var_list.length, MYF(0));
+  if (variables_list)
+  {
+    if (!strcmp(variables_list, (const char *)"*"))
+    {
       track_all = true;
       return false;
     }
@@ -468,7 +481,8 @@ bool Session_sysvars_tracker::vars_list::parse_var_list(
   */
   if (!thd || session_created)
     lock_plugin_mutex();
-  while (token) {
+  while (token)
+  {
     LEX_STRING var;
     var.str = token;
     var.length = strlen(token);
@@ -476,26 +490,34 @@ bool Session_sysvars_tracker::vars_list::parse_var_list(
     /* Remove leading/trailing whitespace. */
     trim_whitespace(char_set, &var);
 
-    if (!thd || session_created) {
-      if (find_sys_var_ex(thd, var.str, var.length, throw_error, true)) {
-        if (insert(NULL, var) == TRUE) {
+    if (!thd || session_created)
+    {
+      if (find_sys_var_ex(thd, var.str, var.length, throw_error, true))
+      {
+        if (insert(NULL, var) == TRUE)
+        {
           /* Error inserting into the hash. */
           unlock_plugin_mutex();
           return true; /* Error */
         }
       }
 
-      else if (throw_error) {
+      else if (throw_error)
+      {
         assert(thd);
-        push_warning_printf(
-            thd, Sql_condition::SL_WARNING, ER_WRONG_VALUE_FOR_VAR,
-            "%s is not a valid system variable and will be ignored.", token);
-      } else {
+        push_warning_printf(thd, Sql_condition::SL_WARNING, ER_WRONG_VALUE_FOR_VAR,
+                            "%s is not a valid system variable and will be ignored.", token);
+      }
+      else
+      {
         unlock_plugin_mutex();
         return true;
       }
-    } else {
-      if (insert(NULL, var) == TRUE) {
+    }
+    else
+    {
+      if (insert(NULL, var) == TRUE)
+      {
         /* Error inserting into the hash. */
         return true; /* Error */
       }
@@ -523,7 +545,8 @@ bool Session_sysvars_tracker::vars_list::parse_var_list(
     false                   Success
 */
 
-bool Session_sysvars_tracker::enable(THD *thd) {
+bool Session_sysvars_tracker::enable(THD *thd)
+{
   LEX_STRING var_list;
 
   if (!thd->variables.track_sysvars_ptr)
@@ -532,8 +555,7 @@ bool Session_sysvars_tracker::enable(THD *thd) {
   var_list.str = thd->variables.track_sysvars_ptr;
   var_list.length = strlen(thd->variables.track_sysvars_ptr);
 
-  if (tool_list->parse_var_list(thd, var_list, true, thd->charset(), false) ==
-      true)
+  if (tool_list->parse_var_list(thd, var_list, true, thd->charset(), false) == true)
     return true;
 
   m_enabled = orig_list->update(tool_list, thd);
@@ -561,10 +583,10 @@ bool Session_sysvars_tracker::enable(THD *thd) {
     false                   Success
 */
 
-inline bool Session_sysvars_tracker::check(THD *thd, set_var *var) {
+inline bool Session_sysvars_tracker::check(THD *thd, set_var *var)
+{
   tool_list->reset();
-  return tool_list->parse_var_list(thd, var->save_result.string_value, true,
-                                   thd->charset(), true);
+  return tool_list->parse_var_list(thd, var->save_result.string_value, true, thd->charset(), true);
 }
 
 /**
@@ -583,7 +605,8 @@ inline bool Session_sysvars_tracker::check(THD *thd, set_var *var) {
     false                   Success
 */
 
-bool Session_sysvars_tracker::update(THD *thd) {
+bool Session_sysvars_tracker::update(THD *thd)
+{
   if (!thd->variables.track_sysvars_ptr)
     return false;
   m_enabled = orig_list->update(tool_list, thd);
@@ -603,7 +626,8 @@ bool Session_sysvars_tracker::update(THD *thd) {
     true                    Error
 */
 
-bool Session_sysvars_tracker::store(THD *thd, String &buf) {
+bool Session_sysvars_tracker::store(THD *thd, String &buf)
+{
   char val_buf[1024];
   const char *value;
   sysvar_node_st *node;
@@ -620,18 +644,17 @@ bool Session_sysvars_tracker::store(THD *thd, String &buf) {
   /* As its always system variable. */
   show->type = SHOW_SYS;
 
-  while ((node = (sysvar_node_st *)(*orig_list)[idx])) {
+  while ((node = (sysvar_node_st *)(*orig_list)[idx]))
+  {
     if (node->m_changed &&
-        (var = find_sys_var_ex(thd, node->m_sysvar_name.str,
-                               node->m_sysvar_name.length, true, false))) {
+        (var = find_sys_var_ex(thd, node->m_sysvar_name.str, node->m_sysvar_name.length, true, false)))
+    {
       show->name = var->name.str;
       show->value = (char *)var;
 
-      value = get_one_variable(thd, show, OPT_SESSION, show->type, NULL,
-                               &charset, val_buf, &val_length);
+      value = get_one_variable(thd, show, OPT_SESSION, show->type, NULL, &charset, val_buf, &val_length);
 
-      length = net_length_size(node->m_sysvar_name.length) +
-               node->m_sysvar_name.length + net_length_size(val_length) +
+      length = net_length_size(node->m_sysvar_name.length) + node->m_sysvar_name.length + net_length_size(val_length) +
                val_length;
 
       to = (uchar *)buf.prep_append(net_length_size(length) + 1, EXTRA_ALLOC);
@@ -643,23 +666,22 @@ bool Session_sysvars_tracker::store(THD *thd, String &buf) {
       net_store_length(to, (ulonglong)length);
 
       /* System variable's name (length-encoded string). */
-      store_lenenc_string(buf, node->m_sysvar_name.str,
-                          node->m_sysvar_name.length);
+      store_lenenc_string(buf, node->m_sysvar_name.str, node->m_sysvar_name.length);
 
       DBUG_EXECUTE_IF(
           "store_100_chars_charset_set_client_name",
-          if (!strncmp(node->m_sysvar_name.str, "character_set_client",
-                       node->m_sysvar_name.length)) {
-            value = "0123456789"
-                    "0123456789"
-                    "0123456789"
-                    "0123456789"
-                    "0123456789"
-                    "0123456789"
-                    "0123456789"
-                    "0123456789"
-                    "0123456789"
-                    "0123456789";
+          if (!strncmp(node->m_sysvar_name.str, "character_set_client", node->m_sysvar_name.length)) {
+            value =
+                "0123456789"
+                "0123456789"
+                "0123456789"
+                "0123456789"
+                "0123456789"
+                "0123456789"
+                "0123456789"
+                "0123456789"
+                "0123456789"
+                "0123456789";
             val_length = 100;
           });
 
@@ -682,8 +704,8 @@ bool Session_sysvars_tracker::store(THD *thd, String &buf) {
   @return                   void
 */
 
-void Session_sysvars_tracker::mark_as_changed(THD *thd,
-                                              LEX_CSTRING *tracked_item_name) {
+void Session_sysvars_tracker::mark_as_changed(THD *thd, LEX_CSTRING *tracked_item_name)
+{
   assert(tracked_item_name->str);
   sysvar_node_st *node = NULL;
   LEX_STRING tmp;
@@ -693,7 +715,8 @@ void Session_sysvars_tracker::mark_as_changed(THD *thd,
     Check if the specified system variable is being tracked, if so
     mark it as changed and also set the class's m_changed flag.
   */
-  if ((node = (sysvar_node_st *)(orig_list->search(node, tmp)))) {
+  if ((node = (sysvar_node_st *)(orig_list->search(node, tmp))))
+  {
     node->m_changed = true;
     m_changed = true;
     /* do not cache the statement when there is change in session state */
@@ -712,9 +735,9 @@ void Session_sysvars_tracker::mark_as_changed(THD *thd,
   @return                   Pointer to the key buffer.
 */
 
-uchar *Session_sysvars_tracker::sysvars_get_key(
-    const char *entry, size_t *length,
-    my_bool not_used MY_ATTRIBUTE((unused))) {
+uchar *Session_sysvars_tracker::sysvars_get_key(const char *entry, size_t *length,
+                                                my_bool not_used MY_ATTRIBUTE((unused)))
+{
   char *key;
   key = ((sysvar_node_st *)entry)->m_sysvar_name.str;
   *length = ((sysvar_node_st *)entry)->m_sysvar_name.length;
@@ -727,11 +750,13 @@ uchar *Session_sysvars_tracker::sysvars_get_key(
   @return                   void
 */
 
-void Session_sysvars_tracker::reset() {
+void Session_sysvars_tracker::reset()
+{
   sysvar_node_st *node;
   int idx = 0;
 
-  while ((node = (sysvar_node_st *)(*orig_list)[idx])) {
+  while ((node = (sysvar_node_st *)(*orig_list)[idx]))
+  {
     node->m_changed = false;
     ++idx;
   }
@@ -749,7 +774,8 @@ void Session_sysvars_tracker::reset() {
     false (always)
 */
 
-bool Current_schema_tracker::update(THD *thd) {
+bool Current_schema_tracker::update(THD *thd)
+{
   m_enabled = (thd->variables.session_track_schema) ? true : false;
   return false;
 }
@@ -768,14 +794,14 @@ bool Current_schema_tracker::update(THD *thd) {
     true                    Error
 */
 
-bool Current_schema_tracker::store(THD *thd, String &buf) {
+bool Current_schema_tracker::store(THD *thd, String &buf)
+{
   ulonglong db_length, length;
 
   length = db_length = thd->db().length;
   length += net_length_size(length);
 
-  uchar *to =
-      (uchar *)buf.prep_append(net_length_size(length) + 1, EXTRA_ALLOC);
+  uchar *to = (uchar *)buf.prep_append(net_length_size(length) + 1, EXTRA_ALLOC);
 
   /* Session state type (SESSION_TRACK_SCHEMA) */
   to = net_store_length(to, (ulonglong)SESSION_TRACK_SCHEMA);
@@ -802,8 +828,8 @@ bool Current_schema_tracker::store(THD *thd, String &buf) {
   @return void
 */
 
-void Current_schema_tracker::mark_as_changed(
-    THD *thd, LEX_CSTRING *tracked_item_name MY_ATTRIBUTE((unused))) {
+void Current_schema_tracker::mark_as_changed(THD *thd, LEX_CSTRING *tracked_item_name MY_ATTRIBUTE((unused)))
+{
   m_changed = true;
   thd->lex->safe_to_cache_query = 0;
 }
@@ -822,7 +848,8 @@ void Current_schema_tracker::reset() { m_changed = false; }
    @brief Constructor for transaction state tracker.
 */
 
-Transaction_state_tracker::Transaction_state_tracker() {
+Transaction_state_tracker::Transaction_state_tracker()
+{
   m_enabled = false;
   tx_changed = TX_CHG_NONE;
   tx_curr_state = tx_reported_state = TX_EMPTY;
@@ -840,17 +867,20 @@ Transaction_state_tracker::Transaction_state_tracker() {
     true if updating the tracking level failed, false otherwise
 */
 
-bool Transaction_state_tracker::update(THD *thd) {
+bool Transaction_state_tracker::update(THD *thd)
+{
 #ifdef EMBEDDED_LIBRARY
   return true;
 
 #else
-  if (thd->variables.session_track_transaction_info != TX_TRACK_NONE) {
+  if (thd->variables.session_track_transaction_info != TX_TRACK_NONE)
+  {
     /*
       If we only just turned reporting on (rather than changing between
       state and chistics reporting), start from a defined state.
     */
-    if (!m_enabled) {
+    if (!m_enabled)
+    {
       tx_curr_state = tx_reported_state = TX_EMPTY;
       tx_changed |= TX_CHG_STATE;
       m_enabled = true;
@@ -858,7 +888,8 @@ bool Transaction_state_tracker::update(THD *thd) {
     if (thd->variables.session_track_transaction_info == TX_TRACK_CHISTICS)
       tx_changed |= TX_CHG_CHISTICS;
     mark_as_changed(thd, NULL);
-  } else
+  }
+  else
     m_enabled = false;
 
   return false;
@@ -879,25 +910,21 @@ bool Transaction_state_tracker::update(THD *thd) {
     true                    Error
 */
 
-bool Transaction_state_tracker::store(THD *thd, String &buf) {
+bool Transaction_state_tracker::store(THD *thd, String &buf)
+{
   /* STATE */
-  if (tx_changed & TX_CHG_STATE) {
+  if (tx_changed & TX_CHG_STATE)
+  {
     uchar *to = (uchar *)buf.prep_append(11, EXTRA_ALLOC);
 
-    to = net_store_length((uchar *)to,
-                          (ulonglong)SESSION_TRACK_TRANSACTION_STATE);
+    to = net_store_length((uchar *)to, (ulonglong)SESSION_TRACK_TRANSACTION_STATE);
 
     to = net_store_length((uchar *)to, (ulonglong)9);
     to = net_store_length((uchar *)to, (ulonglong)8);
 
-    *(to++) = (tx_curr_state & TX_EXPLICIT)
-                  ? 'T'
-                  : ((tx_curr_state & TX_IMPLICIT) ? 'I' : '_');
+    *(to++) = (tx_curr_state & TX_EXPLICIT) ? 'T' : ((tx_curr_state & TX_IMPLICIT) ? 'I' : '_');
     *(to++) = (tx_curr_state & TX_READ_UNSAFE) ? 'r' : '_';
-    *(to++) =
-        ((tx_curr_state & TX_READ_TRX) || (tx_curr_state & TX_WITH_SNAPSHOT))
-            ? 'R'
-            : '_';
+    *(to++) = ((tx_curr_state & TX_READ_TRX) || (tx_curr_state & TX_WITH_SNAPSHOT)) ? 'R' : '_';
     *(to++) = (tx_curr_state & TX_WRITE_UNSAFE) ? 'w' : '_';
     *(to++) = (tx_curr_state & TX_WRITE_TRX) ? 'W' : '_';
     *(to++) = (tx_curr_state & TX_STMT_UNSAFE) ? 's' : '_';
@@ -907,10 +934,9 @@ bool Transaction_state_tracker::store(THD *thd, String &buf) {
 
   /* CHARACTERISTICS -- How to restart the transaction */
 
-  if ((thd->variables.session_track_transaction_info == TX_TRACK_CHISTICS) &&
-      (tx_changed & TX_CHG_CHISTICS)) {
-    bool is_xa =
-        !thd->get_transaction()->xid_state()->has_state(XID_STATE::XA_NOTR);
+  if ((thd->variables.session_track_transaction_info == TX_TRACK_CHISTICS) && (tx_changed & TX_CHG_CHISTICS))
+  {
+    bool is_xa = !thd->get_transaction()->xid_state()->has_state(XID_STATE::XA_NOTR);
 
     // worst case: READ UNCOMMITTED + READ WRITE + CONSISTENT SNAPSHOT
     char buffer[110];
@@ -999,7 +1025,8 @@ bool Transaction_state_tracker::store(THD *thd, String &buf) {
         "ISOLATION LEVEL"
         Only legal in SET TRANSACTION, so will always be replayed as such.
       */
-      if (tx_isol_level != TX_ISOL_INHERIT) {
+      if (tx_isol_level != TX_ISOL_INHERIT)
+      {
         /*
           Unfortunately, we can't re-use tx_isolation_names /
           tx_isolation_typelib as it hyphenates its items.
@@ -1023,7 +1050,8 @@ bool Transaction_state_tracker::store(THD *thd, String &buf) {
         separately before adding XA START (whereas with START TRANSACTION,
         we can merge the access mode into the same statement).
       */
-      if ((tx_curr_state & TX_EXPLICIT) && !is_xa) {
+      if ((tx_curr_state & TX_EXPLICIT) && !is_xa)
+      {
         tx.append(STRING_WITH_LEN("START TRANSACTION"));
 
         /*
@@ -1031,7 +1059,8 @@ bool Transaction_state_tracker::store(THD *thd, String &buf) {
           Defaults to no, can only be enabled.
           Only appears in START TRANSACTION.
         */
-        if (tx_curr_state & TX_WITH_SNAPSHOT) {
+        if (tx_curr_state & TX_WITH_SNAPSHOT)
+        {
           tx.append(STRING_WITH_LEN(" WITH CONSISTENT SNAPSHOT"));
           if (tx_read_flags != TX_READ_INHERIT)
             tx.append(STRING_WITH_LEN(","));
@@ -1053,14 +1082,17 @@ bool Transaction_state_tracker::store(THD *thd, String &buf) {
           If READ is flagged as set explicitly (rather than just inherited
           from the session's default), we'll get the actual bool from the THD.
         */
-        if (tx_read_flags != TX_READ_INHERIT) {
+        if (tx_read_flags != TX_READ_INHERIT)
+        {
           if (tx_read_flags == TX_READ_ONLY)
             tx.append(STRING_WITH_LEN(" READ ONLY"));
           else
             tx.append(STRING_WITH_LEN(" READ WRITE"));
         }
         tx.append(STRING_WITH_LEN("; "));
-      } else if (tx_read_flags != TX_READ_INHERIT) {
+      }
+      else if (tx_read_flags != TX_READ_INHERIT)
+      {
         /*
           "READ ONLY" / "READ WRITE"
           We could transform this to SET TRANSACTION even when it occurs
@@ -1074,23 +1106,27 @@ bool Transaction_state_tracker::store(THD *thd, String &buf) {
           tx.append(STRING_WITH_LEN("READ WRITE; "));
       }
 
-      if ((tx_curr_state & TX_EXPLICIT) && is_xa) {
+      if ((tx_curr_state & TX_EXPLICIT) && is_xa)
+      {
         XID *xid = thd->get_transaction()->xid_state()->get_xid();
         long glen, blen;
 
         tx.append(STRING_WITH_LEN("XA START"));
 
-        if ((glen = xid->get_gtrid_length()) > 0) {
+        if ((glen = xid->get_gtrid_length()) > 0)
+        {
           tx.append(STRING_WITH_LEN(" '"));
           tx.append(xid->get_data(), glen);
 
-          if ((blen = xid->get_bqual_length()) > 0) {
+          if ((blen = xid->get_bqual_length()) > 0)
+          {
             tx.append(STRING_WITH_LEN("','"));
             tx.append(xid->get_data() + glen, blen);
           }
           tx.append(STRING_WITH_LEN("'"));
 
-          if (xid->get_format_id() != 1) {
+          if (xid->get_format_id() != 1)
+          {
             tx.append(STRING_WITH_LEN(","));
             tx.append_ulonglong(xid->get_format_id());
           }
@@ -1105,19 +1141,17 @@ bool Transaction_state_tracker::store(THD *thd, String &buf) {
     }
 
     {
-      ulonglong length = tx.length(); // length of the string payload ...
+      ulonglong length = tx.length();  // length of the string payload ...
       /*
         We've set up the info string, now turn it into a proper tracker
         item we can send!
       */
-      length += net_length_size(length); // ... plus that of its length
+      length += net_length_size(length);  // ... plus that of its length
 
-      uchar *to =
-          (uchar *)buf.prep_append(net_length_size(length) + 1, EXTRA_ALLOC);
+      uchar *to = (uchar *)buf.prep_append(net_length_size(length) + 1, EXTRA_ALLOC);
 
       /* Session state type (SESSION_TRACK_TRANSACTION_CHARACTERISTICS) */
-      to = net_store_length(
-          (uchar *)to, (ulonglong)SESSION_TRACK_TRANSACTION_CHARACTERISTICS);
+      to = net_store_length((uchar *)to, (ulonglong)SESSION_TRACK_TRANSACTION_CHARACTERISTICS);
 
       /* Length of the overall entity. */
       to = net_store_length((uchar *)to, length);
@@ -1140,8 +1174,8 @@ bool Transaction_state_tracker::store(THD *thd, String &buf) {
   @return void
 */
 
-void Transaction_state_tracker::mark_as_changed(
-    THD *thd, LEX_CSTRING *tracked_item_name MY_ATTRIBUTE((unused))) {
+void Transaction_state_tracker::mark_as_changed(THD *thd, LEX_CSTRING *tracked_item_name MY_ATTRIBUTE((unused)))
+{
   m_changed = true;
 }
 
@@ -1151,7 +1185,8 @@ void Transaction_state_tracker::mark_as_changed(
   @return                   void
 */
 
-void Transaction_state_tracker::reset() {
+void Transaction_state_tracker::reset()
+{
   m_changed = false;
   tx_reported_state = tx_curr_state;
   tx_changed = TX_CHG_NONE;
@@ -1169,9 +1204,8 @@ void Transaction_state_tracker::reset() {
 
   @return                   The table access flag
 */
-enum_tx_state Transaction_state_tracker::calc_trx_state(THD *thd,
-                                                        thr_lock_type l,
-                                                        bool has_trx) {
+enum_tx_state Transaction_state_tracker::calc_trx_state(THD *thd, thr_lock_type l, bool has_trx)
+{
   enum_tx_state s;
   bool read = (l <= TL_READ_NO_INSERT);
 
@@ -1188,13 +1222,15 @@ enum_tx_state Transaction_state_tracker::calc_trx_state(THD *thd,
 
   @param thd [IN]           The thd handle
 */
-void Transaction_state_tracker::end_trx(THD *thd) {
+void Transaction_state_tracker::end_trx(THD *thd)
+{
   assert(thd->variables.session_track_transaction_info > TX_TRACK_NONE);
 
   if ((!m_enabled) || (thd->state_flags & Open_tables_state::BACKUPS_AVAIL))
     return;
 
-  if (tx_curr_state != TX_EMPTY) {
+  if (tx_curr_state != TX_EMPTY)
+  {
     if (tx_curr_state & TX_EXPLICIT)
       tx_changed |= TX_CHG_CHISTICS;
     tx_curr_state &= TX_LOCKED_TABLES;
@@ -1209,7 +1245,8 @@ void Transaction_state_tracker::end_trx(THD *thd) {
   @param thd [IN]           The thd handle.
   @param set [IN]           The flags to clear
 */
-void Transaction_state_tracker::clear_trx_state(THD *thd, uint clear) {
+void Transaction_state_tracker::clear_trx_state(THD *thd, uint clear)
+{
   if ((!m_enabled) || (thd->state_flags & Open_tables_state::BACKUPS_AVAIL))
     return;
 
@@ -1225,11 +1262,13 @@ void Transaction_state_tracker::clear_trx_state(THD *thd, uint clear) {
   @param thd [IN]           The thd handle.
   @param set [IN]           The flags to add
 */
-void Transaction_state_tracker::add_trx_state(THD *thd, uint add) {
+void Transaction_state_tracker::add_trx_state(THD *thd, uint add)
+{
   if ((!m_enabled) || (thd->state_flags & Open_tables_state::BACKUPS_AVAIL))
     return;
 
-  if (add == TX_EXPLICIT) {
+  if (add == TX_EXPLICIT)
+  {
     /*
       Always send chistics item (if tracked), always replace state.
     */
@@ -1241,10 +1280,8 @@ void Transaction_state_tracker::add_trx_state(THD *thd, uint add) {
     If we're not in an implicit or explicit transaction, but
     autocommit==0 and tables are accessed, we flag "implicit transaction."
   */
-  else if (!(tx_curr_state & (TX_EXPLICIT | TX_IMPLICIT)) &&
-           (thd->variables.option_bits & OPTION_NOT_AUTOCOMMIT) &&
-           (add &
-            (TX_READ_TRX | TX_READ_UNSAFE | TX_WRITE_TRX | TX_WRITE_UNSAFE)))
+  else if (!(tx_curr_state & (TX_EXPLICIT | TX_IMPLICIT)) && (thd->variables.option_bits & OPTION_NOT_AUTOCOMMIT) &&
+           (add & (TX_READ_TRX | TX_READ_UNSAFE | TX_WRITE_TRX | TX_WRITE_UNSAFE)))
     tx_curr_state |= TX_IMPLICIT;
 
   /*
@@ -1262,8 +1299,10 @@ void Transaction_state_tracker::add_trx_state(THD *thd, uint add) {
   @param thd [IN]           The thd handle.
   @param set [IN]           The flags to add
 */
-void Transaction_state_tracker::add_trx_state_from_thd(THD *thd) {
-  if (m_enabled) {
+void Transaction_state_tracker::add_trx_state_from_thd(THD *thd)
+{
+  if (m_enabled)
+  {
     if (thd->lex->is_stmt_unsafe())
       add_trx_state(thd, TX_STMT_UNSAFE);
 
@@ -1278,9 +1317,10 @@ void Transaction_state_tracker::add_trx_state_from_thd(THD *thd) {
   @param thd [IN]           The thd handle.
   @param set [IN]           The flags to set
 */
-void Transaction_state_tracker::set_read_flags(THD *thd,
-                                               enum enum_tx_read_flags flags) {
-  if (m_enabled && (tx_read_flags != flags)) {
+void Transaction_state_tracker::set_read_flags(THD *thd, enum enum_tx_read_flags flags)
+{
+  if (m_enabled && (tx_read_flags != flags))
+  {
     tx_read_flags = flags;
     tx_changed |= TX_CHG_CHISTICS;
     mark_as_changed(thd, NULL);
@@ -1293,9 +1333,10 @@ void Transaction_state_tracker::set_read_flags(THD *thd,
   @param thd [IN]           The thd handle.
   @param set [IN]           The isolation level to set
 */
-void Transaction_state_tracker::set_isol_level(THD *thd,
-                                               enum enum_tx_isol_level level) {
-  if (m_enabled && (tx_isol_level != level)) {
+void Transaction_state_tracker::set_isol_level(THD *thd, enum enum_tx_isol_level level)
+{
+  if (m_enabled && (tx_isol_level != level))
+  {
     tx_isol_level = level;
     tx_changed |= TX_CHG_CHISTICS;
     mark_as_changed(thd, NULL);
@@ -1305,9 +1346,7 @@ void Transaction_state_tracker::set_isol_level(THD *thd,
 ///////////////////////////////////////////////////////////////////////////////
 
 /** Constructor */
-Session_state_change_tracker::Session_state_change_tracker() {
-  m_changed = false;
-}
+Session_state_change_tracker::Session_state_change_tracker() { m_changed = false; }
 
 /**
   @brief Initiate the value of m_enabled based on
@@ -1318,7 +1357,8 @@ Session_state_change_tracker::Session_state_change_tracker() {
 
 **/
 
-bool Session_state_change_tracker::enable(THD *thd) {
+bool Session_state_change_tracker::enable(THD *thd)
+{
   m_enabled = (thd->variables.session_track_state_change) ? true : false;
   return false;
 }
@@ -1347,7 +1387,8 @@ bool Session_state_change_tracker::update(THD *thd) { return enable(thd); }
     true                    Error
 **/
 
-bool Session_state_change_tracker::store(THD *thd, String &buf) {
+bool Session_state_change_tracker::store(THD *thd, String &buf)
+{
   /* since its a boolean tracker length is always 1 */
   const ulonglong length = 1;
 
@@ -1378,14 +1419,14 @@ bool Session_state_change_tracker::store(THD *thd, String &buf) {
   @return void
 */
 
-void Session_state_change_tracker::mark_as_changed(
-    THD *thd, LEX_CSTRING *tracked_item_name) {
+void Session_state_change_tracker::mark_as_changed(THD *thd, LEX_CSTRING *tracked_item_name)
+{
   /* do not send the boolean flag for the tracker itself
      in the OK packet */
-  if (tracked_item_name &&
-      (strncmp(tracked_item_name->str, "session_track_state_change", 26) == 0))
+  if (tracked_item_name && (strncmp(tracked_item_name->str, "session_track_state_change", 26) == 0))
     m_changed = false;
-  else {
+  else
+  {
     m_changed = true;
     thd->lex->safe_to_cache_query = 0;
   }
@@ -1407,9 +1448,7 @@ void Session_state_change_tracker::reset() { m_changed = false; }
   false - if there is no session state change
 **/
 
-bool Session_state_change_tracker::is_state_changed(THD *thd) {
-  return m_changed;
-}
+bool Session_state_change_tracker::is_state_changed(THD *thd) { return m_changed; }
 
 ///////////////////////////////////////////////////////////////////////////////
 
@@ -1421,21 +1460,18 @@ bool Session_state_change_tracker::is_state_changed(THD *thd) {
   @return                   void
 */
 
-void Session_tracker::init(const CHARSET_INFO *char_set) {
-  m_trackers[SESSION_SYSVARS_TRACKER] =
-      new (std::nothrow) Session_sysvars_tracker(char_set);
-  m_trackers[CURRENT_SCHEMA_TRACKER] =
-      new (std::nothrow) Current_schema_tracker;
-  m_trackers[SESSION_STATE_CHANGE_TRACKER] =
-      new (std::nothrow) Session_state_change_tracker;
+void Session_tracker::init(const CHARSET_INFO *char_set)
+{
+  m_trackers[SESSION_SYSVARS_TRACKER] = new (std::nothrow) Session_sysvars_tracker(char_set);
+  m_trackers[CURRENT_SCHEMA_TRACKER] = new (std::nothrow) Current_schema_tracker;
+  m_trackers[SESSION_STATE_CHANGE_TRACKER] = new (std::nothrow) Session_state_change_tracker;
   m_trackers[SESSION_GTIDS_TRACKER] = new (std::nothrow) Session_gtids_tracker;
-  m_trackers[TRANSACTION_INFO_TRACKER] =
-      new (std::nothrow) Transaction_state_tracker;
+  m_trackers[TRANSACTION_INFO_TRACKER] = new (std::nothrow) Transaction_state_tracker;
 }
 
-void Session_tracker::claim_memory_ownership() {
-  for (int i = 0; i <= SESSION_TRACKER_END; i++)
-    m_trackers[i]->claim_memory_ownership();
+void Session_tracker::claim_memory_ownership()
+{
+  for (int i = 0; i <= SESSION_TRACKER_END; i++) m_trackers[i]->claim_memory_ownership();
 }
 
 /**
@@ -1445,9 +1481,9 @@ void Session_tracker::claim_memory_ownership() {
 
   @return            void
 */
-void Session_tracker::enable(THD *thd) {
-  for (int i = 0; i <= SESSION_TRACKER_END; i++)
-    m_trackers[i]->enable(thd);
+void Session_tracker::enable(THD *thd)
+{
+  for (int i = 0; i <= SESSION_TRACKER_END; i++) m_trackers[i]->enable(thd);
 }
 
 /**
@@ -1460,8 +1496,8 @@ void Session_tracker::enable(THD *thd) {
   @return   false           Success
             true            failure
 */
-bool Session_tracker::server_boot_verify(const CHARSET_INFO *char_set,
-                                         LEX_STRING var_list) {
+bool Session_tracker::server_boot_verify(const CHARSET_INFO *char_set, LEX_STRING var_list)
+{
   Session_sysvars_tracker *server_tracker;
   bool result;
   server_tracker = new (std::nothrow) Session_sysvars_tracker(char_set);
@@ -1478,10 +1514,7 @@ bool Session_tracker::server_boot_verify(const CHARSET_INFO *char_set,
   @return                   Pointer to the tracker object.
 */
 
-State_tracker *
-Session_tracker::get_tracker(enum_session_tracker tracker) const {
-  return m_trackers[tracker];
-}
+State_tracker *Session_tracker::get_tracker(enum_session_tracker tracker) const { return m_trackers[tracker]; }
 
 /**
   @brief Checks if m_enabled flag is set for any of the tracker objects.
@@ -1492,8 +1525,10 @@ Session_tracker::get_tracker(enum_session_tracker tracker) const {
 
 */
 
-bool Session_tracker::enabled_any() {
-  for (int i = 0; i <= SESSION_TRACKER_END; i++) {
+bool Session_tracker::enabled_any()
+{
+  for (int i = 0; i <= SESSION_TRACKER_END; i++)
+  {
     if (m_trackers[i]->is_enabled())
       return true;
   }
@@ -1509,8 +1544,10 @@ bool Session_tracker::enabled_any() {
     false                   None of the entities being tracked has changed.
 */
 
-bool Session_tracker::changed_any() {
-  for (int i = 0; i <= SESSION_TRACKER_END; i++) {
+bool Session_tracker::changed_any()
+{
+  for (int i = 0; i <= SESSION_TRACKER_END; i++)
+  {
     if (m_trackers[i]->is_changed())
       return true;
   }
@@ -1527,13 +1564,15 @@ bool Session_tracker::changed_any() {
   @return                   void
 */
 
-void Session_tracker::store(THD *thd, String &buf) {
+void Session_tracker::store(THD *thd, String &buf)
+{
   /* Temporary buffer to store all the changes. */
   String temp;
   size_t length;
 
   /* Get total length. */
-  for (int i = 0; i <= SESSION_TRACKER_END; i++) {
+  for (int i = 0; i <= SESSION_TRACKER_END; i++)
+  {
     if (m_trackers[i]->is_changed())
       m_trackers[i]->store(thd, temp);
   }
@@ -1559,14 +1598,13 @@ void Session_tracker::store(THD *thd, String &buf) {
   @return                   void.
 */
 
-static void store_lenenc_string(String &to, const char *from, size_t length) {
+static void store_lenenc_string(String &to, const char *from, size_t length)
+{
   char *ptr;
   ptr = to.prep_append(net_length_size(length), EXTRA_ALLOC);
-  DBUG_EXECUTE_IF("session_tracker_store_lenenc_string_add1M",
-                  length += 1000000L;);
+  DBUG_EXECUTE_IF("session_tracker_store_lenenc_string_add1M", length += 1000000L;);
   net_store_length((uchar *)ptr, length);
-  DBUG_EXECUTE_IF("session_tracker_store_lenenc_string_add1M",
-                  length -= 1000000L;);
+  DBUG_EXECUTE_IF("session_tracker_store_lenenc_string_add1M", length -= 1000000L;);
   net_store_length((uchar *)ptr, length);
   to.append(from, length);
 }
@@ -1580,7 +1618,8 @@ static void store_lenenc_string(String &to, const char *from, size_t length) {
     false (always)
 */
 
-bool Session_gtids_tracker::update(THD *thd) {
+bool Session_gtids_tracker::update(THD *thd)
+{
   /*
     We are updating this using the previous value. No change needed.
     Bailing out.
@@ -1591,13 +1630,14 @@ bool Session_gtids_tracker::update(THD *thd) {
   m_enabled = thd->variables.session_track_gtids != OFF &&
               /* No need to track GTIDs for system threads. */
               thd->system_thread == NON_SYSTEM_THREAD;
-  if (m_enabled) {
+  if (m_enabled)
+  {
     // register to listen to gtids context state changes
-    thd->rpl_thd_ctx.session_gtids_ctx().register_ctx_change_listener(this,
-                                                                      thd);
+    thd->rpl_thd_ctx.session_gtids_ctx().register_ctx_change_listener(this, thd);
 
     // instantiate the encoder if needed
-    if (m_encoder == NULL) {
+    if (m_encoder == NULL)
+    {
       /*
        TODO: in the future, there can be a variable to control which
        encoder instance to instantiate here.
@@ -1628,7 +1668,8 @@ bool Session_gtids_tracker::update(THD *thd) {
     true                    Error
 */
 
-bool Session_gtids_tracker::store(THD *thd, String &buf) {
+bool Session_gtids_tracker::store(THD *thd, String &buf)
+{
   if (m_encoder && m_encoder->encode(thd, buf))
     return true;
   reset();
@@ -1645,8 +1686,8 @@ bool Session_gtids_tracker::store(THD *thd, String &buf) {
 */
 
 void Session_gtids_tracker::mark_as_changed(THD *thd MY_ATTRIBUTE((unused)),
-                                            LEX_CSTRING *tracked_item_name
-                                                MY_ATTRIBUTE((unused))) {
+                                            LEX_CSTRING *tracked_item_name MY_ATTRIBUTE((unused)))
+{
   m_changed = true;
 }
 
@@ -1656,18 +1697,19 @@ void Session_gtids_tracker::mark_as_changed(THD *thd MY_ATTRIBUTE((unused)),
   @return                   void
 */
 
-void Session_gtids_tracker::reset() {
+void Session_gtids_tracker::reset()
+{
   /*
    Delete the encoder and remove the listener if this had been previously
    deactivated.
    */
-  if (!m_enabled && m_encoder) {
+  if (!m_enabled && m_encoder)
+  {
     /* No need to listen to gtids context state changes */
-    current_thd->rpl_thd_ctx.session_gtids_ctx().unregister_ctx_change_listener(
-        this);
+    current_thd->rpl_thd_ctx.session_gtids_ctx().unregister_ctx_change_listener(this);
 
     // delete the encoder (just to free memory)
-    delete m_encoder; // if not tracking, delete the encoder
+    delete m_encoder;  // if not tracking, delete the encoder
     m_encoder = NULL;
   }
   m_changed = false;

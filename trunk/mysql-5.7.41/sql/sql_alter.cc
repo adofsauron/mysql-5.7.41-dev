@@ -22,27 +22,27 @@
 
 #include "sql_alter.h"
 
-#include "auth_common.h"                     // check_access
-#include "sql_table.h"                       // mysql_alter_table,
-                                             // mysql_exchange_partition
-#include "sql_base.h"                        // open_temporary_tables
+#include "auth_common.h"  // check_access
+#include "sql_table.h"    // mysql_alter_table,
+                          // mysql_exchange_partition
+#include "sql_base.h"     // open_temporary_tables
 #include "log.h"
 
 bool has_external_data_or_index_dir(partition_info &pi);
 
 Alter_info::Alter_info(const Alter_info &rhs, MEM_ROOT *mem_root)
-  :drop_list(rhs.drop_list, mem_root),
-  alter_list(rhs.alter_list, mem_root),
-  key_list(rhs.key_list, mem_root),
-  alter_rename_key_list(rhs.alter_rename_key_list, mem_root),
-  create_list(rhs.create_list, mem_root),
-  flags(rhs.flags),
-  keys_onoff(rhs.keys_onoff),
-  partition_names(rhs.partition_names, mem_root),
-  num_parts(rhs.num_parts),
-  requested_algorithm(rhs.requested_algorithm),
-  requested_lock(rhs.requested_lock),
-  with_validation(rhs.with_validation)
+    : drop_list(rhs.drop_list, mem_root),
+      alter_list(rhs.alter_list, mem_root),
+      key_list(rhs.key_list, mem_root),
+      alter_rename_key_list(rhs.alter_rename_key_list, mem_root),
+      create_list(rhs.create_list, mem_root),
+      flags(rhs.flags),
+      keys_onoff(rhs.keys_onoff),
+      partition_names(rhs.partition_names, mem_root),
+      num_parts(rhs.num_parts),
+      requested_algorithm(rhs.requested_algorithm),
+      requested_lock(rhs.requested_lock),
+      with_validation(rhs.with_validation)
 {
   /*
     Make deep copies of used objects.
@@ -61,60 +61,63 @@ Alter_info::Alter_info(const Alter_info &rhs, MEM_ROOT *mem_root)
   /* partition_names are not deeply copied currently */
 }
 
-
 bool Alter_info::set_requested_algorithm(const LEX_STRING *str)
 {
   // To avoid adding new keywords to the grammar, we match strings here.
   if (!my_strcasecmp(system_charset_info, str->str, "INPLACE"))
-    requested_algorithm= ALTER_TABLE_ALGORITHM_INPLACE;
+    requested_algorithm = ALTER_TABLE_ALGORITHM_INPLACE;
   else if (!my_strcasecmp(system_charset_info, str->str, "COPY"))
-    requested_algorithm= ALTER_TABLE_ALGORITHM_COPY;
+    requested_algorithm = ALTER_TABLE_ALGORITHM_COPY;
   else if (!my_strcasecmp(system_charset_info, str->str, "DEFAULT"))
-    requested_algorithm= ALTER_TABLE_ALGORITHM_DEFAULT;
+    requested_algorithm = ALTER_TABLE_ALGORITHM_DEFAULT;
   else
     return true;
   return false;
 }
-
 
 bool Alter_info::set_requested_lock(const LEX_STRING *str)
 {
   // To avoid adding new keywords to the grammar, we match strings here.
   if (!my_strcasecmp(system_charset_info, str->str, "NONE"))
-    requested_lock= ALTER_TABLE_LOCK_NONE;
+    requested_lock = ALTER_TABLE_LOCK_NONE;
   else if (!my_strcasecmp(system_charset_info, str->str, "SHARED"))
-    requested_lock= ALTER_TABLE_LOCK_SHARED;
+    requested_lock = ALTER_TABLE_LOCK_SHARED;
   else if (!my_strcasecmp(system_charset_info, str->str, "EXCLUSIVE"))
-    requested_lock= ALTER_TABLE_LOCK_EXCLUSIVE;
+    requested_lock = ALTER_TABLE_LOCK_EXCLUSIVE;
   else if (!my_strcasecmp(system_charset_info, str->str, "DEFAULT"))
-    requested_lock= ALTER_TABLE_LOCK_DEFAULT;
+    requested_lock = ALTER_TABLE_LOCK_DEFAULT;
   else
     return true;
   return false;
 }
 
-
 Alter_table_ctx::Alter_table_ctx()
-  : datetime_field(NULL), error_if_not_empty(false),
-    tables_opened(0),
-    db(NULL), table_name(NULL), alias(NULL),
-    new_db(NULL), new_name(NULL), new_alias(NULL)
+    : datetime_field(NULL),
+      error_if_not_empty(false),
+      tables_opened(0),
+      db(NULL),
+      table_name(NULL),
+      alias(NULL),
+      new_db(NULL),
+      new_name(NULL),
+      new_alias(NULL)
 #ifndef NDEBUG
-    , tmp_table(false)
+      ,
+      tmp_table(false)
 #endif
 {
 }
 
-
-Alter_table_ctx::Alter_table_ctx(THD *thd, TABLE_LIST *table_list,
-                                 uint tables_opened_arg,
-                                 const char *new_db_arg,
+Alter_table_ctx::Alter_table_ctx(THD *thd, TABLE_LIST *table_list, uint tables_opened_arg, const char *new_db_arg,
                                  const char *new_name_arg)
-  : datetime_field(NULL), error_if_not_empty(false),
-    tables_opened(tables_opened_arg),
-    new_db(new_db_arg), new_name(new_name_arg)
+    : datetime_field(NULL),
+      error_if_not_empty(false),
+      tables_opened(tables_opened_arg),
+      new_db(new_db_arg),
+      new_name(new_name_arg)
 #ifndef NDEBUG
-    , tmp_table(false)
+      ,
+      tmp_table(false)
 #endif
 {
   /*
@@ -122,50 +125,48 @@ Alter_table_ctx::Alter_table_ctx(THD *thd, TABLE_LIST *table_list,
     to simplify further comparisions: we want to see if it's a RENAME
     later just by comparing the pointers, avoiding the need for strcmp.
   */
-  db= table_list->db;
-  table_name= table_list->table_name;
-  alias= (lower_case_table_names == 2) ? table_list->alias : table_name;
+  db = table_list->db;
+  table_name = table_list->table_name;
+  alias = (lower_case_table_names == 2) ? table_list->alias : table_name;
 
   if (!new_db || !my_strcasecmp(table_alias_charset, new_db, db))
-    new_db= db;
+    new_db = db;
 
   if (new_name)
   {
     DBUG_PRINT("info", ("new_db.new_name: '%s'.'%s'", new_db, new_name));
 
-    if (lower_case_table_names == 1) // Convert new_name/new_alias to lower case
+    if (lower_case_table_names == 1)  // Convert new_name/new_alias to lower case
     {
-      my_casedn_str(files_charset_info, const_cast<char*>(new_name));
-      new_alias= new_name;
+      my_casedn_str(files_charset_info, const_cast< char * >(new_name));
+      new_alias = new_name;
     }
-    else if (lower_case_table_names == 2) // Convert new_name to lower case
+    else if (lower_case_table_names == 2)  // Convert new_name to lower case
     {
       my_stpcpy(new_alias_buff, new_name);
-      new_alias= (const char*)new_alias_buff;
-      my_casedn_str(files_charset_info, const_cast<char*>(new_name));
+      new_alias = (const char *)new_alias_buff;
+      my_casedn_str(files_charset_info, const_cast< char * >(new_name));
     }
     else
-      new_alias= new_name; // LCTN=0 => case sensitive + case preserving
+      new_alias = new_name;  // LCTN=0 => case sensitive + case preserving
 
-    if (!is_database_changed() &&
-        !my_strcasecmp(table_alias_charset, new_name, table_name))
+    if (!is_database_changed() && !my_strcasecmp(table_alias_charset, new_name, table_name))
     {
       /*
         Source and destination table names are equal:
         make is_table_renamed() more efficient.
       */
-      new_alias= table_name;
-      new_name= table_name;
+      new_alias = table_name;
+      new_name = table_name;
     }
   }
   else
   {
-    new_alias= alias;
-    new_name= table_name;
+    new_alias = alias;
+    new_name = table_name;
   }
 
-  my_snprintf(tmp_name, sizeof(tmp_name), "%s-%lx_%x", tmp_file_prefix,
-              current_pid, thd->thread_id());
+  my_snprintf(tmp_name, sizeof(tmp_name), "%s-%lx_%x", tmp_file_prefix, current_pid, thd->thread_id());
   /* Safety fix for InnoDB */
   if (lower_case_table_names)
     my_casedn_str(files_charset_info, tmp_name);
@@ -176,11 +177,9 @@ Alter_table_ctx::Alter_table_ctx(THD *thd, TABLE_LIST *table_list,
 
     build_table_filename(new_path, sizeof(new_path) - 1, new_db, new_name, "", 0);
 
-    build_table_filename(new_filename, sizeof(new_filename) - 1,
-                         new_db, new_name, reg_ext, 0);
+    build_table_filename(new_filename, sizeof(new_filename) - 1, new_db, new_name, reg_ext, 0);
 
-    build_table_filename(tmp_path, sizeof(tmp_path) - 1, new_db, tmp_name, "",
-                         FN_IS_TMP);
+    build_table_filename(tmp_path, sizeof(tmp_path) - 1, new_db, tmp_name, "", FN_IS_TMP);
   }
   else
   {
@@ -191,19 +190,18 @@ Alter_table_ctx::Alter_table_ctx(THD *thd, TABLE_LIST *table_list,
     */
     build_tmptable_filename(thd, tmp_path, sizeof(tmp_path));
 #ifndef NDEBUG
-    tmp_table= true;
+    tmp_table = true;
 #endif
   }
 }
 
-
 bool Sql_cmd_alter_table::execute(THD *thd)
 {
-  LEX *lex= thd->lex;
+  LEX *lex = thd->lex;
   /* first SELECT_LEX (have special meaning for many of non-SELECTcommands) */
-  SELECT_LEX *select_lex= lex->select_lex;
+  SELECT_LEX *select_lex = lex->select_lex;
   /* first table of first SELECT_LEX */
-  TABLE_LIST *first_table= select_lex->get_table_list();
+  TABLE_LIST *first_table = select_lex->get_table_list();
   /*
     Code in mysql_alter_table() may modify its HA_CREATE_INFO argument,
     so we have to use a copy of this structure to make execution
@@ -213,8 +211,8 @@ bool Sql_cmd_alter_table::execute(THD *thd)
   */
   HA_CREATE_INFO create_info(lex->create_info);
   Alter_info alter_info(lex->alter_info, thd->mem_root);
-  ulong priv=0;
-  ulong priv_needed= ALTER_ACL;
+  ulong priv = 0;
+  ulong priv_needed = ALTER_ACL;
   bool result;
 
   DBUG_ENTER("Sql_cmd_alter_table::execute");
@@ -223,7 +221,7 @@ bool Sql_cmd_alter_table::execute(THD *thd)
     DBUG_RETURN(TRUE);
 
   {
-    partition_info *part_info= thd->lex->part_info;
+    partition_info *part_info = thd->lex->part_info;
     if (part_info != NULL && has_external_data_or_index_dir(*part_info) &&
         check_access(thd, FILE_ACL, any_db, NULL, NULL, FALSE, FALSE))
 
@@ -233,23 +231,19 @@ bool Sql_cmd_alter_table::execute(THD *thd)
     We also require DROP priv for ALTER TABLE ... DROP PARTITION, as well
     as for RENAME TO, as being done by SQLCOM_RENAME_TABLE
   */
-  if (alter_info.flags & (Alter_info::ALTER_DROP_PARTITION |
-                          Alter_info::ALTER_RENAME))
-    priv_needed|= DROP_ACL;
+  if (alter_info.flags & (Alter_info::ALTER_DROP_PARTITION | Alter_info::ALTER_RENAME))
+    priv_needed |= DROP_ACL;
 
   /* Must be set in the parser */
   assert(select_lex->db);
   assert(!(alter_info.flags & Alter_info::ALTER_EXCHANGE_PARTITION));
   assert(!(alter_info.flags & Alter_info::ALTER_ADMIN_PARTITION));
-  if (check_access(thd, priv_needed, first_table->db,
-                   &first_table->grant.privilege,
-                   &first_table->grant.m_internal,
-                   0, 0) ||
-      check_access(thd, INSERT_ACL | CREATE_ACL, select_lex->db,
-                   &priv,
+  if (check_access(thd, priv_needed, first_table->db, &first_table->grant.privilege, &first_table->grant.m_internal, 0,
+                   0) ||
+      check_access(thd, INSERT_ACL | CREATE_ACL, select_lex->db, &priv,
                    NULL, /* Don't use first_tab->grant with sel_lex->db */
                    0, 0))
-    DBUG_RETURN(TRUE);                  /* purecov: inspected */
+    DBUG_RETURN(TRUE); /* purecov: inspected */
 
   /* If it is a merge table, check privileges for merge children. */
   if (create_info.merge_list.first)
@@ -272,7 +266,7 @@ bool Sql_cmd_alter_table::execute(THD *thd)
           In other words, once a merge table is created, the privileges of
           the underlying tables can be revoked, but the user will still have
           access to the merge table (provided that the user has privileges on
-          the merge table itself). 
+          the merge table itself).
 
         - Temporary tables shadow base tables.
 
@@ -289,39 +283,35 @@ bool Sql_cmd_alter_table::execute(THD *thd)
       Bug#12771903.
     */
 
-    if (check_table_access(thd, SELECT_ACL | UPDATE_ACL | DELETE_ACL,
-                           create_info.merge_list.first, FALSE, UINT_MAX, FALSE))
+    if (check_table_access(thd, SELECT_ACL | UPDATE_ACL | DELETE_ACL, create_info.merge_list.first, FALSE, UINT_MAX,
+                           FALSE))
       DBUG_RETURN(TRUE);
   }
 
   if (check_grant(thd, priv_needed, first_table, FALSE, UINT_MAX, FALSE))
-    DBUG_RETURN(TRUE);                  /* purecov: inspected */
+    DBUG_RETURN(TRUE); /* purecov: inspected */
 
   if (lex->name.str && !test_all_bits(priv, INSERT_ACL | CREATE_ACL))
   {
     // Rename of table
     TABLE_LIST tmp_table;
 
-    tmp_table.table_name= lex->name.str;
-    tmp_table.db= select_lex->db;
-    tmp_table.grant.privilege= priv;
-    if (check_grant(thd, INSERT_ACL | CREATE_ACL, &tmp_table, FALSE,
-                    UINT_MAX, FALSE))
-      DBUG_RETURN(TRUE);                  /* purecov: inspected */
+    tmp_table.table_name = lex->name.str;
+    tmp_table.db = select_lex->db;
+    tmp_table.grant.privilege = priv;
+    if (check_grant(thd, INSERT_ACL | CREATE_ACL, &tmp_table, FALSE, UINT_MAX, FALSE))
+      DBUG_RETURN(TRUE); /* purecov: inspected */
   }
 
   /* Don't yet allow changing of symlinks with ALTER TABLE */
   if (create_info.data_file_name)
-    push_warning_printf(thd, Sql_condition::SL_WARNING,
-                        WARN_OPTION_IGNORED, ER(WARN_OPTION_IGNORED),
-                        "DATA DIRECTORY");
+    push_warning_printf(thd, Sql_condition::SL_WARNING, WARN_OPTION_IGNORED, ER(WARN_OPTION_IGNORED), "DATA DIRECTORY");
   if (create_info.index_file_name)
-    push_warning_printf(thd, Sql_condition::SL_WARNING,
-                        WARN_OPTION_IGNORED, ER(WARN_OPTION_IGNORED),
+    push_warning_printf(thd, Sql_condition::SL_WARNING, WARN_OPTION_IGNORED, ER(WARN_OPTION_IGNORED),
                         "INDEX DIRECTORY");
-  create_info.data_file_name= create_info.index_file_name= NULL;
+  create_info.data_file_name = create_info.index_file_name = NULL;
 
-  thd->enable_slow_log= opt_log_slow_admin_statements;
+  thd->enable_slow_log = opt_log_slow_admin_statements;
 
   /* Push Strict_error_handler for alter table*/
   Strict_error_handler strict_handler;
@@ -330,8 +320,7 @@ bool Sql_cmd_alter_table::execute(THD *thd)
 
   Partition_in_shared_ts_error_handler partition_in_shared_ts_handler;
   thd->push_internal_handler(&partition_in_shared_ts_handler);
-  result= mysql_alter_table(thd, select_lex->db, lex->name.str,
-                            &create_info, first_table, &alter_info);
+  result = mysql_alter_table(thd, select_lex->db, lex->name.str, &create_info, first_table, &alter_info);
   thd->pop_internal_handler();
 
   if (!thd->lex->is_ignore() && thd->is_strict_mode())
@@ -339,24 +328,20 @@ bool Sql_cmd_alter_table::execute(THD *thd)
   DBUG_RETURN(result);
 }
 
-
 bool Sql_cmd_discard_import_tablespace::execute(THD *thd)
 {
   /* first SELECT_LEX (have special meaning for many of non-SELECTcommands) */
-  SELECT_LEX *select_lex= thd->lex->select_lex;
+  SELECT_LEX *select_lex = thd->lex->select_lex;
   /* first table of first SELECT_LEX */
-  TABLE_LIST *table_list= select_lex->get_table_list();
+  TABLE_LIST *table_list = select_lex->get_table_list();
 
-  if (check_access(thd, ALTER_ACL, table_list->db,
-                   &table_list->grant.privilege,
-                   &table_list->grant.m_internal,
-                   0, 0))
+  if (check_access(thd, ALTER_ACL, table_list->db, &table_list->grant.privilege, &table_list->grant.m_internal, 0, 0))
     return true;
 
   if (check_grant(thd, ALTER_ACL, table_list, false, UINT_MAX, false))
     return true;
 
-  thd->enable_slow_log= opt_log_slow_admin_statements;
+  thd->enable_slow_log = opt_log_slow_admin_statements;
 
   /*
     Check if we attempt to alter mysql.slow_log or
@@ -364,8 +349,7 @@ bool Sql_cmd_discard_import_tablespace::execute(THD *thd)
     it is the case.
     TODO: this design is obsolete and will be removed.
   */
-  enum_log_table_type table_kind=
-    query_logger.check_if_log_table(table_list, false);
+  enum_log_table_type table_kind = query_logger.check_if_log_table(table_list, false);
 
   if (table_kind != QUERY_LOG_NONE)
   {
@@ -383,7 +367,5 @@ bool Sql_cmd_discard_import_tablespace::execute(THD *thd)
   */
   thd->add_to_binlog_accessed_dbs(table_list->db);
 
-  return
-    mysql_discard_or_import_tablespace(thd, table_list,
-                                       m_tablespace_op == DISCARD_TABLESPACE);
+  return mysql_discard_or_import_tablespace(thd, table_list, m_tablespace_op == DISCARD_TABLESPACE);
 }

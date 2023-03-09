@@ -22,18 +22,17 @@
 
 #include "sql_truncate.h"
 
-#include "debug_sync.h"  // DEBUG_SYNC
-#include "table.h"       // TABLE, FOREIGN_KEY_INFO
-#include "sql_class.h"   // THD
-#include "sql_base.h"    // open_and_lock_tables
-#include "sql_table.h"   // write_bin_log
-#include "datadict.h"    // dd_recreate_table()
-#include "lock.h"        // MYSQL_OPEN_* flags
-#include "auth_common.h" // DROP_ACL
-#include "sql_parse.h"   // check_one_table_access()
-#include "sql_show.h"    //append_identifier()
+#include "debug_sync.h"   // DEBUG_SYNC
+#include "table.h"        // TABLE, FOREIGN_KEY_INFO
+#include "sql_class.h"    // THD
+#include "sql_base.h"     // open_and_lock_tables
+#include "sql_table.h"    // write_bin_log
+#include "datadict.h"     // dd_recreate_table()
+#include "lock.h"         // MYSQL_OPEN_* flags
+#include "auth_common.h"  // DROP_ACL
+#include "sql_parse.h"    // check_one_table_access()
+#include "sql_show.h"     //append_identifier()
 #include "sql_audit.h"
-
 
 /**
   Append a list of field names to a string.
@@ -44,16 +43,16 @@
   @return TRUE on failure, FALSE otherwise.
 */
 
-static bool fk_info_append_fields(String *str, List<LEX_STRING> *fields)
+static bool fk_info_append_fields(String *str, List< LEX_STRING > *fields)
 {
-  bool res= FALSE;
+  bool res = FALSE;
   LEX_STRING *field;
-  List_iterator_fast<LEX_STRING> it(*fields);
+  List_iterator_fast< LEX_STRING > it(*fields);
 
-  while ((field= it++))
+  while ((field = it++))
   {
     append_identifier(NULL, str, field->str, field->length);
-    res|= str->append(", ");
+    res |= str->append(", ");
   }
 
   str->chop();
@@ -61,7 +60,6 @@ static bool fk_info_append_fields(String *str, List<LEX_STRING> *fields)
 
   return res;
 }
-
 
 /**
   Generate a foreign key description suitable for a error message.
@@ -74,8 +72,8 @@ static bool fk_info_append_fields(String *str, List<LEX_STRING> *fields)
 
 static const char *fk_info_str(THD *thd, FOREIGN_KEY_INFO *fk_info)
 {
-  bool res= FALSE;
-  char buffer[STRING_BUFFER_USUAL_SIZE*2];
+  bool res = FALSE;
+  char buffer[STRING_BUFFER_USUAL_SIZE * 2];
   String str(buffer, sizeof(buffer), system_charset_info);
 
   str.length(0);
@@ -84,29 +82,23 @@ static const char *fk_info_str(THD *thd, FOREIGN_KEY_INFO *fk_info)
     `db`.`tbl`, CONSTRAINT `id` FOREIGN KEY (`fk`) REFERENCES `db`.`tbl` (`fk`)
   */
 
-  append_identifier(NULL, &str, fk_info->foreign_db->str,
-                    fk_info->foreign_db->length);
-  res|= str.append(".");
-  append_identifier(NULL, &str, fk_info->foreign_table->str,
-                    fk_info->foreign_table->length);
-  res|= str.append(", CONSTRAINT ");
-  append_identifier(NULL, &str, fk_info->foreign_id->str,
-                    fk_info->foreign_id->length);
-  res|= str.append(" FOREIGN KEY (");
-  res|= fk_info_append_fields(&str, &fk_info->foreign_fields);
-  res|= str.append(") REFERENCES ");
-  append_identifier(NULL, &str, fk_info->referenced_db->str,
-                    fk_info->referenced_db->length);
-  res|= str.append(".");
-  append_identifier(NULL, &str, fk_info->referenced_table->str,
-                    fk_info->referenced_table->length);
-  res|= str.append(" (");
-  res|= fk_info_append_fields(&str, &fk_info->referenced_fields);
-  res|= str.append(')');
+  append_identifier(NULL, &str, fk_info->foreign_db->str, fk_info->foreign_db->length);
+  res |= str.append(".");
+  append_identifier(NULL, &str, fk_info->foreign_table->str, fk_info->foreign_table->length);
+  res |= str.append(", CONSTRAINT ");
+  append_identifier(NULL, &str, fk_info->foreign_id->str, fk_info->foreign_id->length);
+  res |= str.append(" FOREIGN KEY (");
+  res |= fk_info_append_fields(&str, &fk_info->foreign_fields);
+  res |= str.append(") REFERENCES ");
+  append_identifier(NULL, &str, fk_info->referenced_db->str, fk_info->referenced_db->length);
+  res |= str.append(".");
+  append_identifier(NULL, &str, fk_info->referenced_table->str, fk_info->referenced_table->length);
+  res |= str.append(" (");
+  res |= fk_info_append_fields(&str, &fk_info->referenced_fields);
+  res |= str.append(')');
 
   return res ? NULL : thd->strmake(str.ptr(), str.length());
 }
-
 
 /**
   Check and emit a fatal error if the table which is going to be
@@ -125,18 +117,17 @@ static const char *fk_info_str(THD *thd, FOREIGN_KEY_INFO *fk_info)
                  error was emitted.
 */
 
-static bool
-fk_truncate_illegal_if_parent(THD *thd, TABLE *table)
+static bool fk_truncate_illegal_if_parent(THD *thd, TABLE *table)
 {
   FOREIGN_KEY_INFO *fk_info;
-  List<FOREIGN_KEY_INFO> fk_list;
-  List_iterator_fast<FOREIGN_KEY_INFO> it;
+  List< FOREIGN_KEY_INFO > fk_list;
+  List_iterator_fast< FOREIGN_KEY_INFO > it;
 
   /*
     Bail out early if the table is not referenced by a foreign key.
     In this case, the table could only be, if at all, a child table.
   */
-  if (! table->file->referenced_by_foreign_key())
+  if (!table->file->referenced_by_foreign_key())
     return FALSE;
 
   /*
@@ -154,20 +145,14 @@ fk_truncate_illegal_if_parent(THD *thd, TABLE *table)
   it.init(fk_list);
 
   /* Loop over the set of foreign keys for which this table is a parent. */
-  while ((fk_info= it++))
+  while ((fk_info = it++))
   {
-    assert(!my_strcasecmp(system_charset_info,
-                          fk_info->referenced_db->str,
-                          table->s->db.str));
+    assert(!my_strcasecmp(system_charset_info, fk_info->referenced_db->str, table->s->db.str));
 
-    assert(!my_strcasecmp(system_charset_info,
-                          fk_info->referenced_table->str,
-                          table->s->table_name.str));
+    assert(!my_strcasecmp(system_charset_info, fk_info->referenced_table->str, table->s->table_name.str));
 
-    if (my_strcasecmp(system_charset_info, fk_info->foreign_db->str,
-                      table->s->db.str) ||
-        my_strcasecmp(system_charset_info, fk_info->foreign_table->str,
-                      table->s->table_name.str))
+    if (my_strcasecmp(system_charset_info, fk_info->foreign_db->str, table->s->db.str) ||
+        my_strcasecmp(system_charset_info, fk_info->foreign_table->str, table->s->table_name.str))
       break;
   }
 
@@ -180,7 +165,6 @@ fk_truncate_illegal_if_parent(THD *thd, TABLE *table)
 
   return FALSE;
 }
-
 
 /*
   Open and truncate a locked table.
@@ -199,12 +183,11 @@ fk_truncate_illegal_if_parent(THD *thd, TABLE *table)
                         binlong the statement.
 */
 
-enum Sql_cmd_truncate_table::truncate_result
-Sql_cmd_truncate_table::handler_truncate(THD *thd, TABLE_LIST *table_ref,
-                                             bool is_tmp_table)
+enum Sql_cmd_truncate_table::truncate_result Sql_cmd_truncate_table::handler_truncate(THD *thd, TABLE_LIST *table_ref,
+                                                                                      bool is_tmp_table)
 {
-  int error= 0;
-  uint flags= 0;
+  int error = 0;
+  uint flags = 0;
   DBUG_ENTER("Sql_cmd_truncate_table::handler_truncate");
 
   /*
@@ -222,13 +205,13 @@ Sql_cmd_truncate_table::handler_truncate(THD *thd, TABLE_LIST *table_ref,
       or writing into the table. Yet, to open a write cursor we need
       a thr_lock lock. Allow to open base tables only.
     */
-    table_ref->required_type= FRMTYPE_TABLE;
+    table_ref->required_type = FRMTYPE_TABLE;
     /*
       Ignore pending FLUSH TABLES since we don't want to release
       the MDL lock taken above and otherwise there is no way to
       wait for FLUSH TABLES in deadlock-free fashion.
     */
-    flags= MYSQL_OPEN_IGNORE_FLUSH;
+    flags = MYSQL_OPEN_IGNORE_FLUSH;
     /*
       Even though we have an MDL lock on the table here, we don't
       pass MYSQL_OPEN_HAS_MDL_LOCK to open_and_lock_tables
@@ -236,7 +219,7 @@ Sql_cmd_truncate_table::handler_truncate(THD *thd, TABLE_LIST *table_ref,
       merge children, and on those we don't have an MDL lock.
       Thus clear the ticket to satisfy MDL asserts.
     */
-    table_ref->mdl_request.ticket= NULL;
+    table_ref->mdl_request.ticket = NULL;
   }
 
   /* Open the table as it will handle some required preparations. */
@@ -244,11 +227,11 @@ Sql_cmd_truncate_table::handler_truncate(THD *thd, TABLE_LIST *table_ref,
     DBUG_RETURN(TRUNCATE_FAILED_SKIP_BINLOG);
 
   /* Whether to truncate regardless of foreign keys. */
-  if (! (thd->variables.option_bits & OPTION_NO_FOREIGN_KEY_CHECKS))
+  if (!(thd->variables.option_bits & OPTION_NO_FOREIGN_KEY_CHECKS))
     if (fk_truncate_illegal_if_parent(thd, table_ref->table))
       DBUG_RETURN(TRUNCATE_FAILED_SKIP_BINLOG);
 
-  error= table_ref->table->file->ha_truncate();
+  error = table_ref->table->file->ha_truncate();
   if (error)
   {
     table_ref->table->file->print_error(error, MYF(0));
@@ -258,15 +241,13 @@ Sql_cmd_truncate_table::handler_truncate(THD *thd, TABLE_LIST *table_ref,
       donot binlog the statment. Only in non transactional engine we binlog
       inspite of errors.
      */
-    if (error == HA_ERR_WRONG_COMMAND ||
-        table_ref->table->file->has_transactions())
+    if (error == HA_ERR_WRONG_COMMAND || table_ref->table->file->has_transactions())
       DBUG_RETURN(TRUNCATE_FAILED_SKIP_BINLOG);
     else
       DBUG_RETURN(TRUNCATE_FAILED_BUT_BINLOG);
   }
   DBUG_RETURN(TRUNCATE_OK);
 }
-
 
 /*
   Close and recreate a temporary table. In case of success,
@@ -282,10 +263,10 @@ Sql_cmd_truncate_table::handler_truncate(THD *thd, TABLE_LIST *table_ref,
 
 static bool recreate_temporary_table(THD *thd, TABLE *table)
 {
-  bool error= TRUE;
-  TABLE_SHARE *share= table->s;
+  bool error = TRUE;
+  TABLE_SHARE *share = table->s;
   HA_CREATE_INFO create_info;
-  handlerton *table_type= table->s->db_type();
+  handlerton *table_type = table->s->db_type();
   DBUG_ENTER("recreate_temporary_table");
 
   table->file->info(HA_STATUS_AUTO | HA_STATUS_NO_LOCK);
@@ -304,14 +285,12 @@ static bool recreate_temporary_table(THD *thd, TABLE *table)
     differs from what dd_recreate_table() would generate based
     on table and schema names.
   */
-  ha_create_table(thd, share->normalized_path.str, share->db.str,
-                  share->table_name.str, &create_info, true, true);
+  ha_create_table(thd, share->normalized_path.str, share->db.str, share->table_name.str, &create_info, true, true);
 
-  if (open_table_uncached(thd, share->path.str, share->db.str,
-                          share->table_name.str, true, true))
+  if (open_table_uncached(thd, share->path.str, share->db.str, share->table_name.str, true, true))
   {
-    error= FALSE;
-    thd->thread_specific_used= TRUE;
+    error = FALSE;
+    thd->thread_specific_used = TRUE;
   }
   else
     rm_temporary_table(table_type, share->path.str);
@@ -321,7 +300,6 @@ static bool recreate_temporary_table(THD *thd, TABLE *table)
 
   DBUG_RETURN(error);
 }
-
 
 /*
   Handle locking a base table for truncate.
@@ -336,10 +314,9 @@ static bool recreate_temporary_table(THD *thd, TABLE *table)
   @retval  TRUE   Error.
 */
 
-bool Sql_cmd_truncate_table::lock_table(THD *thd, TABLE_LIST *table_ref,
-                                        bool *hton_can_recreate)
+bool Sql_cmd_truncate_table::lock_table(THD *thd, TABLE_LIST *table_ref, bool *hton_can_recreate)
 {
-  TABLE *table= NULL;
+  TABLE *table = NULL;
   DBUG_ENTER("Sql_cmd_truncate_table::lock_table");
 
   /* Lock types are set in the parser. */
@@ -362,24 +339,20 @@ bool Sql_cmd_truncate_table::lock_table(THD *thd, TABLE_LIST *table_ref,
   */
   if (thd->locked_tables_mode)
   {
-    if (!(table= find_table_for_mdl_upgrade(thd, table_ref->db,
-                                            table_ref->table_name, FALSE)))
+    if (!(table = find_table_for_mdl_upgrade(thd, table_ref->db, table_ref->table_name, FALSE)))
       DBUG_RETURN(TRUE);
 
-    *hton_can_recreate= ha_check_storage_engine_flag(table->s->db_type(),
-                                                     HTON_CAN_RECREATE);
-    table_ref->mdl_request.ticket= table->mdl_ticket;
+    *hton_can_recreate = ha_check_storage_engine_flag(table->s->db_type(), HTON_CAN_RECREATE);
+    table_ref->mdl_request.ticket = table->mdl_ticket;
   }
   else
   {
     /* Acquire an exclusive lock. */
     assert(table_ref->next_global == NULL);
-    if (lock_table_names(thd, table_ref, NULL,
-                         thd->variables.lock_wait_timeout, 0))
+    if (lock_table_names(thd, table_ref, NULL, thd->variables.lock_wait_timeout, 0))
       DBUG_RETURN(TRUE);
 
-    if (dd_check_storage_engine_flag(thd, table_ref->db, table_ref->table_name,
-                                     HTON_CAN_RECREATE, hton_can_recreate))
+    if (dd_check_storage_engine_flag(thd, table_ref->db, table_ref->table_name, HTON_CAN_RECREATE, hton_can_recreate))
       DBUG_RETURN(TRUE);
   }
 
@@ -394,7 +367,7 @@ bool Sql_cmd_truncate_table::lock_table(THD *thd, TABLE_LIST *table_ref,
     /* To remove the table from the cache we need an exclusive lock. */
     if (wait_while_table_is_used(thd, table, HA_EXTRA_FORCE_REOPEN))
       DBUG_RETURN(TRUE);
-    m_ticket_downgrade= table->mdl_ticket;
+    m_ticket_downgrade = table->mdl_ticket;
     /* Close if table is going to be recreated. */
     if (*hton_can_recreate)
       close_all_tables_for_name(thd, table->s, false, NULL);
@@ -402,13 +375,11 @@ bool Sql_cmd_truncate_table::lock_table(THD *thd, TABLE_LIST *table_ref,
   else
   {
     /* Table is already locked exclusively. Remove cached instances. */
-    tdc_remove_table(thd, TDC_RT_REMOVE_ALL, table_ref->db,
-                     table_ref->table_name, FALSE);
+    tdc_remove_table(thd, TDC_RT_REMOVE_ALL, table_ref->db, table_ref->table_name, FALSE);
   }
 
   DBUG_RETURN(FALSE);
 }
-
 
 /*
   Optimized delete of all rows by doing a full generate of the table.
@@ -430,28 +401,26 @@ bool Sql_cmd_truncate_table::truncate_table(THD *thd, TABLE_LIST *table_ref)
   bool binlog_stmt;
   DBUG_ENTER("Sql_cmd_truncate_table::truncate_table");
 
-  assert((!table_ref->table) ||
-         (table_ref->table && table_ref->table->s));
+  assert((!table_ref->table) || (table_ref->table && table_ref->table->s));
 
   /* Initialize, or reinitialize in case of reexecution (SP). */
-  m_ticket_downgrade= NULL;
+  m_ticket_downgrade = NULL;
 
   /* If it is a temporary table, no need to take locks. */
   if (is_temporary_table(table_ref))
   {
-    TABLE *tmp_table= table_ref->table;
+    TABLE *tmp_table = table_ref->table;
 
     /* In RBR, the statement is not binlogged if the table is temporary. */
-    binlog_stmt= !thd->is_current_stmt_binlog_format_row();
+    binlog_stmt = !thd->is_current_stmt_binlog_format_row();
 
     /* Note that a temporary table cannot be partitioned. */
     if (ha_check_storage_engine_flag(tmp_table->s->db_type(), HTON_CAN_RECREATE))
     {
-      if ((error= recreate_temporary_table(thd, tmp_table)))
-        binlog_stmt= FALSE; /* No need to binlog failed truncate-by-recreate. */
+      if ((error = recreate_temporary_table(thd, tmp_table)))
+        binlog_stmt = FALSE; /* No need to binlog failed truncate-by-recreate. */
 
-      assert(! thd->get_transaction()->cannot_safely_rollback(
-                                                              Transaction_ctx::STMT));
+      assert(!thd->get_transaction()->cannot_safely_rollback(Transaction_ctx::STMT));
     }
     else
     {
@@ -461,7 +430,7 @@ bool Sql_cmd_truncate_table::truncate_table(THD *thd, TABLE_LIST *table_ref)
         can in fact open several tables if it's a temporary MyISAMMRG
         table.
       */
-      error= handler_truncate(thd, table_ref, TRUE);
+      error = handler_truncate(thd, table_ref, TRUE);
     }
 
     /*
@@ -493,17 +462,17 @@ bool Sql_cmd_truncate_table::truncate_table(THD *thd, TABLE_LIST *table_ref)
         DBUG_RETURN(true);
       }
 #endif /* !EMBEDDED_LIBRARY */
-     /*
-        The storage engine can truncate the table by creating an
-        empty table with the same structure.
-      */
-      error= dd_recreate_table(thd, table_ref->db, table_ref->table_name);
+       /*
+          The storage engine can truncate the table by creating an
+          empty table with the same structure.
+        */
+      error = dd_recreate_table(thd, table_ref->db, table_ref->table_name);
 
       if (thd->locked_tables_mode && thd->locked_tables_list.reopen_tables(thd))
-          thd->locked_tables_list.unlink_all_closed_tables(thd, NULL, 0);
+        thd->locked_tables_list.unlink_all_closed_tables(thd, NULL, 0);
 
       /* No need to binlog a failed truncate-by-recreate. */
-      binlog_stmt= !error;
+      binlog_stmt = !error;
     }
     else
     {
@@ -513,7 +482,7 @@ bool Sql_cmd_truncate_table::truncate_table(THD *thd, TABLE_LIST *table_ref)
         MYSQL_AUDIT_TABLE_ACCESS_READ audit event is generated when opening
         tables using open_tables function.
       */
-      error= handler_truncate(thd, table_ref, FALSE);
+      error = handler_truncate(thd, table_ref, FALSE);
 
       /*
         All effects of a TRUNCATE TABLE operation are committed even if
@@ -522,9 +491,9 @@ bool Sql_cmd_truncate_table::truncate_table(THD *thd, TABLE_LIST *table_ref)
         unimplemented truncate method.
       */
       if (error == TRUNCATE_OK || error == TRUNCATE_FAILED_BUT_BINLOG)
-        binlog_stmt= true;
+        binlog_stmt = true;
       else
-        binlog_stmt= false;
+        binlog_stmt = false;
     }
 
     /*
@@ -533,13 +502,13 @@ bool Sql_cmd_truncate_table::truncate_table(THD *thd, TABLE_LIST *table_ref)
       will be invalid. Reset the pointer here in any case as
       query_cache_invalidate does not need a valid TABLE object.
     */
-    table_ref->table= NULL;
+    table_ref->table = NULL;
     query_cache.invalidate(thd, table_ref, FALSE);
   }
 
   /* DDL is logged in statement format, regardless of binlog format. */
   if (binlog_stmt)
-    error|= write_bin_log(thd, !error, thd->query().str, thd->query().length);
+    error |= write_bin_log(thd, !error, thd->query().str, thd->query().length);
 
   /*
     A locked table ticket was upgraded to a exclusive lock. After the
@@ -552,7 +521,6 @@ bool Sql_cmd_truncate_table::truncate_table(THD *thd, TABLE_LIST *table_ref)
   DBUG_RETURN(error);
 }
 
-
 /**
   Execute a TRUNCATE statement at runtime.
 
@@ -562,16 +530,15 @@ bool Sql_cmd_truncate_table::truncate_table(THD *thd, TABLE_LIST *table_ref)
 */
 bool Sql_cmd_truncate_table::execute(THD *thd)
 {
-  bool res= TRUE;
-  TABLE_LIST *first_table= thd->lex->select_lex->table_list.first;
+  bool res = TRUE;
+  TABLE_LIST *first_table = thd->lex->select_lex->table_list.first;
   DBUG_ENTER("Sql_cmd_truncate_table::execute");
 
   if (check_one_table_access(thd, DROP_ACL, first_table))
     DBUG_RETURN(res);
 
-  if (! (res= truncate_table(thd, first_table)))
+  if (!(res = truncate_table(thd, first_table)))
     my_ok(thd);
 
   DBUG_RETURN(res);
 }
-

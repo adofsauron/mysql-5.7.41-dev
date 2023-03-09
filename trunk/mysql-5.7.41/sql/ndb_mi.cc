@@ -41,19 +41,18 @@
 
   So far the cluster replication only works with the default channel.
 */
-class Multisource_info_guard {
-  Multisource_info_guard(const Multisource_info_guard&);
-  Multisource_info_guard& operator=(const Multisource_info_guard&);
-public:
-  Multisource_info_guard()
-  {
-    channel_map.rdlock();
-  }
+class Multisource_info_guard
+{
+  Multisource_info_guard(const Multisource_info_guard &);
+  Multisource_info_guard &operator=(const Multisource_info_guard &);
+
+ public:
+  Multisource_info_guard() { channel_map.rdlock(); }
 
   // Return the default channels Master_info*
-  Master_info* get_default_mi() const
+  Master_info *get_default_mi() const
   {
-    Master_info* default_mi = channel_map.get_default_channel_mi();
+    Master_info *default_mi = channel_map.get_default_channel_mi();
     // There should always be a default Master_info at this point
     assert(default_mi);
     return default_mi;
@@ -66,14 +65,13 @@ public:
   }
 };
 
-
 uint32 ndb_mi_get_master_server_id()
 {
   Multisource_info_guard msi;
-  return (uint32) msi.get_default_mi()->master_id;
+  return (uint32)msi.get_default_mi()->master_id;
 }
 
-const char* ndb_mi_get_group_master_log_name()
+const char *ndb_mi_get_group_master_log_name()
 {
   Multisource_info_guard msi;
   return msi.get_default_mi()->rli->get_group_master_log_name();
@@ -82,19 +80,19 @@ const char* ndb_mi_get_group_master_log_name()
 uint64 ndb_mi_get_group_master_log_pos()
 {
   Multisource_info_guard msi;
-  return (uint64) msi.get_default_mi()->rli->get_group_master_log_pos();
+  return (uint64)msi.get_default_mi()->rli->get_group_master_log_pos();
 }
 
 uint64 ndb_mi_get_future_event_relay_log_pos()
 {
   Multisource_info_guard msi;
-  return (uint64) msi.get_default_mi()->rli->get_future_event_relay_log_pos();
+  return (uint64)msi.get_default_mi()->rli->get_future_event_relay_log_pos();
 }
 
 uint64 ndb_mi_get_group_relay_log_pos()
 {
   Multisource_info_guard msi;
-  return (uint64) msi.get_default_mi()->rli->get_group_relay_log_pos();
+  return (uint64)msi.get_default_mi()->rli->get_group_relay_log_pos();
 }
 
 bool ndb_mi_get_ignore_server_id(uint32 server_id)

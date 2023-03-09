@@ -20,7 +20,6 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301  USA */
 
-
 #include "sql_class.h"
 #include <AclAPI.h>
 #include <accctrl.h>
@@ -36,15 +35,14 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301  USA */
 bool is_existing_windows_group_name(const char *group_name)
 {
   // First, let's get a SID for the given group name...
-  BYTE soughtSID[SECURITY_MAX_SID_SIZE]= { 0 };
-  DWORD size_sid= SECURITY_MAX_SID_SIZE;
+  BYTE soughtSID[SECURITY_MAX_SID_SIZE] = {0};
+  DWORD size_sid = SECURITY_MAX_SID_SIZE;
   char referencedDomainName[MAX_PATH];
-  DWORD size_referencedDomainName= MAX_PATH;
+  DWORD size_referencedDomainName = MAX_PATH;
   SID_NAME_USE sid_name_use;
 
-  if (!LookupAccountName(nullptr, group_name, soughtSID, &size_sid,
-    referencedDomainName, &size_referencedDomainName,
-    &sid_name_use))
+  if (!LookupAccountName(nullptr, group_name, soughtSID, &size_sid, referencedDomainName, &size_referencedDomainName,
+                         &sid_name_use))
   {
     return false;
   }
@@ -60,10 +58,9 @@ bool is_existing_windows_group_name(const char *group_name)
 /*
 return false on successfully checking group, true on error.
 */
-static bool check_windows_group_for_everyone(const char *group_name,
-                                             bool *is_everyone_group)
+static bool check_windows_group_for_everyone(const char *group_name, bool *is_everyone_group)
 {
-  *is_everyone_group= false;
+  *is_everyone_group = false;
   if (!group_name || group_name[0] == '\0')
   {
     return false;
@@ -71,55 +68,54 @@ static bool check_windows_group_for_everyone(const char *group_name,
 
   if (strcmp(group_name, NAMED_PIPE_FULL_ACCESS_GROUP_EVERYONE) == 0)
   {
-    *is_everyone_group= true;
+    *is_everyone_group = true;
     return false;
   }
   else
   {
     TCHAR last_error_msg[256];
     // First, let's get a SID for the given group name...
-    BYTE soughtSID[SECURITY_MAX_SID_SIZE]= {0};
-    DWORD size_sought_sid= SECURITY_MAX_SID_SIZE;
-    BYTE worldSID[SECURITY_MAX_SID_SIZE]= {0};
-    DWORD size_world_sid= SECURITY_MAX_SID_SIZE;
+    BYTE soughtSID[SECURITY_MAX_SID_SIZE] = {0};
+    DWORD size_sought_sid = SECURITY_MAX_SID_SIZE;
+    BYTE worldSID[SECURITY_MAX_SID_SIZE] = {0};
+    DWORD size_world_sid = SECURITY_MAX_SID_SIZE;
     char referencedDomainName[MAX_PATH];
-    DWORD size_referencedDomainName= MAX_PATH;
+    DWORD size_referencedDomainName = MAX_PATH;
     SID_NAME_USE sid_name_use;
 
-    if (!LookupAccountName(NULL, group_name, soughtSID, &size_sought_sid,
-                         referencedDomainName, &size_referencedDomainName,
-                         &sid_name_use))
+    if (!LookupAccountName(NULL, group_name, soughtSID, &size_sought_sid, referencedDomainName,
+                           &size_referencedDomainName, &sid_name_use))
     {
       return false;
     }
 
     if (!CreateWellKnownSid(WinWorldSid, NULL, worldSID, &size_world_sid))
     {
-      DWORD last_error_num= GetLastError();
-      FormatMessage(FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS,
-                    NULL, last_error_num,
-                    MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT), last_error_msg,
-                    sizeof(last_error_msg) / sizeof(TCHAR), NULL);
-      my_printf_error(ER_UNKNOWN_ERROR,
-                      "check_windows_group_for_everyone, CreateWellKnownSid failed: %s",
-                      MYF(0), last_error_msg);
+      DWORD last_error_num = GetLastError();
+      FormatMessage(FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS, NULL, last_error_num,
+                    MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT), last_error_msg, sizeof(last_error_msg) / sizeof(TCHAR),
+                    NULL);
+      my_printf_error(ER_UNKNOWN_ERROR, "check_windows_group_for_everyone, CreateWellKnownSid failed: %s", MYF(0),
+                      last_error_msg);
       return true;
     }
 
-    *is_everyone_group= EqualSid(soughtSID, worldSID);
+    *is_everyone_group = EqualSid(soughtSID, worldSID);
     return false;
   }
 }
 
 bool is_valid_named_pipe_full_access_group(const char *group_name)
 {
-  if (!group_name || group_name[0] == '\0'){
+  if (!group_name || group_name[0] == '\0')
+  {
     return true;
   }
 
-  bool is_everyone_group= false;
+  bool is_everyone_group = false;
 
-  if(check_windows_group_for_everyone(group_name, &is_everyone_group)){
+  if (check_windows_group_for_everyone(group_name, &is_everyone_group))
+  {
     return false;
   }
 
@@ -131,21 +127,20 @@ bool is_valid_named_pipe_full_access_group(const char *group_name)
 }
 
 // return false on success, true on failure.
-bool my_security_attr_add_rights_to_group(SECURITY_ATTRIBUTES *psa,
-  const char *group_name,
-  DWORD group_rights)
+bool my_security_attr_add_rights_to_group(SECURITY_ATTRIBUTES *psa, const char *group_name, DWORD group_rights)
 {
   TCHAR last_error_msg[256];
   // First, let's get a SID for the given group name...
-  BYTE soughtSID[SECURITY_MAX_SID_SIZE]= { 0 };
-  DWORD size_sid= SECURITY_MAX_SID_SIZE;
+  BYTE soughtSID[SECURITY_MAX_SID_SIZE] = {0};
+  DWORD size_sid = SECURITY_MAX_SID_SIZE;
   char referencedDomainName[MAX_PATH];
-  DWORD size_referencedDomainName= MAX_PATH;
+  DWORD size_referencedDomainName = MAX_PATH;
   SID_NAME_USE sid_name_use;
 
-  bool is_everyone_group= false;
+  bool is_everyone_group = false;
 
-  if(check_windows_group_for_everyone(group_name, &is_everyone_group)){
+  if (check_windows_group_for_everyone(group_name, &is_everyone_group))
+  {
     return true;
   }
 
@@ -154,9 +149,8 @@ bool my_security_attr_add_rights_to_group(SECURITY_ATTRIBUTES *psa,
     sql_print_warning(ER_DEFAULT(WARN_NAMED_PIPE_ACCESS_EVERYONE), group_name);
     if (current_thd)
     {
-      push_warning_printf(current_thd, Sql_condition::SL_WARNING,
-        WARN_NAMED_PIPE_ACCESS_EVERYONE,
-        ER(WARN_NAMED_PIPE_ACCESS_EVERYONE), group_name);
+      push_warning_printf(current_thd, Sql_condition::SL_WARNING, WARN_NAMED_PIPE_ACCESS_EVERYONE,
+                          ER(WARN_NAMED_PIPE_ACCESS_EVERYONE), group_name);
     }
   }
 
@@ -166,30 +160,25 @@ bool my_security_attr_add_rights_to_group(SECURITY_ATTRIBUTES *psa,
   {
     if (!CreateWellKnownSid(WinWorldSid, NULL, soughtSID, &size_sid))
     {
-      DWORD last_error_num= GetLastError();
-      FormatMessage(FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS,
-                    NULL, last_error_num,
-                    MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT), last_error_msg,
-                    sizeof(last_error_msg) / sizeof(TCHAR), NULL);
-      my_printf_error(ER_UNKNOWN_ERROR,
-                      "my_security_attr_add_rights_to_group, CreateWellKnownSid failed: %s",
-                      MYF(0), last_error_msg);
+      DWORD last_error_num = GetLastError();
+      FormatMessage(FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS, NULL, last_error_num,
+                    MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT), last_error_msg, sizeof(last_error_msg) / sizeof(TCHAR),
+                    NULL);
+      my_printf_error(ER_UNKNOWN_ERROR, "my_security_attr_add_rights_to_group, CreateWellKnownSid failed: %s", MYF(0),
+                      last_error_msg);
       return true;
     }
   }
   else
   {
-    if (!LookupAccountName(NULL, group_name, soughtSID, &size_sid,
-                           referencedDomainName, &size_referencedDomainName,
+    if (!LookupAccountName(NULL, group_name, soughtSID, &size_sid, referencedDomainName, &size_referencedDomainName,
                            &sid_name_use))
     {
-      DWORD last_error_num= GetLastError();
-      FormatMessage(FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS,
-                    NULL, last_error_num,
-                    MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT), last_error_msg,
-                    sizeof(last_error_msg) / sizeof(TCHAR), NULL);
-      sql_print_error("my_security_attr_add_rights_to_group, LookupAccountName failed: %s",
-                      last_error_msg);
+      DWORD last_error_num = GetLastError();
+      FormatMessage(FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS, NULL, last_error_num,
+                    MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT), last_error_msg, sizeof(last_error_msg) / sizeof(TCHAR),
+                    NULL);
+      sql_print_error("my_security_attr_add_rights_to_group, LookupAccountName failed: %s", last_error_msg);
       return true;
     }
 
@@ -201,20 +190,17 @@ bool my_security_attr_add_rights_to_group(SECURITY_ATTRIBUTES *psa,
     }
   }
 
-  PACL pNewDACL= nullptr;
-  PACL pOldDACL= nullptr;
-  BOOL dacl_present_in_descriptor= FALSE;
-  BOOL dacl_defaulted= FALSE;
-  if (!GetSecurityDescriptorDacl(psa->lpSecurityDescriptor,
-    &dacl_present_in_descriptor, &pOldDACL,
-    &dacl_defaulted) ||
-    !dacl_present_in_descriptor)
+  PACL pNewDACL = nullptr;
+  PACL pOldDACL = nullptr;
+  BOOL dacl_present_in_descriptor = FALSE;
+  BOOL dacl_defaulted = FALSE;
+  if (!GetSecurityDescriptorDacl(psa->lpSecurityDescriptor, &dacl_present_in_descriptor, &pOldDACL, &dacl_defaulted) ||
+      !dacl_present_in_descriptor)
   {
-    DWORD last_error_num= GetLastError();
-    FormatMessage(FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS,
-      NULL, last_error_num,
-      MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT), last_error_msg,
-      sizeof(last_error_msg) / sizeof(TCHAR), NULL);
+    DWORD last_error_num = GetLastError();
+    FormatMessage(FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS, NULL, last_error_num,
+                  MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT), last_error_msg, sizeof(last_error_msg) / sizeof(TCHAR),
+                  NULL);
     sql_print_error("GetSecurityDescriptorDacl failed: %s", last_error_msg);
     return true;
   }
@@ -224,8 +210,7 @@ bool my_security_attr_add_rights_to_group(SECURITY_ATTRIBUTES *psa,
   // dacl_defaulted == TRUE
   if (pOldDACL == nullptr || dacl_defaulted)
   {
-    sql_print_error("Invalid DACL on named pipe: %s",
-      (pOldDACL == nullptr) ? "NULL DACL" : "Defaulted DACL");
+    sql_print_error("Invalid DACL on named pipe: %s", (pOldDACL == nullptr) ? "NULL DACL" : "Defaulted DACL");
     return true;
   }
 
@@ -233,15 +218,15 @@ bool my_security_attr_add_rights_to_group(SECURITY_ATTRIBUTES *psa,
   // Initialize an EXPLICIT_ACCESS structure for the new ACE.
 
   ZeroMemory(&ea, sizeof(EXPLICIT_ACCESS));
-  ea.grfAccessPermissions= group_rights;
-  ea.grfAccessMode= SET_ACCESS;
-  ea.grfInheritance= NO_INHERITANCE;
-  ea.Trustee.TrusteeForm= TRUSTEE_IS_SID;
-  ea.Trustee.ptstrName= (LPSTR)soughtSID;
+  ea.grfAccessPermissions = group_rights;
+  ea.grfAccessMode = SET_ACCESS;
+  ea.grfInheritance = NO_INHERITANCE;
+  ea.Trustee.TrusteeForm = TRUSTEE_IS_SID;
+  ea.Trustee.ptstrName = (LPSTR)soughtSID;
 
   // Create a new ACL that merges the new ACE
   // into the existing DACL.
-  DWORD dwRes= SetEntriesInAcl(1, &ea, pOldDACL, &pNewDACL);
+  DWORD dwRes = SetEntriesInAcl(1, &ea, pOldDACL, &pNewDACL);
   if (ERROR_SUCCESS != dwRes)
   {
     char num_buff[20];
@@ -251,14 +236,12 @@ bool my_security_attr_add_rights_to_group(SECURITY_ATTRIBUTES *psa,
   }
 
   // Apply the new DACL to the existing security descriptor...
-  if (!SetSecurityDescriptorDacl(psa->lpSecurityDescriptor, TRUE, pNewDACL,
-    FALSE))
+  if (!SetSecurityDescriptorDacl(psa->lpSecurityDescriptor, TRUE, pNewDACL, FALSE))
   {
-    DWORD last_error_num= GetLastError();
-    FormatMessage(FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS,
-      NULL, last_error_num,
-      MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT), last_error_msg,
-      sizeof(last_error_msg) / sizeof(TCHAR), NULL);
+    DWORD last_error_num = GetLastError();
+    FormatMessage(FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS, NULL, last_error_num,
+                  MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT), last_error_msg, sizeof(last_error_msg) / sizeof(TCHAR),
+                  NULL);
     sql_print_error("SetSecurityDescriptorDacl failed: %s", last_error_msg);
     return true;
   }
@@ -281,20 +264,17 @@ Creates an instance of a named pipe and returns a handle.
 @note  The entire pipe name string can be up to 256 characters long.
 Pipe names are not case sensitive.
 */
-HANDLE create_server_named_pipe(SECURITY_ATTRIBUTES **ppsec_attr,
-  DWORD buffer_size, const char *name,
-  char *name_buf, size_t buflen,
-  const char *full_access_group_name)
+HANDLE create_server_named_pipe(SECURITY_ATTRIBUTES **ppsec_attr, DWORD buffer_size, const char *name, char *name_buf,
+                                size_t buflen, const char *full_access_group_name)
 {
-  HANDLE ret_handle= INVALID_HANDLE_VALUE;
+  HANDLE ret_handle = INVALID_HANDLE_VALUE;
   TCHAR last_error_msg[256];
 
   strxnmov(name_buf, buflen - 1, "\\\\.\\pipe\\", name, NullS);
-  const char *perror= nullptr;
+  const char *perror = nullptr;
   // Set up security for the named pipe to provide full access to the owner
   // and minimal read/write access to others.
-  if (my_security_attr_create(ppsec_attr, &perror, NAMED_PIPE_OWNER_PERMISSIONS,
-    NAMED_PIPE_EVERYONE_PERMISSIONS) != 0)
+  if (my_security_attr_create(ppsec_attr, &perror, NAMED_PIPE_OWNER_PERMISSIONS, NAMED_PIPE_EVERYONE_PERMISSIONS) != 0)
   {
     sql_print_error("my_security_attr_create failed: %s", perror);
     return ret_handle;
@@ -302,38 +282,32 @@ HANDLE create_server_named_pipe(SECURITY_ATTRIBUTES **ppsec_attr,
 
   if (full_access_group_name && full_access_group_name[0] != '\0')
   {
-    if (my_security_attr_add_rights_to_group(
-      *ppsec_attr, full_access_group_name,
-      NAMED_PIPE_FULL_ACCESS_GROUP_PERMISSIONS))
+    if (my_security_attr_add_rights_to_group(*ppsec_attr, full_access_group_name,
+                                             NAMED_PIPE_FULL_ACCESS_GROUP_PERMISSIONS))
     {
       return ret_handle;
     }
   }
 
-  ret_handle= CreateNamedPipe(
-    name_buf,
-    PIPE_ACCESS_DUPLEX | FILE_FLAG_OVERLAPPED |
-    FILE_FLAG_FIRST_PIPE_INSTANCE | WRITE_DAC,
-    PIPE_TYPE_BYTE | PIPE_READMODE_BYTE | PIPE_WAIT, PIPE_UNLIMITED_INSTANCES,
-    buffer_size, buffer_size, NMPWAIT_USE_DEFAULT_WAIT, *ppsec_attr);
+  ret_handle =
+      CreateNamedPipe(name_buf, PIPE_ACCESS_DUPLEX | FILE_FLAG_OVERLAPPED | FILE_FLAG_FIRST_PIPE_INSTANCE | WRITE_DAC,
+                      PIPE_TYPE_BYTE | PIPE_READMODE_BYTE | PIPE_WAIT, PIPE_UNLIMITED_INSTANCES, buffer_size,
+                      buffer_size, NMPWAIT_USE_DEFAULT_WAIT, *ppsec_attr);
 
   if (ret_handle == INVALID_HANDLE_VALUE)
   {
-    DWORD last_error_num= GetLastError();
+    DWORD last_error_num = GetLastError();
 
     if (last_error_num == ERROR_ACCESS_DENIED)
     {
-      my_printf_error(ER_CANT_START_SERVER_NAMED_PIPE,
-        ER_DEFAULT(ER_CANT_START_SERVER_NAMED_PIPE),
-        MYF(ME_FATALERROR), name);
+      my_printf_error(ER_CANT_START_SERVER_NAMED_PIPE, ER_DEFAULT(ER_CANT_START_SERVER_NAMED_PIPE), MYF(ME_FATALERROR),
+                      name);
     }
     else
     {
-      FormatMessage(FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS |
-        FORMAT_MESSAGE_MAX_WIDTH_MASK,
-        NULL, last_error_num,
-        MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT), last_error_msg,
-        sizeof(last_error_msg) / sizeof(TCHAR), NULL);
+      FormatMessage(FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS | FORMAT_MESSAGE_MAX_WIDTH_MASK, NULL,
+                    last_error_num, MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT), last_error_msg,
+                    sizeof(last_error_msg) / sizeof(TCHAR), NULL);
       char num_buff[20];
       int10_to_str(last_error_num, num_buff, 10);
       sql_print_error("Can't start server : %s %s", last_error_msg, num_buff);

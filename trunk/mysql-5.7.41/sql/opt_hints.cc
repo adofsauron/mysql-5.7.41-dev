@@ -22,9 +22,8 @@
 
 #include "parse_tree_hints.h"
 #include "sql_class.h"
-#include "mysqld.h"        // table_alias_charset
+#include "mysqld.h"  // table_alias_charset
 #include "sql_lex.h"
-
 
 /**
   Information about hints. Sould be
@@ -37,28 +36,23 @@
   can control wishful form of the hint name.
 */
 
-struct st_opt_hint_info opt_hint_info[]=
-{
-  {"BKA", true, true},
-  {"BNL", true, true},
-  {"ICP", true, true},
-  {"MRR", true, true},
-  {"NO_RANGE_OPTIMIZATION", true, true},
-  {"MAX_EXECUTION_TIME", false, false},
-  {"QB_NAME", false, false},
-  {"SEMIJOIN", false, false},
-  {"SUBQUERY", false, false},
-  {0, 0, 0}
-};
-
+struct st_opt_hint_info opt_hint_info[] = {{"BKA", true, true},
+                                           {"BNL", true, true},
+                                           {"ICP", true, true},
+                                           {"MRR", true, true},
+                                           {"NO_RANGE_OPTIMIZATION", true, true},
+                                           {"MAX_EXECUTION_TIME", false, false},
+                                           {"QB_NAME", false, false},
+                                           {"SEMIJOIN", false, false},
+                                           {"SUBQUERY", false, false},
+                                           {0, 0, 0}};
 
 /**
   Prefix for system generated query block name.
   Used in information warning in EXPLAIN oputput.
 */
 
-const LEX_CSTRING sys_qb_prefix=  {"select#", 7};
-
+const LEX_CSTRING sys_qb_prefix = {"select#", 7};
 
 /*
   Compare LEX_CSTRING objects.
@@ -72,15 +66,10 @@ const LEX_CSTRING sys_qb_prefix=  {"select#", 7};
           -1 if t is greater
 */
 
-static int cmp_lex_string(const LEX_CSTRING *s,
-                          const LEX_CSTRING *t,
-                          const CHARSET_INFO *cs)
+static int cmp_lex_string(const LEX_CSTRING *s, const LEX_CSTRING *t, const CHARSET_INFO *cs)
 {
-  return cs->coll->strnncollsp(cs,
-                               (uchar *) s->str, s->length,
-                               (uchar *) t->str, t->length, 0);
+  return cs->coll->strnncollsp(cs, (uchar *)s->str, s->length, (uchar *)t->str, t->length, 0);
 }
-
 
 bool Opt_hints::get_switch(opt_hints_enum type_arg) const
 {
@@ -93,32 +82,28 @@ bool Opt_hints::get_switch(opt_hints_enum type_arg) const
   return false;
 }
 
-
-Opt_hints* Opt_hints::find_by_name(const LEX_CSTRING *name_arg,
-                                   const CHARSET_INFO *cs) const
+Opt_hints *Opt_hints::find_by_name(const LEX_CSTRING *name_arg, const CHARSET_INFO *cs) const
 {
-  for (uint i= 0; i < child_array.size(); i++)
+  for (uint i = 0; i < child_array.size(); i++)
   {
-    const LEX_CSTRING *name= child_array[i]->get_name();
+    const LEX_CSTRING *name = child_array[i]->get_name();
     if (name && !cmp_lex_string(name, name_arg, cs))
       return child_array[i];
   }
   return NULL;
 }
 
-
 void Opt_hints::print(THD *thd, String *str, enum_query_type query_type)
 {
-  for (uint i= 0; i < MAX_HINT_ENUM; i++)
+  for (uint i = 0; i < MAX_HINT_ENUM; i++)
   {
-    opt_hints_enum hint= static_cast<opt_hints_enum>(i);
+    opt_hints_enum hint = static_cast< opt_hints_enum >(i);
     /*
        If printing a normalized query, also unresolved hints will be printed.
        (This is needed by query rewrite plugins which request
        normalized form before resolving has been performed.)
     */
-    if (is_specified(hint) &&
-        (is_resolved() || query_type == QT_NORMALIZED_FORMAT))
+    if (is_specified(hint) && (is_resolved() || query_type == QT_NORMALIZED_FORMAT))
     {
       append_hint_type(str, hint);
       str->append(STRING_WITH_LEN("("));
@@ -129,40 +114,33 @@ void Opt_hints::print(THD *thd, String *str, enum_query_type query_type)
     }
   }
 
-  for (uint i= 0; i < child_array.size(); i++)
-    child_array[i]->print(thd, str, query_type);
+  for (uint i = 0; i < child_array.size(); i++) child_array[i]->print(thd, str, query_type);
 }
-
 
 void Opt_hints::append_hint_type(String *str, opt_hints_enum type)
 {
-  const char* hint_name= opt_hint_info[type].hint_name;
-  if(!hints_map.switch_on(type))
+  const char *hint_name = opt_hint_info[type].hint_name;
+  if (!hints_map.switch_on(type))
     str->append(STRING_WITH_LEN("NO_"));
   str->append(hint_name);
 }
-
 
 void Opt_hints::print_warn_unresolved(THD *thd)
 {
   String hint_name_str, hint_type_str;
   append_name(thd, &hint_name_str);
 
-  for (uint i= 0; i < MAX_HINT_ENUM; i++)
+  for (uint i = 0; i < MAX_HINT_ENUM; i++)
   {
-    if (is_specified(static_cast<opt_hints_enum>(i)))
+    if (is_specified(static_cast< opt_hints_enum >(i)))
     {
       hint_type_str.length(0);
-      append_hint_type(&hint_type_str, static_cast<opt_hints_enum>(i));
-      push_warning_printf(thd, Sql_condition::SL_WARNING,
-                          ER_UNRESOLVED_HINT_NAME,
-                          ER_THD(thd, ER_UNRESOLVED_HINT_NAME),
-                          hint_name_str.c_ptr_safe(),
-                          hint_type_str.c_ptr_safe());
+      append_hint_type(&hint_type_str, static_cast< opt_hints_enum >(i));
+      push_warning_printf(thd, Sql_condition::SL_WARNING, ER_UNRESOLVED_HINT_NAME, ER_THD(thd, ER_UNRESOLVED_HINT_NAME),
+                          hint_name_str.c_ptr_safe(), hint_type_str.c_ptr_safe());
     }
   }
 }
-
 
 void Opt_hints::check_unresolved(THD *thd)
 {
@@ -171,11 +149,9 @@ void Opt_hints::check_unresolved(THD *thd)
 
   if (!is_all_resolved())
   {
-    for (uint i= 0; i < child_array.size(); i++)
-      child_array[i]->check_unresolved(thd);
+    for (uint i = 0; i < child_array.size(); i++) child_array[i]->check_unresolved(thd);
   }
 }
-
 
 PT_hint *Opt_hints_global::get_complex_hints(opt_hints_enum type)
 {
@@ -186,18 +162,15 @@ PT_hint *Opt_hints_global::get_complex_hints(opt_hints_enum type)
   return NULL;
 }
 
-
-Opt_hints_qb::Opt_hints_qb(Opt_hints *opt_hints_arg,
-                           MEM_ROOT *mem_root_arg,
-                           uint select_number_arg)
-  : Opt_hints(NULL, opt_hints_arg, mem_root_arg),
-    select_number(select_number_arg), subquery_hint(NULL), semijoin_hint(NULL)
+Opt_hints_qb::Opt_hints_qb(Opt_hints *opt_hints_arg, MEM_ROOT *mem_root_arg, uint select_number_arg)
+    : Opt_hints(NULL, opt_hints_arg, mem_root_arg),
+      select_number(select_number_arg),
+      subquery_hint(NULL),
+      semijoin_hint(NULL)
 {
-  sys_name.str= buff;
-  sys_name.length= my_snprintf(buff, sizeof(buff), "%s%lx",
-                               sys_qb_prefix.str, select_number);
+  sys_name.str = buff;
+  sys_name.length = my_snprintf(buff, sizeof(buff), "%s%lx", sys_qb_prefix.str, select_number);
 }
-
 
 PT_hint *Opt_hints_qb::get_complex_hints(opt_hints_enum type)
 {
@@ -211,27 +184,23 @@ PT_hint *Opt_hints_qb::get_complex_hints(opt_hints_enum type)
   return NULL;
 }
 
-
-Opt_hints_table *Opt_hints_qb::adjust_table_hints(TABLE *table,
-                                                  const char *alias)
+Opt_hints_table *Opt_hints_qb::adjust_table_hints(TABLE *table, const char *alias)
 {
-  const LEX_CSTRING str= { alias, strlen(alias) };
-  Opt_hints_table *tab=
-    static_cast<Opt_hints_table *>(find_by_name(&str, table_alias_charset));
+  const LEX_CSTRING str = {alias, strlen(alias)};
+  Opt_hints_table *tab = static_cast< Opt_hints_table * >(find_by_name(&str, table_alias_charset));
 
-  table->pos_in_table_list->opt_hints_qb= this;
+  table->pos_in_table_list->opt_hints_qb = this;
 
-  if (!tab)                            // Tables not found
+  if (!tab)  // Tables not found
     return NULL;
 
   tab->adjust_key_hints(table);
   return tab;
 }
 
-
 bool Opt_hints_qb::semijoin_enabled(THD *thd) const
 {
-  if (subquery_hint) // SUBQUERY hint disables semi-join
+  if (subquery_hint)  // SUBQUERY hint disables semi-join
     return false;
 
   if (semijoin_hint)
@@ -250,13 +219,12 @@ bool Opt_hints_qb::semijoin_enabled(THD *thd) const
   return thd->optimizer_switch_flag(OPTIMIZER_SWITCH_SEMIJOIN);
 }
 
-
 uint Opt_hints_qb::sj_enabled_strategies(uint opt_switches) const
 {
   // Hints override switches
   if (semijoin_hint)
   {
-    const uint strategies= semijoin_hint->get_args();
+    const uint strategies = semijoin_hint->get_args();
     if (semijoin_hint->switch_on())  // SEMIJOIN hint
       return (strategies == 0) ? opt_switches : strategies;
 
@@ -267,17 +235,13 @@ uint Opt_hints_qb::sj_enabled_strategies(uint opt_switches) const
   return opt_switches;
 }
 
-
-Item_exists_subselect::enum_exec_method
-Opt_hints_qb::subquery_strategy() const
+Item_exists_subselect::enum_exec_method Opt_hints_qb::subquery_strategy() const
 {
   if (subquery_hint)
-    return static_cast<Item_exists_subselect::enum_exec_method>
-      (subquery_hint->get_args());
+    return static_cast< Item_exists_subselect::enum_exec_method >(subquery_hint->get_args());
 
   return Item_exists_subselect::EXEC_UNSPECIFIED;
 }
-
 
 void Opt_hints_table::adjust_key_hints(TABLE *table)
 {
@@ -297,17 +261,16 @@ void Opt_hints_table::adjust_key_hints(TABLE *table)
 
   keyinfo_array.resize(table->s->keys, NULL);
 
-  for (Opt_hints** hint= child_array_ptr()->begin();
-       hint < child_array_ptr()->end(); ++hint) 
+  for (Opt_hints **hint = child_array_ptr()->begin(); hint < child_array_ptr()->end(); ++hint)
   {
-    KEY *key_info= table->key_info;
-    for (uint j= 0 ; j < table->s->keys ; j++, key_info++)
+    KEY *key_info = table->key_info;
+    for (uint j = 0; j < table->s->keys; j++, key_info++)
     {
-      const LEX_CSTRING key_name= { key_info->name, strlen(key_info->name) };
+      const LEX_CSTRING key_name = {key_info->name, strlen(key_info->name)};
       if (!cmp_lex_string((*hint)->get_name(), &key_name, system_charset_info))
       {
         (*hint)->set_resolved();
-        keyinfo_array[j]= static_cast<Opt_hints_key *>(*hint);
+        keyinfo_array[j] = static_cast< Opt_hints_key * >(*hint);
         incr_resolved_children();
       }
     }
@@ -322,13 +285,12 @@ void Opt_hints_table::adjust_key_hints(TABLE *table)
     get_parent()->incr_resolved_children();
 }
 
-
 /**
   Function returns hint value depending on
   the specfied hint level. If hint is specified
   on current level, current level hint value is
   returned, otherwise parent level hint is checked.
-  
+
   @param hint              Pointer to the hint object
   @param parent_hint       Pointer to the parent hint object,
                            should never be NULL
@@ -339,10 +301,7 @@ void Opt_hints_table::adjust_key_hints(TABLE *table)
   @return true if hint is specified, false otherwise
 */
 
-static bool get_hint_state(Opt_hints *hint,
-                           Opt_hints *parent_hint,
-                           opt_hints_enum type_arg,
-                           bool *ret_val)
+static bool get_hint_state(Opt_hints *hint, Opt_hints *parent_hint, opt_hints_enum type_arg, bool *ret_val)
 {
   assert(parent_hint);
 
@@ -350,13 +309,12 @@ static bool get_hint_state(Opt_hints *hint,
   {
     if (hint && hint->is_specified(type_arg))
     {
-      *ret_val= hint->get_switch(type_arg);
+      *ret_val = hint->get_switch(type_arg);
       return true;
     }
-    else if (opt_hint_info[type_arg].check_upper_lvl &&
-             parent_hint->is_specified(type_arg))
+    else if (opt_hint_info[type_arg].check_upper_lvl && parent_hint->is_specified(type_arg))
     {
-      *ret_val= parent_hint->get_switch(type_arg);
+      *ret_val = parent_hint->get_switch(type_arg);
       return true;
     }
   }
@@ -368,19 +326,15 @@ static bool get_hint_state(Opt_hints *hint,
   return false;
 }
 
-
-bool hint_key_state(const THD *thd, const TABLE *table,
-                    uint keyno, opt_hints_enum type_arg,
-                    uint optimizer_switch)
+bool hint_key_state(const THD *thd, const TABLE *table, uint keyno, opt_hints_enum type_arg, uint optimizer_switch)
 {
-  Opt_hints_table *table_hints= table->pos_in_table_list->opt_hints_table;
+  Opt_hints_table *table_hints = table->pos_in_table_list->opt_hints_table;
 
   /* Parent should always be initialized */
   if (table_hints && keyno != MAX_KEY)
   {
-    Opt_hints_key *key_hints= table_hints->keyinfo_array.size() > 0 ?
-      table_hints->keyinfo_array[keyno] : NULL;
-    bool ret_val= false;
+    Opt_hints_key *key_hints = table_hints->keyinfo_array.size() > 0 ? table_hints->keyinfo_array[keyno] : NULL;
+    bool ret_val = false;
     if (get_hint_state(key_hints, table_hints, type_arg, &ret_val))
       return ret_val;
   }
@@ -388,18 +342,13 @@ bool hint_key_state(const THD *thd, const TABLE *table,
   return thd->optimizer_switch_flag(optimizer_switch);
 }
 
-
-bool hint_table_state(const THD *thd, const TABLE *table,
-                      opt_hints_enum type_arg,
-                      uint optimizer_switch)
+bool hint_table_state(const THD *thd, const TABLE *table, opt_hints_enum type_arg, uint optimizer_switch)
 {
-  TABLE_LIST *table_list= table->pos_in_table_list;
+  TABLE_LIST *table_list = table->pos_in_table_list;
   if (table_list->opt_hints_qb)
   {
-    bool ret_val= false;
-    if (get_hint_state(table_list->opt_hints_table,
-                       table_list->opt_hints_qb,
-                       type_arg, &ret_val))
+    bool ret_val = false;
+    if (get_hint_state(table_list->opt_hints_table, table_list->opt_hints_qb, type_arg, &ret_val))
       return ret_val;
   }
 

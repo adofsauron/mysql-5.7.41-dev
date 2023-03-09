@@ -23,20 +23,15 @@
 
 #include "rpl_table_access.h"
 
-#include "handler.h"     // ha_rollback_trans
-#include "log.h"         // sql_print_warning
-#include "sql_base.h"    // close_thread_tables
-#include "sql_class.h"   // THD
-#include "sql_lex.h"     // Query_tables_list
-#include "table.h"       // TABLE_LIST
+#include "handler.h"    // ha_rollback_trans
+#include "log.h"        // sql_print_warning
+#include "sql_base.h"   // close_thread_tables
+#include "sql_class.h"  // THD
+#include "sql_lex.h"    // Query_tables_list
+#include "table.h"      // TABLE_LIST
 
-
-bool System_table_access::open_table(THD* thd, const LEX_STRING dbstr,
-                                     const LEX_STRING tbstr,
-                                     uint max_num_field,
-                                     enum thr_lock_type lock_type,
-                                     TABLE** table,
-                                     Open_tables_backup* backup)
+bool System_table_access::open_table(THD *thd, const LEX_STRING dbstr, const LEX_STRING tbstr, uint max_num_field,
+                                     enum thr_lock_type lock_type, TABLE **table, Open_tables_backup *backup)
 {
   TABLE_LIST tables;
   Query_tables_list query_tables_list_backup;
@@ -55,10 +50,9 @@ bool System_table_access::open_table(THD* thd, const LEX_STRING dbstr,
   thd->lex->reset_n_backup_query_tables_list(&query_tables_list_backup);
   thd->reset_n_backup_open_tables_state(backup);
 
-  tables.init_one_table(dbstr.str, dbstr.length, tbstr.str, tbstr.length,
-                        tbstr.str, lock_type);
+  tables.init_one_table(dbstr.str, dbstr.length, tbstr.str, tbstr.length, tbstr.str, lock_type);
 
-  tables.open_strategy= TABLE_LIST::OPEN_IF_EXISTS;
+  tables.open_strategy = TABLE_LIST::OPEN_IF_EXISTS;
 
   if (!open_n_lock_single_table(thd, &tables, tables.lock_type, m_flags))
   {
@@ -66,8 +60,10 @@ bool System_table_access::open_table(THD* thd, const LEX_STRING dbstr,
     thd->restore_backup_open_tables_state(backup);
     thd->lex->restore_backup_query_tables_list(&query_tables_list_backup);
     if (thd->is_operating_gtid_table_implicitly)
-      sql_print_warning("Gtid table is not ready to be used. Table '%s.%s' "
-                        "cannot be opened.", dbstr.str, tbstr.str);
+      sql_print_warning(
+          "Gtid table is not ready to be used. Table '%s.%s' "
+          "cannot be opened.",
+          dbstr.str, tbstr.str);
     else
       my_error(ER_NO_SUCH_TABLE, MYF(0), dbstr.str, tbstr.str);
     DBUG_RETURN(true);
@@ -83,52 +79,48 @@ bool System_table_access::open_table(THD* thd, const LEX_STRING dbstr,
     close_thread_tables(thd);
     thd->restore_backup_open_tables_state(backup);
     thd->lex->restore_backup_query_tables_list(&query_tables_list_backup);
-    my_error(ER_COL_COUNT_DOESNT_MATCH_CORRUPTED_V2, MYF(0),
-             tables.table->s->db.str, tables.table->s->table_name.str,
+    my_error(ER_COL_COUNT_DOESNT_MATCH_CORRUPTED_V2, MYF(0), tables.table->s->db.str, tables.table->s->table_name.str,
              max_num_field, tables.table->s->fields);
     DBUG_RETURN(true);
   }
 
   thd->lex->restore_backup_query_tables_list(&query_tables_list_backup);
 
-  *table= tables.table;
+  *table = tables.table;
   tables.table->use_all_columns();
   DBUG_RETURN(false);
 }
 
-
-bool System_table_access::close_table(THD *thd, TABLE* table,
-                                      Open_tables_backup *backup,
-                                      bool error, bool need_commit)
+bool System_table_access::close_table(THD *thd, TABLE *table, Open_tables_backup *backup, bool error, bool need_commit)
 {
   Query_tables_list query_tables_list_backup;
-  bool res= false;
+  bool res = false;
 
   DBUG_ENTER("System_table_access::close_table");
 
   if (table)
   {
     if (error)
-      res= ha_rollback_trans(thd, false);
+      res = ha_rollback_trans(thd, false);
     else
     {
       /*
         To make the commit not to block with global read lock set
         "ignore_global_read_lock" flag to true.
        */
-      res= ha_commit_trans(thd, false, true);
+      res = ha_commit_trans(thd, false, true);
     }
     if (need_commit)
     {
       if (error)
-        res= ha_rollback_trans(thd, true) || res;
+        res = ha_rollback_trans(thd, true) || res;
       else
       {
         /*
           To make the commit not to block with global read lock set
           "ignore_global_read_lock" flag to true.
          */
-        res= ha_commit_trans(thd, true, true) || res;
+        res = ha_commit_trans(thd, true, true) || res;
       }
     }
     /*
@@ -142,22 +134,20 @@ bool System_table_access::close_table(THD *thd, TABLE* table,
     thd->restore_backup_open_tables_state(backup);
   }
 
-  DBUG_EXECUTE_IF("simulate_flush_commit_error", {res= true;});
+  DBUG_EXECUTE_IF("simulate_flush_commit_error", { res = true; });
   DBUG_RETURN(res);
 }
 
-
 THD *System_table_access::create_thd()
 {
-  THD *thd= NULL;
-  thd= new THD;
-  thd->thread_stack= (char*) &thd;
+  THD *thd = NULL;
+  thd = new THD;
+  thd->thread_stack = (char *)&thd;
   thd->store_globals();
   thd->security_context()->skip_grants();
 
-  return(thd);
+  return (thd);
 }
-
 
 void System_table_access::drop_thd(THD *thd)
 {
@@ -168,4 +158,3 @@ void System_table_access::drop_thd(THD *thd)
 
   DBUG_VOID_RETURN;
 }
-

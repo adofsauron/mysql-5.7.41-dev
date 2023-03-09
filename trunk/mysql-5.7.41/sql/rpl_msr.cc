@@ -22,37 +22,35 @@
 
 #include "rpl_msr.h"
 
-#include "rpl_rli.h"     // Relay_log_info
+#include "rpl_rli.h"  // Relay_log_info
 
-const char* Multisource_info::default_channel= "";
-const char* Multisource_info::group_replication_channel_names[] = {
-  "group_replication_applier",
-  "group_replication_recovery"
-};
+const char *Multisource_info::default_channel = "";
+const char *Multisource_info::group_replication_channel_names[] = {"group_replication_applier",
+                                                                   "group_replication_recovery"};
 
-bool Multisource_info::add_mi(const char* channel_name, Master_info* mi)
+bool Multisource_info::add_mi(const char *channel_name, Master_info *mi)
 {
   DBUG_ENTER("Multisource_info::add_mi");
 
   m_channel_map_lock->assert_some_wrlock();
 
   mi_map::const_iterator it;
-  std::pair<mi_map::iterator, bool>  ret;
-  bool res= false;
+  std::pair< mi_map::iterator, bool > ret;
+  bool res = false;
 
   /* The check of mi exceeding MAX_CHANNELS shall be done in the caller */
   assert(current_mi_count < MAX_CHANNELS);
 
   replication_channel_map::iterator map_it;
-  enum_channel_type type= is_group_replication_channel_name(channel_name)
-    ? GROUP_REPLICATION_CHANNEL: SLAVE_REPLICATION_CHANNEL;
+  enum_channel_type type =
+      is_group_replication_channel_name(channel_name) ? GROUP_REPLICATION_CHANNEL : SLAVE_REPLICATION_CHANNEL;
 
-  map_it= rep_channel_map.find(type);
+  map_it = rep_channel_map.find(type);
 
   if (map_it == rep_channel_map.end())
   {
-    std::pair<replication_channel_map::iterator, bool> map_ret =
-      rep_channel_map.insert(replication_channel_map::value_type(type, mi_map()));
+    std::pair< replication_channel_map::iterator, bool > map_ret =
+        rep_channel_map.insert(replication_channel_map::value_type(type, mi_map()));
 
     if (!map_ret.second)
       DBUG_RETURN(true);
@@ -63,23 +61,22 @@ bool Multisource_info::add_mi(const char* channel_name, Master_info* mi)
   ret = map_it->second.insert(mi_map::value_type(channel_name, mi));
 
   /* If a map insert fails, ret.second is false */
-  if(!ret.second)
+  if (!ret.second)
     DBUG_RETURN(true);
 
   /* Save the pointer for the default_channel to avoid searching it */
   if (!strcmp(channel_name, get_default_channel()))
-    default_channel_mi= mi;
+    default_channel_mi = mi;
 
 #ifdef WITH_PERFSCHEMA_STORAGE_ENGINE
-  res= add_mi_to_rpl_pfs_mi(mi);
+  res = add_mi_to_rpl_pfs_mi(mi);
 #endif
   current_mi_count++;
 
   DBUG_RETURN(res);
-
 }
 
-Master_info* Multisource_info::get_mi(const char* channel_name)
+Master_info *Multisource_info::get_mi(const char *channel_name)
 {
   DBUG_ENTER("Multisource_info::get_mi");
 
@@ -90,21 +87,21 @@ Master_info* Multisource_info::get_mi(const char* channel_name)
   mi_map::iterator it;
   replication_channel_map::iterator map_it;
 
-  map_it= rep_channel_map.find(SLAVE_REPLICATION_CHANNEL);
+  map_it = rep_channel_map.find(SLAVE_REPLICATION_CHANNEL);
   if (map_it != rep_channel_map.end())
   {
-    it= map_it->second.find(channel_name);
+    it = map_it->second.find(channel_name);
   }
 
-  if (map_it == rep_channel_map.end() || //If not a slave channel, maybe a group one
+  if (map_it == rep_channel_map.end() ||  // If not a slave channel, maybe a group one
       it == map_it->second.end())
   {
-    map_it= rep_channel_map.find(GROUP_REPLICATION_CHANNEL);
+    map_it = rep_channel_map.find(GROUP_REPLICATION_CHANNEL);
     if (map_it == rep_channel_map.end())
     {
       DBUG_RETURN(0);
     }
-    it= map_it->second.find(channel_name);
+    it = map_it->second.find(channel_name);
     if (it == map_it->second.end())
     {
       DBUG_RETURN(0);
@@ -114,28 +111,28 @@ Master_info* Multisource_info::get_mi(const char* channel_name)
   DBUG_RETURN(it->second);
 }
 
-bool Multisource_info::delete_mi(const char* channel_name)
+bool Multisource_info::delete_mi(const char *channel_name)
 {
   DBUG_ENTER("Multisource_info::delete_mi");
 
   m_channel_map_lock->assert_some_wrlock();
 
-  Master_info *mi= 0;
+  Master_info *mi = 0;
   mi_map::iterator it;
 
   assert(channel_name != 0);
 
   replication_channel_map::iterator map_it;
-  map_it= rep_channel_map.find(SLAVE_REPLICATION_CHANNEL);
+  map_it = rep_channel_map.find(SLAVE_REPLICATION_CHANNEL);
 
   if (map_it != rep_channel_map.end())
   {
-    it= map_it->second.find(channel_name);
+    it = map_it->second.find(channel_name);
   }
-  if (map_it == rep_channel_map.end() || //If not a slave channel, maybe a group one
+  if (map_it == rep_channel_map.end() ||  // If not a slave channel, maybe a group one
       it == map_it->second.end())
   {
-    map_it= rep_channel_map.find(GROUP_REPLICATION_CHANNEL);
+    map_it = rep_channel_map.find(GROUP_REPLICATION_CHANNEL);
     assert(map_it != rep_channel_map.end());
 
     if (map_it != rep_channel_map.end())
@@ -152,9 +149,9 @@ bool Multisource_info::delete_mi(const char* channel_name)
   }
 
 #ifdef WITH_PERFSCHEMA_STORAGE_ENGINE
-  int index= -1;
+  int index = -1;
   /* get the index of mi from rpl_pfs_mi */
-  index= get_index_from_rpl_pfs_mi(channel_name);
+  index = get_index_from_rpl_pfs_mi(channel_name);
 
   assert(index != -1);
 
@@ -164,13 +161,13 @@ bool Multisource_info::delete_mi(const char* channel_name)
 
   current_mi_count--;
 
-  mi= it->second;
-  it->second= 0;
+  mi = it->second;
+  it->second = 0;
   /* erase from the map */
   map_it->second.erase(it);
 
   if (default_channel_mi == mi)
-    default_channel_mi= NULL;
+    default_channel_mi = NULL;
 
   /* delete the master info */
   if (mi)
@@ -178,7 +175,7 @@ bool Multisource_info::delete_mi(const char* channel_name)
     mi->channel_assert_some_wrlock();
     mi->wait_until_no_reference(current_thd);
 
-    if(mi->rli)
+    if (mi->rli)
     {
       delete mi->rli;
     }
@@ -188,17 +185,13 @@ bool Multisource_info::delete_mi(const char* channel_name)
   DBUG_RETURN(false);
 }
 
-
-bool Multisource_info::is_group_replication_channel_name(const char* channel,
-                                                         bool is_applier)
+bool Multisource_info::is_group_replication_channel_name(const char *channel, bool is_applier)
 {
   if (is_applier)
     return !strcmp(channel, group_replication_channel_names[0]);
   else
-    return !strcmp(channel, group_replication_channel_names[0]) ||
-           !strcmp(channel, group_replication_channel_names[1]);
+    return !strcmp(channel, group_replication_channel_names[0]) || !strcmp(channel, group_replication_channel_names[1]);
 }
-
 
 #ifdef WITH_PERFSCHEMA_STORAGE_ENGINE
 
@@ -208,7 +201,7 @@ bool Multisource_info::add_mi_to_rpl_pfs_mi(Master_info *mi)
 
   m_channel_map_lock->assert_some_wrlock();
 
-  bool res=true; // not added
+  bool res = true;  // not added
 
   /* Point to this added mi in the rpl_pfs_mi*/
   for (uint i = 0; i < MAX_CHANNELS; i++)
@@ -216,39 +209,37 @@ bool Multisource_info::add_mi_to_rpl_pfs_mi(Master_info *mi)
     if (rpl_pfs_mi[i] == 0)
     {
       rpl_pfs_mi[i] = mi;
-      res= false;  // success
+      res = false;  // success
       break;
     }
   }
   DBUG_RETURN(res);
 }
 
-
-int Multisource_info::get_index_from_rpl_pfs_mi(const char * channel_name)
+int Multisource_info::get_index_from_rpl_pfs_mi(const char *channel_name)
 {
   m_channel_map_lock->assert_some_lock();
 
-  Master_info* mi= 0;
-  for (uint i= 0; i < MAX_CHANNELS; i++)
+  Master_info *mi = 0;
+  for (uint i = 0; i < MAX_CHANNELS; i++)
   {
-    mi= rpl_pfs_mi[i];
+    mi = rpl_pfs_mi[i];
     if (mi)
     {
-      if ( !strcmp(mi->get_channel(), channel_name))
+      if (!strcmp(mi->get_channel(), channel_name))
         return i;
     }
   }
   return -1;
 }
 
-
-Master_info*  Multisource_info::get_mi_at_pos(uint pos)
+Master_info *Multisource_info::get_mi_at_pos(uint pos)
 {
   DBUG_ENTER("Multisource_info::get_mi_at_pos");
 
   m_channel_map_lock->assert_some_lock();
 
-  if ( pos < MAX_CHANNELS)
+  if (pos < MAX_CHANNELS)
     DBUG_RETURN(rpl_pfs_mi[pos]);
 
   DBUG_RETURN(0);

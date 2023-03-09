@@ -24,13 +24,12 @@
 
 #include "ndb_ndbapi_util.h"
 
-#include <string.h> // memcpy
+#include <string.h>  // memcpy
 
 /*
   helper function to pack a ndb varchar
 */
-char *ndb_pack_varchar(const NdbDictionary::Column *col, char *buf,
-                       const char *str, int sz)
+char *ndb_pack_varchar(const NdbDictionary::Column *col, char *buf, const char *str, int sz)
 {
   switch (col->getArrayType())
   {
@@ -38,7 +37,7 @@ char *ndb_pack_varchar(const NdbDictionary::Column *col, char *buf,
       memcpy(buf, str, sz);
       break;
     case NdbDictionary::Column::ArrayTypeShortVar:
-      *(uchar*)buf= (uchar)sz;
+      *(uchar *)buf = (uchar)sz;
       memcpy(buf + 1, str, sz);
       break;
     case NdbDictionary::Column::ArrayTypeMediumVar:
@@ -49,18 +48,13 @@ char *ndb_pack_varchar(const NdbDictionary::Column *col, char *buf,
   return buf;
 }
 
-
-int
-cmp_frm(const NdbDictionary::Table* ndbtab, const void* pack_data,
-        size_t pack_length)
+int cmp_frm(const NdbDictionary::Table *ndbtab, const void *pack_data, size_t pack_length)
 {
   DBUG_ENTER("cmp_frm");
   /*
     Compare the NDB tables FrmData with frm file blob in pack_data.
   */
-  if ((pack_length != ndbtab->getFrmLength()) ||
-      (memcmp(pack_data, ndbtab->getFrmData(), pack_length)))
+  if ((pack_length != ndbtab->getFrmLength()) || (memcmp(pack_data, ndbtab->getFrmData(), pack_length)))
     DBUG_RETURN(1);
   DBUG_RETURN(0);
 }
-

@@ -21,7 +21,6 @@
    Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA
    02110-1301  USA */
 
-
 /*
   In here, we rewrite queries (to obfuscate passwords etc.) that need it
   before we log them.
@@ -37,13 +36,12 @@
   user-submitted one. (see sql_parse.cc)
 */
 
-
-#include "auth_common.h"    // append_user
-#include "sql_parse.h"  // get_current_user
-#include "sql_show.h"   // append_identifier
-#include "sp_head.h"    // struct set_var_base
-#include "rpl_slave.h"  // SLAVE_SQL, SLAVE_IO
-#include "mysqld.h"     // opt_log_builtin_as_identified_by_password
+#include "auth_common.h"  // append_user
+#include "sql_parse.h"    // get_current_user
+#include "sql_show.h"     // append_identifier
+#include "sp_head.h"      // struct set_var_base
+#include "rpl_slave.h"    // SLAVE_SQL, SLAVE_IO
+#include "mysqld.h"       // opt_log_builtin_as_identified_by_password
 #include "log.h"
 
 /**
@@ -60,22 +58,20 @@
   @retval          false if any subsequent key/value pair would be the first
 */
 
-bool append_int(String *str, bool comma, const char *txt, size_t len,
-                long val, int cond)
+bool append_int(String *str, bool comma, const char *txt, size_t len, long val, int cond)
 {
   if (cond)
   {
     String numbuf(42);
     if (comma)
       str->append(STRING_WITH_LEN(", "));
-    str->append(txt,len);
-    numbuf.set((longlong)val,&my_charset_bin);
+    str->append(txt, len);
+    numbuf.set((longlong)val, &my_charset_bin);
     str->append(numbuf);
     return true;
   }
   return comma;
 }
-
 
 /**
   Append a key/value pair to a string if the value is non-NULL,
@@ -111,37 +107,37 @@ void rewrite_ssl_properties(LEX *lex, String *rlb)
     rlb->append(STRING_WITH_LEN(" REQUIRE"));
     switch (lex->ssl_type)
     {
-    case SSL_TYPE_SPECIFIED:
-      if (lex->x509_subject)
-      {
-        rlb->append(STRING_WITH_LEN(" SUBJECT '"));
-        rlb->append(lex->x509_subject);
-        rlb->append(STRING_WITH_LEN("'"));
-      }
-      if (lex->x509_issuer)
-      {
-        rlb->append(STRING_WITH_LEN(" ISSUER '"));
-        rlb->append(lex->x509_issuer);
-        rlb->append(STRING_WITH_LEN("'"));
-      }
-      if (lex->ssl_cipher)
-      {
-        rlb->append(STRING_WITH_LEN(" CIPHER '"));
-        rlb->append(lex->ssl_cipher);
-        rlb->append(STRING_WITH_LEN("'"));
-      }
-      break;
-    case SSL_TYPE_X509:
-      rlb->append(STRING_WITH_LEN(" X509"));
-      break;
-    case SSL_TYPE_ANY:
-      rlb->append(STRING_WITH_LEN(" SSL"));
-      break;
-    case SSL_TYPE_NOT_SPECIFIED:
-      /* fall-thru */
-    case SSL_TYPE_NONE:
-      rlb->append(STRING_WITH_LEN(" NONE"));
-      break;
+      case SSL_TYPE_SPECIFIED:
+        if (lex->x509_subject)
+        {
+          rlb->append(STRING_WITH_LEN(" SUBJECT '"));
+          rlb->append(lex->x509_subject);
+          rlb->append(STRING_WITH_LEN("'"));
+        }
+        if (lex->x509_issuer)
+        {
+          rlb->append(STRING_WITH_LEN(" ISSUER '"));
+          rlb->append(lex->x509_issuer);
+          rlb->append(STRING_WITH_LEN("'"));
+        }
+        if (lex->ssl_cipher)
+        {
+          rlb->append(STRING_WITH_LEN(" CIPHER '"));
+          rlb->append(lex->ssl_cipher);
+          rlb->append(STRING_WITH_LEN("'"));
+        }
+        break;
+      case SSL_TYPE_X509:
+        rlb->append(STRING_WITH_LEN(" X509"));
+        break;
+      case SSL_TYPE_ANY:
+        rlb->append(STRING_WITH_LEN(" SSL"));
+        break;
+      case SSL_TYPE_NOT_SPECIFIED:
+        /* fall-thru */
+      case SSL_TYPE_NONE:
+        rlb->append(STRING_WITH_LEN(" NONE"));
+        break;
     }
   }
 }
@@ -154,20 +150,16 @@ void rewrite_user_resources(LEX *lex, String *rlb)
     if (lex->grant & GRANT_ACL)
       rlb->append(STRING_WITH_LEN(" GRANT OPTION"));
 
-    append_int(rlb, false, STRING_WITH_LEN(" MAX_QUERIES_PER_HOUR "),
-               lex->mqh.questions,
+    append_int(rlb, false, STRING_WITH_LEN(" MAX_QUERIES_PER_HOUR "), lex->mqh.questions,
                lex->mqh.specified_limits & USER_RESOURCES::QUERIES_PER_HOUR);
 
-    append_int(rlb, false, STRING_WITH_LEN(" MAX_UPDATES_PER_HOUR "),
-               lex->mqh.updates,
+    append_int(rlb, false, STRING_WITH_LEN(" MAX_UPDATES_PER_HOUR "), lex->mqh.updates,
                lex->mqh.specified_limits & USER_RESOURCES::UPDATES_PER_HOUR);
 
-    append_int(rlb, false, STRING_WITH_LEN(" MAX_CONNECTIONS_PER_HOUR "),
-               lex->mqh.conn_per_hour,
+    append_int(rlb, false, STRING_WITH_LEN(" MAX_CONNECTIONS_PER_HOUR "), lex->mqh.conn_per_hour,
                lex->mqh.specified_limits & USER_RESOURCES::CONNECTIONS_PER_HOUR);
 
-    append_int(rlb, false, STRING_WITH_LEN(" MAX_USER_CONNECTIONS "),
-               lex->mqh.user_conn,
+    append_int(rlb, false, STRING_WITH_LEN(" MAX_USER_CONNECTIONS "), lex->mqh.user_conn,
                lex->mqh.specified_limits & USER_RESOURCES::USER_CONNECTIONS);
   }
 }
@@ -193,12 +185,12 @@ void rewrite_account_lock(LEX *lex, String *rlb)
 
 void mysql_rewrite_grant(THD *thd, String *rlb)
 {
-  LEX        *lex= thd->lex;
-  TABLE_LIST *first_table= lex->select_lex->table_list.first;
-  bool        comma= FALSE, comma_inner;
-  bool        proxy_grant= lex->type == TYPE_ENUM_PROXY;
-  String      cols(1024);
-  int         c;
+  LEX *lex = thd->lex;
+  TABLE_LIST *first_table = lex->select_lex->table_list.first;
+  bool comma = FALSE, comma_inner;
+  bool proxy_grant = lex->type == TYPE_ENUM_PROXY;
+  String cols(1024);
+  int c;
 
   rlb->append(STRING_WITH_LEN("GRANT "));
 
@@ -210,17 +202,17 @@ void mysql_rewrite_grant(THD *thd, String *rlb)
   {
     ulong priv;
 
-    for (c= 0, priv= SELECT_ACL; priv <= GLOBAL_ACLS; c++, priv <<= 1)
+    for (c = 0, priv = SELECT_ACL; priv <= GLOBAL_ACLS; c++, priv <<= 1)
     {
       if (priv == GRANT_ACL)
         continue;
 
-      comma_inner= FALSE;
+      comma_inner = FALSE;
 
-      if (lex->columns.elements)               // show columns, if any
+      if (lex->columns.elements)  // show columns, if any
       {
         class LEX_COLUMN *column;
-        List_iterator <LEX_COLUMN> column_iter(lex->columns);
+        List_iterator< LEX_COLUMN > column_iter(lex->columns);
 
         cols.length(0);
         cols.append(STRING_WITH_LEN(" ("));
@@ -231,14 +223,14 @@ void mysql_rewrite_grant(THD *thd, String *rlb)
           the order we'll recreate the privilege: UPDATE (f2, f3, f1)
         */
 
-        while ((column= column_iter++))
+        while ((column = column_iter++))
         {
           if (column->rights & priv)
           {
             if (comma_inner)
               cols.append(STRING_WITH_LEN(", "));
             else
-              comma_inner= TRUE;
+              comma_inner = TRUE;
             append_identifier(thd, &cols, column->column.ptr(), column->column.length());
           }
         }
@@ -250,32 +242,37 @@ void mysql_rewrite_grant(THD *thd, String *rlb)
         if (comma)
           rlb->append(STRING_WITH_LEN(", "));
         else
-          comma= TRUE;
-        rlb->append(command_array[c],command_lengths[c]);
-        if (!(lex->grant & priv))              // general outranks specific
+          comma = TRUE;
+        rlb->append(command_array[c], command_lengths[c]);
+        if (!(lex->grant & priv))  // general outranks specific
           rlb->append(cols);
       }
     }
-    if (!comma)                                // no privs, default to USAGE
+    if (!comma)  // no privs, default to USAGE
       rlb->append(STRING_WITH_LEN("USAGE"));
   }
 
   rlb->append(STRING_WITH_LEN(" ON "));
-  switch(lex->type)
+  switch (lex->type)
   {
-    case TYPE_ENUM_PROCEDURE: rlb->append(STRING_WITH_LEN("PROCEDURE ")); break;
-    case TYPE_ENUM_FUNCTION:  rlb->append(STRING_WITH_LEN("FUNCTION "));  break;
-    default:                                                              break;
+    case TYPE_ENUM_PROCEDURE:
+      rlb->append(STRING_WITH_LEN("PROCEDURE "));
+      break;
+    case TYPE_ENUM_FUNCTION:
+      rlb->append(STRING_WITH_LEN("FUNCTION "));
+      break;
+    default:
+      break;
   }
 
   LEX_USER *user_name, *tmp_user_name;
-  List_iterator <LEX_USER> user_list(lex->users_list);
-  comma= FALSE;
+  List_iterator< LEX_USER > user_list(lex->users_list);
+  comma = FALSE;
 
   if (proxy_grant)
   {
-    tmp_user_name= user_list++;
-    user_name= get_current_user(thd, tmp_user_name);
+    tmp_user_name = user_list++;
+    user_name = get_current_user(thd, tmp_user_name);
     if (user_name)
       append_user_new(thd, rlb, user_name, comma);
   }
@@ -283,25 +280,21 @@ void mysql_rewrite_grant(THD *thd, String *rlb)
   {
     if (first_table->is_view())
     {
-      append_identifier(thd, rlb, first_table->view_db.str,
-                        first_table->view_db.length);
+      append_identifier(thd, rlb, first_table->view_db.str, first_table->view_db.length);
       rlb->append(STRING_WITH_LEN("."));
-      append_identifier(thd, rlb, first_table->view_name.str,
-                        first_table->view_name.length);
+      append_identifier(thd, rlb, first_table->view_name.str, first_table->view_name.length);
     }
     else
     {
       append_identifier(thd, rlb, first_table->db, strlen(first_table->db));
       rlb->append(STRING_WITH_LEN("."));
-      append_identifier(thd, rlb, first_table->table_name,
-                        strlen(first_table->table_name));
+      append_identifier(thd, rlb, first_table->table_name, strlen(first_table->table_name));
     }
   }
   else
   {
     if (lex->current_select()->db)
-      append_identifier(thd, rlb, lex->current_select()->db,
-                        strlen(lex->current_select()->db));
+      append_identifier(thd, rlb, lex->current_select()->db, strlen(lex->current_select()->db));
     else
       rlb->append("*");
     rlb->append(STRING_WITH_LEN(".*"));
@@ -309,22 +302,21 @@ void mysql_rewrite_grant(THD *thd, String *rlb)
 
   rlb->append(STRING_WITH_LEN(" TO "));
   {
-    while ((tmp_user_name= user_list++))
+    while ((tmp_user_name = user_list++))
     {
-      if ((user_name= get_current_user(thd, tmp_user_name)))
+      if ((user_name = get_current_user(thd, tmp_user_name)))
       {
         if (opt_log_builtin_as_identified_by_password)
           append_user(thd, rlb, user_name, comma, true);
         else
           append_user_new(thd, rlb, user_name, comma);
-        comma= TRUE;
+        comma = TRUE;
       }
     }
   }
   rewrite_ssl_properties(lex, rlb);
   rewrite_user_resources(lex, rlb);
 }
-
 
 /**
   Rewrite a SET statement.
@@ -335,19 +327,19 @@ void mysql_rewrite_grant(THD *thd, String *rlb)
 
 static void mysql_rewrite_set(THD *thd, String *rlb)
 {
-  LEX                              *lex= thd->lex;
-  List_iterator_fast<set_var_base>  it(lex->var_list);
-  set_var_base                     *var;
-  bool                              comma= FALSE;
+  LEX *lex = thd->lex;
+  List_iterator_fast< set_var_base > it(lex->var_list);
+  set_var_base *var;
+  bool comma = FALSE;
 
   rlb->append(STRING_WITH_LEN("SET "));
 
-  while ((var= it++))
+  while ((var = it++))
   {
     if (comma)
       rlb->append(STRING_WITH_LEN(","));
     else
-      comma= TRUE;
+      comma = TRUE;
 
     var->print(thd, rlb);
   }
@@ -361,38 +353,33 @@ static void mysql_rewrite_set(THD *thd, String *rlb)
   @param hide_password_hash      If password hash has to be shown as <secret> or not.
 */
 
-void mysql_rewrite_create_alter_user(THD *thd, String *rlb,
-                                     std::set<LEX_USER *> *extra_users,
+void mysql_rewrite_create_alter_user(THD *thd, String *rlb, std::set< LEX_USER * > *extra_users,
                                      bool hide_password_hash)
 {
-  LEX                      *lex= thd->lex;
-  LEX_USER                 *user_name, *tmp_user_name;
-  List_iterator <LEX_USER>  user_list(lex->users_list);
-  bool                      comma= FALSE;
+  LEX *lex = thd->lex;
+  LEX_USER *user_name, *tmp_user_name;
+  List_iterator< LEX_USER > user_list(lex->users_list);
+  bool comma = FALSE;
 
-  if (thd->lex->sql_command == SQLCOM_CREATE_USER ||
-      thd->lex->sql_command == SQLCOM_SHOW_CREATE_USER)
+  if (thd->lex->sql_command == SQLCOM_CREATE_USER || thd->lex->sql_command == SQLCOM_SHOW_CREATE_USER)
     rlb->append(STRING_WITH_LEN("CREATE USER "));
   else
     rlb->append(STRING_WITH_LEN("ALTER USER "));
 
-  if (thd->lex->sql_command == SQLCOM_CREATE_USER &&
-      thd->lex->create_info.options & HA_LEX_CREATE_IF_NOT_EXISTS)
+  if (thd->lex->sql_command == SQLCOM_CREATE_USER && thd->lex->create_info.options & HA_LEX_CREATE_IF_NOT_EXISTS)
     rlb->append(STRING_WITH_LEN("IF NOT EXISTS "));
-  if (thd->lex->sql_command == SQLCOM_ALTER_USER &&
-      thd->lex->drop_if_exists)
+  if (thd->lex->sql_command == SQLCOM_ALTER_USER && thd->lex->drop_if_exists)
     rlb->append(STRING_WITH_LEN("IF EXISTS "));
 
-  while ((tmp_user_name= user_list++))
+  while ((tmp_user_name = user_list++))
   {
-    if ((user_name= get_current_user(thd, tmp_user_name)))
+    if ((user_name = get_current_user(thd, tmp_user_name)))
     {
-      if (opt_log_builtin_as_identified_by_password &&
-          thd->lex->sql_command != SQLCOM_ALTER_USER)
+      if (opt_log_builtin_as_identified_by_password && thd->lex->sql_command != SQLCOM_ALTER_USER)
         append_user(thd, rlb, user_name, comma, true);
       else
         append_user_new(thd, rlb, user_name, comma, hide_password_hash);
-      comma= TRUE;
+      comma = TRUE;
     }
   }
 
@@ -408,8 +395,8 @@ void mysql_rewrite_create_alter_user(THD *thd, String *rlb,
     }
     else if (lex->alter_password.expire_after_days)
     {
-      append_int(rlb, false, STRING_WITH_LEN(" PASSWORD EXPIRE INTERVAL "),
-                 lex->alter_password.expire_after_days, TRUE);
+      append_int(rlb, false, STRING_WITH_LEN(" PASSWORD EXPIRE INTERVAL "), lex->alter_password.expire_after_days,
+                 TRUE);
       rlb->append(STRING_WITH_LEN(" DAY"));
     }
     else if (lex->alter_password.use_default_password_lifetime)
@@ -427,14 +414,13 @@ void mysql_rewrite_create_alter_user(THD *thd, String *rlb,
     rewrite_account_lock(lex, rlb);
   }
 
-  if ((lex->sql_command == SQLCOM_CREATE_USER ||
-      lex->sql_command == SQLCOM_ALTER_USER) &&
-      extra_users && extra_users->size())
+  if ((lex->sql_command == SQLCOM_CREATE_USER || lex->sql_command == SQLCOM_ALTER_USER) && extra_users &&
+      extra_users->size())
   {
     String warn_user;
-    bool comma= false;
-    bool log_warning= false;
-    std::set<LEX_USER *>::iterator it;
+    bool comma = false;
+    bool log_warning = false;
+    std::set< LEX_USER * >::iterator it;
     for (it = extra_users->begin(); it != extra_users->end(); it++)
     {
       /*
@@ -444,35 +430,36 @@ void mysql_rewrite_create_alter_user(THD *thd, String *rlb,
         2. If SQLCOM_ALTER_USER and IF EXISTS clause is used and
            IDENTIFIED WITH clause is not used
       */
-      LEX_USER* extra_user= *it;
+      LEX_USER *extra_user = *it;
       if (!extra_user->uses_identified_with_clause &&
-          (lex->sql_command == SQLCOM_CREATE_USER ||
-          extra_user->uses_identified_by_clause))
+          (lex->sql_command == SQLCOM_CREATE_USER || extra_user->uses_identified_by_clause))
       {
         append_user(thd, &warn_user, extra_user, comma, false);
-        comma= true;
-        log_warning= true;
+        comma = true;
+        log_warning = true;
       }
     }
     if (log_warning)
     {
       if (lex->sql_command == SQLCOM_CREATE_USER)
       {
-        sql_print_warning("Following users were specified in CREATE USER "
-                          "IF NOT EXISTS but they already exist. "
-                          "Corresponding entry in binary log used default "
-                          "authentication plugin '%s' to rewrite "
-                          "authentication information(if any) for them: %s\n",
-                          default_auth_plugin, warn_user.c_ptr_safe());
+        sql_print_warning(
+            "Following users were specified in CREATE USER "
+            "IF NOT EXISTS but they already exist. "
+            "Corresponding entry in binary log used default "
+            "authentication plugin '%s' to rewrite "
+            "authentication information(if any) for them: %s\n",
+            default_auth_plugin, warn_user.c_ptr_safe());
       }
       else if (lex->sql_command == SQLCOM_ALTER_USER)
       {
-        sql_print_warning("Following users were specified in ALTER USER "
-                          "IF EXISTS but they do not exist. "
-                          "Corresponding entry in binary log used default "
-                          "authentication plugin '%s' to rewrite "
-                          "authentication information(if any) for them: %s\n",
-                          default_auth_plugin, warn_user.c_ptr_safe());
+        sql_print_warning(
+            "Following users were specified in ALTER USER "
+            "IF EXISTS but they do not exist. "
+            "Corresponding entry in binary log used default "
+            "authentication plugin '%s' to rewrite "
+            "authentication information(if any) for them: %s\n",
+            default_auth_plugin, warn_user.c_ptr_safe());
       }
     }
     warn_user.mem_free();
@@ -488,7 +475,7 @@ void mysql_rewrite_create_alter_user(THD *thd, String *rlb,
 
 static void mysql_rewrite_change_master(THD *thd, String *rlb)
 {
-  LEX *lex= thd->lex;
+  LEX *lex = thd->lex;
 
   rlb->append(STRING_WITH_LEN("CHANGE MASTER TO"));
 
@@ -591,13 +578,13 @@ static void mysql_rewrite_change_master(THD *thd, String *rlb)
   }
   if (lex->mi.repl_ignore_server_ids_opt)
   {
-    bool first= TRUE;
+    bool first = TRUE;
     rlb->append(STRING_WITH_LEN(" IGNORE_SERVER_IDS = ( "));
-    for (size_t i= 0; i < lex->mi.repl_ignore_server_ids.size(); i++)
+    for (size_t i = 0; i < lex->mi.repl_ignore_server_ids.size(); i++)
     {
-      ulong s_id= lex->mi.repl_ignore_server_ids[i];
+      ulong s_id = lex->mi.repl_ignore_server_ids[i];
       if (first)
-        first= FALSE;
+        first = FALSE;
       else
         rlb->append(STRING_WITH_LEN(", "));
       rlb->append_ulonglong(s_id);
@@ -618,7 +605,6 @@ static void mysql_rewrite_change_master(THD *thd, String *rlb)
   }
 }
 
-
 /**
   Rewrite a START SLAVE statement.
 
@@ -628,7 +614,7 @@ static void mysql_rewrite_change_master(THD *thd, String *rlb)
 
 static void mysql_rewrite_start_slave(THD *thd, String *rlb)
 {
-  LEX *lex= thd->lex;
+  LEX *lex = thd->lex;
 
   if (!lex->slave_connection.password)
     return;
@@ -639,8 +625,7 @@ static void mysql_rewrite_start_slave(THD *thd, String *rlb)
     rlb->append(STRING_WITH_LEN(" IO_THREAD"));
 
   /* we have printed the IO THREAD related options */
-  if (lex->slave_thd_opt & SLAVE_IO && 
-      lex->slave_thd_opt & SLAVE_SQL)
+  if (lex->slave_thd_opt & SLAVE_IO && lex->slave_thd_opt & SLAVE_SQL)
     rlb->append(STRING_WITH_LEN(","));
 
   if (lex->slave_thd_opt & SLAVE_SQL)
@@ -695,7 +680,6 @@ static void mysql_rewrite_start_slave(THD *thd, String *rlb)
   }
 }
 
-
 /**
   Rewrite a SERVER OPTIONS clause (for CREATE SERVER and ALTER SERVER).
 
@@ -705,7 +689,7 @@ static void mysql_rewrite_start_slave(THD *thd, String *rlb)
 
 static void mysql_rewrite_server_options(THD *thd, String *rlb)
 {
-  LEX *lex= thd->lex;
+  LEX *lex = thd->lex;
 
   rlb->append(STRING_WITH_LEN(" OPTIONS ( "));
 
@@ -715,13 +699,11 @@ static void mysql_rewrite_server_options(THD *thd, String *rlb)
   append_str(rlb, true, "DATABASE", lex->server_options.get_db());
   append_str(rlb, true, "OWNER", lex->server_options.get_owner());
   append_str(rlb, true, "SOCKET", lex->server_options.get_socket());
-  append_int(rlb, true, STRING_WITH_LEN("PORT "),
-             lex->server_options.get_port(),
+  append_int(rlb, true, STRING_WITH_LEN("PORT "), lex->server_options.get_port(),
              lex->server_options.get_port() != Server_options::PORT_NOT_SET);
 
   rlb->append(STRING_WITH_LEN(" )"));
 }
-
 
 /**
   Rewrite a CREATE SERVER statement.
@@ -732,24 +714,21 @@ static void mysql_rewrite_server_options(THD *thd, String *rlb)
 
 static void mysql_rewrite_create_server(THD *thd, String *rlb)
 {
-  LEX *lex= thd->lex;
+  LEX *lex = thd->lex;
 
   if (!lex->server_options.get_password())
     return;
 
   rlb->append(STRING_WITH_LEN("CREATE SERVER "));
 
-  rlb->append(lex->server_options.m_server_name.str ?
-              lex->server_options.m_server_name.str : "");
+  rlb->append(lex->server_options.m_server_name.str ? lex->server_options.m_server_name.str : "");
 
   rlb->append(STRING_WITH_LEN(" FOREIGN DATA WRAPPER '"));
-  rlb->append(lex->server_options.get_scheme() ?
-              lex->server_options.get_scheme() : "");
+  rlb->append(lex->server_options.get_scheme() ? lex->server_options.get_scheme() : "");
   rlb->append(STRING_WITH_LEN("'"));
 
   mysql_rewrite_server_options(thd, rlb);
 }
-
 
 /**
   Rewrite a ALTER SERVER statement.
@@ -760,21 +739,17 @@ static void mysql_rewrite_create_server(THD *thd, String *rlb)
 
 static void mysql_rewrite_alter_server(THD *thd, String *rlb)
 {
-  LEX *lex= thd->lex;
+  LEX *lex = thd->lex;
 
   if (!lex->server_options.get_password())
     return;
 
   rlb->append(STRING_WITH_LEN("ALTER SERVER "));
 
-  rlb->append(lex->server_options.m_server_name.str ?
-              lex->server_options.m_server_name.str : "");
+  rlb->append(lex->server_options.m_server_name.str ? lex->server_options.m_server_name.str : "");
 
   mysql_rewrite_server_options(thd, rlb);
 }
-
-
-
 
 /**
   Rewrite a PREPARE statement.
@@ -785,19 +760,15 @@ static void mysql_rewrite_alter_server(THD *thd, String *rlb)
 
 static void mysql_rewrite_prepare(THD *thd, String *rlb)
 {
-  LEX *lex= thd->lex;
+  LEX *lex = thd->lex;
 
   if (lex->prepared_stmt_code_is_varref)
     return;
 
   rlb->append(STRING_WITH_LEN("PREPARE "));
-  rlb->append(lex->prepared_stmt_name.str,
-              lex->prepared_stmt_name.length);
+  rlb->append(lex->prepared_stmt_name.str, lex->prepared_stmt_name.length);
   rlb->append(STRING_WITH_LEN(" FROM ..."));
 }
-
-
-
 
 /**
    Rewrite a query (to obfuscate passwords etc.)
@@ -824,33 +795,49 @@ void mysql_rewrite_query(THD *thd)
 
   if (thd->lex->contains_plaintext_password)
   {
-    switch(thd->lex->sql_command)
+    switch (thd->lex->sql_command)
     {
-    case SQLCOM_GRANT:         mysql_rewrite_grant(thd, &rlb);         break;
-    case SQLCOM_SET_OPTION:    mysql_rewrite_set(thd, &rlb);           break;
-    case SQLCOM_CREATE_USER:
-    case SQLCOM_ALTER_USER:
-                        mysql_rewrite_create_alter_user(thd, &rlb);    break;
-    case SQLCOM_CHANGE_MASTER: mysql_rewrite_change_master(thd, &rlb); break;
-    case SQLCOM_SLAVE_START:   mysql_rewrite_start_slave(thd, &rlb);   break;
-    case SQLCOM_CREATE_SERVER: mysql_rewrite_create_server(thd, &rlb); break;
-    case SQLCOM_ALTER_SERVER:  mysql_rewrite_alter_server(thd, &rlb);  break;
+      case SQLCOM_GRANT:
+        mysql_rewrite_grant(thd, &rlb);
+        break;
+      case SQLCOM_SET_OPTION:
+        mysql_rewrite_set(thd, &rlb);
+        break;
+      case SQLCOM_CREATE_USER:
+      case SQLCOM_ALTER_USER:
+        mysql_rewrite_create_alter_user(thd, &rlb);
+        break;
+      case SQLCOM_CHANGE_MASTER:
+        mysql_rewrite_change_master(thd, &rlb);
+        break;
+      case SQLCOM_SLAVE_START:
+        mysql_rewrite_start_slave(thd, &rlb);
+        break;
+      case SQLCOM_CREATE_SERVER:
+        mysql_rewrite_create_server(thd, &rlb);
+        break;
+      case SQLCOM_ALTER_SERVER:
+        mysql_rewrite_alter_server(thd, &rlb);
+        break;
 
-    /*
-      PREPARE stmt FROM <string> is rewritten so that <string> is
-      not logged.  The statement in <string> will in turn be logged
-      by the prepare and the execute functions in sql_prepare.cc.
-      They do call rewrite so they can safely log the statement,
-      but when they call us, it'll be with sql_command set to reflect
-      the statement in question, not SQLCOM_PREPARE or SQLCOM_EXECUTE.
-      Therefore, there is no SQLCOM_EXECUTE case here, and all
-      SQLCOM_PREPARE does is remove <string>; the "other half",
-      i.e. printing what string we prepare from happens when the
-      prepare function calls the logger (and comes by here with
-      sql_command set to the command being prepared).
-    */
-    case SQLCOM_PREPARE:       mysql_rewrite_prepare(thd, &rlb);       break;
-    default:                   /* unhandled query types are legal. */  break;
+      /*
+        PREPARE stmt FROM <string> is rewritten so that <string> is
+        not logged.  The statement in <string> will in turn be logged
+        by the prepare and the execute functions in sql_prepare.cc.
+        They do call rewrite so they can safely log the statement,
+        but when they call us, it'll be with sql_command set to reflect
+        the statement in question, not SQLCOM_PREPARE or SQLCOM_EXECUTE.
+        Therefore, there is no SQLCOM_EXECUTE case here, and all
+        SQLCOM_PREPARE does is remove <string>; the "other half",
+        i.e. printing what string we prepare from happens when the
+        prepare function calls the logger (and comes by here with
+        sql_command set to the command being prepared).
+      */
+      case SQLCOM_PREPARE:
+        mysql_rewrite_prepare(thd, &rlb);
+        break;
+      default: /* unhandled query types are legal. */
+        break;
     }
   }
 

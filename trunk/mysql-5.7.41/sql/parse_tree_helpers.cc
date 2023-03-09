@@ -28,7 +28,6 @@
 #include "sp_instr.h"
 #include "auth/auth_common.h"
 
-
 /**
   Create an object to represent a SP variable in the Item-hierarchy.
 
@@ -45,21 +44,17 @@
 
   @return An Item_splocal object representing the SP variable, or NULL on error.
 */
-Item_splocal* create_item_for_sp_var(THD *thd,
-                                     LEX_STRING name,
-                                     sp_variable *spv,
-                                     const char *query_start_ptr,
-                                     const char *start,
-                                     const char *end)
+Item_splocal *create_item_for_sp_var(THD *thd, LEX_STRING name, sp_variable *spv, const char *query_start_ptr,
+                                     const char *start, const char *end)
 {
-  LEX *lex= thd->lex;
-  size_t spv_pos_in_query= 0;
-  size_t spv_len_in_query= 0;
-  sp_pcontext *pctx= lex->get_sp_current_parsing_ctx();
+  LEX *lex = thd->lex;
+  size_t spv_pos_in_query = 0;
+  size_t spv_len_in_query = 0;
+  sp_pcontext *pctx = lex->get_sp_current_parsing_ctx();
 
   /* If necessary, look for the variable. */
   if (pctx && !spv)
-    spv= pctx->find_variable(name, false);
+    spv = pctx->find_variable(name, false);
 
   if (!spv)
   {
@@ -72,22 +67,20 @@ Item_splocal* create_item_for_sp_var(THD *thd,
   if (query_start_ptr)
   {
     /* Position and length of the SP variable name in the query. */
-    spv_pos_in_query= start - query_start_ptr;
-    spv_len_in_query= end - start;
+    spv_pos_in_query = start - query_start_ptr;
+    spv_len_in_query = end - start;
   }
 
-  Item_splocal *item=
-    new (thd->mem_root) Item_splocal(
-      name, spv->offset, spv->type, spv_pos_in_query, spv_len_in_query);
+  Item_splocal *item =
+      new (thd->mem_root) Item_splocal(name, spv->offset, spv->type, spv_pos_in_query, spv_len_in_query);
 
 #ifndef NDEBUG
   if (item)
-    item->m_sp= lex->sphead;
+    item->m_sp = lex->sphead;
 #endif
 
   return item;
 }
-
 
 /**
    Report syntax error if the sel query block can't be parenthesized
@@ -98,24 +91,19 @@ Item_splocal* create_item_for_sp_var(THD *thd,
 bool setup_select_in_parentheses(SELECT_LEX *sel)
 {
   assert(sel->braces);
-  if (sel->linkage == UNION_TYPE &&
-      !sel->master_unit()->first_select()->braces &&
-      sel->master_unit()->first_select()->linkage ==
-      UNION_TYPE)
+  if (sel->linkage == UNION_TYPE && !sel->master_unit()->first_select()->braces &&
+      sel->master_unit()->first_select()->linkage == UNION_TYPE)
   {
     my_syntax_error(ER(ER_SYNTAX_ERROR));
     return true;
   }
-  if (sel->linkage == UNION_TYPE &&
-      sel->olap != UNSPECIFIED_OLAP_TYPE &&
-      sel->master_unit()->fake_select_lex)
+  if (sel->linkage == UNION_TYPE && sel->olap != UNSPECIFIED_OLAP_TYPE && sel->master_unit()->fake_select_lex)
   {
     my_error(ER_WRONG_USAGE, MYF(0), "CUBE/ROLLUP", "ORDER BY");
     return true;
   }
   return false;
 }
-
 
 /**
   @brief Push an error message into MySQL diagnostic area with line
@@ -130,32 +118,29 @@ bool setup_select_in_parentheses(SELECT_LEX *sel)
 
 void my_syntax_error(const char *s)
 {
-  THD *thd= current_thd;
-  Lex_input_stream *lip= & thd->m_parser_state->m_lip;
+  THD *thd = current_thd;
+  Lex_input_stream *lip = &thd->m_parser_state->m_lip;
 
-  const char *yytext= lip->get_tok_start();
+  const char *yytext = lip->get_tok_start();
   if (!yytext)
-    yytext= "";
+    yytext = "";
 
   /* Push an error into the diagnostic area */
   ErrConvString err(yytext, thd->variables.character_set_client);
-  my_printf_error(ER_PARSE_ERROR,  ER(ER_PARSE_ERROR), MYF(0), s,
-                  err.ptr(), lip->yylineno);
+  my_printf_error(ER_PARSE_ERROR, ER(ER_PARSE_ERROR), MYF(0), s, err.ptr(), lip->yylineno);
 }
-
 
 bool find_sys_var_null_base(THD *thd, struct sys_var_with_base *tmp)
 {
-  tmp->var= find_sys_var(thd, tmp->base_name.str, tmp->base_name.length);
+  tmp->var = find_sys_var(thd, tmp->base_name.str, tmp->base_name.length);
 
   if (tmp->var == NULL)
     my_error(ER_UNKNOWN_SYSTEM_VARIABLE, MYF(0), tmp->base_name.str);
   else
-    tmp->base_name= null_lex_str;
+    tmp->base_name = null_lex_str;
 
   return thd->is_error();
 }
-
 
 /**
   Helper action for a SET statement.
@@ -169,48 +154,41 @@ bool find_sys_var_null_base(THD *thd, struct sys_var_with_base *tmp)
   @return TRUE if error, FALSE otherwise.
 */
 
-bool
-set_system_variable(THD *thd, struct sys_var_with_base *var_with_base,
-                    enum enum_var_type var_type, Item *val)
+bool set_system_variable(THD *thd, struct sys_var_with_base *var_with_base, enum enum_var_type var_type, Item *val)
 {
   set_var *var;
-  LEX *lex= thd->lex;
-  sp_head *sp= lex->sphead;
-  sp_pcontext *pctx= lex->get_sp_current_parsing_ctx();
+  LEX *lex = thd->lex;
+  sp_head *sp = lex->sphead;
+  sp_pcontext *pctx = lex->get_sp_current_parsing_ctx();
 
   /* No AUTOCOMMIT from a stored function or trigger. */
   if (pctx && var_with_base->var == Sys_autocommit_ptr)
-    sp->m_flags|= sp_head::HAS_SET_AUTOCOMMIT_STMT;
+    sp->m_flags |= sp_head::HAS_SET_AUTOCOMMIT_STMT;
 
 #ifdef HAVE_REPLICATION
-  if (lex->uses_stored_routines() &&
-      ((var_with_base->var == Sys_gtid_next_ptr
+  if (lex->uses_stored_routines() && ((var_with_base->var == Sys_gtid_next_ptr
 #ifdef HAVE_GTID_NEXT_LIST
-       || var_with_base->var == Sys_gtid_next_list_ptr
+                                       || var_with_base->var == Sys_gtid_next_list_ptr
 #endif
-       ) ||
-       Sys_gtid_purged_ptr == var_with_base->var))
+                                       ) ||
+                                      Sys_gtid_purged_ptr == var_with_base->var))
   {
-    my_error(ER_SET_STATEMENT_CANNOT_INVOKE_FUNCTION, MYF(0),
-             var_with_base->var->name.str);
+    my_error(ER_SET_STATEMENT_CANNOT_INVOKE_FUNCTION, MYF(0), var_with_base->var->name.str);
     return TRUE;
   }
 #endif
 
-  if (val && val->type() == Item::FIELD_ITEM &&
-      ((Item_field*)val)->table_name)
+  if (val && val->type() == Item::FIELD_ITEM && ((Item_field *)val)->table_name)
   {
     my_error(ER_WRONG_TYPE_FOR_VAR, MYF(0), var_with_base->var->name.str);
     return TRUE;
   }
 
-  if (! (var= new set_var(var_type, var_with_base->var,
-         &var_with_base->base_name, val)))
+  if (!(var = new set_var(var_type, var_with_base->var, &var_with_base->base_name, val)))
     return TRUE;
 
   return lex->var_list.push_back(var);
 }
-
 
 /**
   Make a new string allocated on THD's mem-root.
@@ -227,15 +205,14 @@ LEX_STRING make_string(THD *thd, const char *start_ptr, const char *end_ptr)
 {
   LEX_STRING s;
 
-  s.length= end_ptr - start_ptr;
-  s.str= (char *) thd->alloc(s.length + 1);
+  s.length = end_ptr - start_ptr;
+  s.str = (char *)thd->alloc(s.length + 1);
 
   if (s.str)
     strmake(s.str, start_ptr, s.length);
 
   return s;
 }
-
 
 /**
   Helper action for a SET statement.
@@ -249,37 +226,25 @@ LEX_STRING make_string(THD *thd, const char *start_ptr, const char *end_ptr)
   @return error status (true if error, false otherwise).
 */
 
-bool set_trigger_new_row(Parse_context *pc,
-                         LEX_STRING trigger_field_name,
-                         Item *expr_item,
-                         LEX_STRING expr_query)
+bool set_trigger_new_row(Parse_context *pc, LEX_STRING trigger_field_name, Item *expr_item, LEX_STRING expr_query)
 {
-  THD *thd= pc->thd;
-  LEX *lex= thd->lex;
-  sp_head *sp= lex->sphead;
+  THD *thd = pc->thd;
+  LEX *lex = thd->lex;
+  sp_head *sp = lex->sphead;
 
   assert(expr_item);
   assert(sp->m_trg_chistics.action_time == TRG_ACTION_BEFORE &&
-         (sp->m_trg_chistics.event == TRG_EVENT_INSERT ||
-          sp->m_trg_chistics.event == TRG_EVENT_UPDATE));
+         (sp->m_trg_chistics.event == TRG_EVENT_INSERT || sp->m_trg_chistics.event == TRG_EVENT_UPDATE));
 
-  Item_trigger_field *trg_fld=
-    new (pc->mem_root) Item_trigger_field(POS(),
-                                          TRG_NEW_ROW,
-                                          trigger_field_name.str,
-                                          UPDATE_ACL, false);
+  Item_trigger_field *trg_fld =
+      new (pc->mem_root) Item_trigger_field(POS(), TRG_NEW_ROW, trigger_field_name.str, UPDATE_ACL, false);
 
-  if (trg_fld == NULL || trg_fld->itemize(pc, (Item **) &trg_fld))
+  if (trg_fld == NULL || trg_fld->itemize(pc, (Item **)&trg_fld))
     return true;
   assert(trg_fld->type() == Item::TRIGGER_FIELD_ITEM);
 
-  sp_instr_set_trigger_field *i=
-    new (pc->mem_root)
-      sp_instr_set_trigger_field(sp->instructions(),
-                                 lex,
-                                 trigger_field_name,
-                                 trg_fld, expr_item,
-                                 expr_query);
+  sp_instr_set_trigger_field *i = new (pc->mem_root)
+      sp_instr_set_trigger_field(sp->instructions(), lex, trigger_field_name, trg_fld, expr_item, expr_query);
 
   if (!i)
     return true;
@@ -288,16 +253,14 @@ bool set_trigger_new_row(Parse_context *pc,
     Let us add this item to list of all Item_trigger_field
     objects in trigger.
   */
-  sp->m_cur_instr_trig_field_items.link_in_list(trg_fld,
-                                                &trg_fld->next_trg_field);
+  sp->m_cur_instr_trig_field_items.link_in_list(trg_fld, &trg_fld->next_trg_field);
 
   return sp->add_instr(thd, i);
 }
 
-
 void sp_create_assignment_lex(THD *thd, const char *option_ptr)
 {
-  sp_head *sp= thd->lex->sphead;
+  sp_head *sp = thd->lex->sphead;
 
   /*
     We can come here in the following cases:
@@ -317,20 +280,20 @@ void sp_create_assignment_lex(THD *thd, const char *option_ptr)
         further.
   */
 
-  if (!sp ||            // case #1
-      sp->is_invoked()) // case #3
+  if (!sp ||             // case #1
+      sp->is_invoked())  // case #3
   {
     return;
   }
 
-  LEX *old_lex= thd->lex;
+  LEX *old_lex = thd->lex;
   sp->reset_lex(thd);
-  LEX * const lex= thd->lex;
+  LEX *const lex = thd->lex;
 
   /* Set new LEX as if we at start of set rule. */
-  lex->sql_command= SQLCOM_SET_OPTION;
+  lex->sql_command = SQLCOM_SET_OPTION;
   lex->var_list.empty();
-  lex->autocommit= false;
+  lex->autocommit = false;
 
   /*
     It's a SET statement within SP. It will be either translated
@@ -344,9 +307,8 @@ void sp_create_assignment_lex(THD *thd, const char *option_ptr)
   sp->m_parser_data.set_option_start_ptr(option_ptr);
 
   /* Inherit from outer lex. */
-  lex->option_type= old_lex->option_type;
+  lex->option_type = old_lex->option_type;
 }
-
 
 /**
   Create a SP instruction for a SET assignment.
@@ -361,8 +323,8 @@ void sp_create_assignment_lex(THD *thd, const char *option_ptr)
 
 bool sp_create_assignment_instr(THD *thd, const char *expr_end_ptr)
 {
-  LEX *lex= thd->lex;
-  sp_head *sp= lex->sphead;
+  LEX *lex = thd->lex;
+  sp_head *sp = lex->sphead;
 
   /*
     We can come here in the following cases:
@@ -382,8 +344,8 @@ bool sp_create_assignment_instr(THD *thd, const char *expr_end_ptr)
         further.
   */
 
-  if (!sp ||            // case #1
-      sp->is_invoked()) // case #3
+  if (!sp ||             // case #1
+      sp->is_invoked())  // case #3
   {
     return false;
   }
@@ -392,48 +354,43 @@ bool sp_create_assignment_instr(THD *thd, const char *expr_end_ptr)
   {
     /* Extract expression string. */
 
-    const char *expr_start_ptr= sp->m_parser_data.get_option_start_ptr();
+    const char *expr_start_ptr = sp->m_parser_data.get_option_start_ptr();
 
     LEX_STRING expr;
-    expr.str= (char *) expr_start_ptr;
-    expr.length= expr_end_ptr - expr_start_ptr;
+    expr.str = (char *)expr_start_ptr;
+    expr.length = expr_end_ptr - expr_start_ptr;
 
     /* Construct SET-statement query. */
 
     LEX_STRING set_stmt_query;
 
-    set_stmt_query.length= expr.length + 3;
-    set_stmt_query.str= (char *) thd->alloc(set_stmt_query.length + 1);
+    set_stmt_query.length = expr.length + 3;
+    set_stmt_query.str = (char *)thd->alloc(set_stmt_query.length + 1);
 
     if (!set_stmt_query.str)
       return true;
 
-    strmake(strmake(set_stmt_query.str, "SET", 3),
-            expr.str, expr.length);
+    strmake(strmake(set_stmt_query.str, "SET", 3), expr.str, expr.length);
 
     /*
       We have assignment to user or system variable or option setting, so we
       should construct sp_instr_stmt for it.
     */
 
-    sp_instr_stmt *i=
-      new (thd->mem_root)
-        sp_instr_stmt(sp->instructions(), lex, set_stmt_query);
+    sp_instr_stmt *i = new (thd->mem_root) sp_instr_stmt(sp->instructions(), lex, set_stmt_query);
 
     if (!i || sp->add_instr(thd, i))
       return true;
   }
 
   /* Remember option_type of the currently parsed LEX. */
-  enum_var_type inner_option_type= lex->option_type;
+  enum_var_type inner_option_type = lex->option_type;
 
   if (sp->restore_lex(thd))
     return true;
 
   /* Copy option_type to outer lex in case it has changed. */
-  thd->lex->option_type= inner_option_type;
+  thd->lex->option_type = inner_option_type;
 
   return false;
 }
-
-

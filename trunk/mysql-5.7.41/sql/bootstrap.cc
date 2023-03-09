@@ -26,89 +26,81 @@
 #include "mysqld_thd_manager.h"  // Global_THD_manager
 #include "bootstrap_impl.h"
 #include "sql_initialize.h"
-#include "sql_class.h"           // THD
-#include "sql_connect.h"         // close_connection
-#include "sql_parse.h"           // mysql_parse
+#include "sql_class.h"    // THD
+#include "sql_connect.h"  // close_connection
+#include "sql_parse.h"    // mysql_parse
 
 #include "pfs_file_provider.h"
 #include "mysql/psi/mysql_file.h"
 
-static MYSQL_FILE *bootstrap_file= NULL;
-static const char *bootstrap_query= NULL;
-static int bootstrap_error= 0;
+static MYSQL_FILE *bootstrap_file = NULL;
+static const char *bootstrap_query = NULL;
+static int bootstrap_error = 0;
 
-
-class Query_command_iterator: public Command_iterator
+class Query_command_iterator : public Command_iterator
 {
-public:
-  Query_command_iterator(const char* query):
-    m_query(query), m_is_read(false) {}
+ public:
+  Query_command_iterator(const char *query) : m_query(query), m_is_read(false) {}
   virtual int next(std::string &query, int *read_error, int *query_source)
   {
     if (m_is_read)
       return READ_BOOTSTRAP_EOF;
 
-    query= m_query;
-    m_is_read= true;
-    *read_error= 0;
-    *query_source= QUERY_SOURCE_COMPILED;
+    query = m_query;
+    m_is_read = true;
+    *read_error = 0;
+    *query_source = QUERY_SOURCE_COMPILED;
     return READ_BOOTSTRAP_SUCCESS;
   }
-private:
-  const char *m_query; // Owned externally.
+
+ private:
+  const char *m_query;  // Owned externally.
   bool m_is_read;
 };
 
-
-int File_command_iterator::next(std::string &query, int *error,
-                                int *query_source)
+int File_command_iterator::next(std::string &query, int *error, int *query_source)
 {
   static char query_buffer[MAX_BOOTSTRAP_QUERY_SIZE];
-  size_t length= 0;
+  size_t length = 0;
   int rc;
-  *query_source= QUERY_SOURCE_FILE;
+  *query_source = QUERY_SOURCE_FILE;
 
-  rc= read_bootstrap_query(query_buffer, &length, m_input, m_fgets_fn, error);
+  rc = read_bootstrap_query(query_buffer, &length, m_input, m_fgets_fn, error);
   if (rc == READ_BOOTSTRAP_SUCCESS)
     query.assign(query_buffer, length);
   return rc;
 }
 
-
-char *mysql_file_fgets_fn(char *buffer, size_t size, MYSQL_FILE* input, int *error)
+char *mysql_file_fgets_fn(char *buffer, size_t size, MYSQL_FILE *input, int *error)
 {
-  char *line= mysql_file_fgets(buffer, static_cast<int>(size), input);
+  char *line = mysql_file_fgets(buffer, static_cast< int >(size), input);
   if (error)
-    *error= (line == NULL) ? ferror(input->m_file) : 0;
+    *error = (line == NULL) ? ferror(input->m_file) : 0;
   return line;
 }
 
 File_command_iterator::File_command_iterator(const char *file_name)
 {
-  is_allocated= false;
-  if (!(m_input= mysql_file_fopen(key_file_init, file_name,
-    O_RDONLY, MYF(MY_WME))))
+  is_allocated = false;
+  if (!(m_input = mysql_file_fopen(key_file_init, file_name, O_RDONLY, MYF(MY_WME))))
     return;
-  m_fgets_fn= mysql_file_fgets_fn;
-  is_allocated= true;
+  m_fgets_fn = mysql_file_fgets_fn;
+  is_allocated = true;
 }
 
-File_command_iterator::~File_command_iterator()
-{
-  end();
-}
+File_command_iterator::~File_command_iterator() { end(); }
 
 void File_command_iterator::end(void)
 {
   if (is_allocated)
   {
     mysql_file_fclose(m_input, MYF(0));
-    is_allocated= false;
-    m_input= NULL;
+    is_allocated = false;
+    m_input = NULL;
   }
 }
 
-Command_iterator *Command_iterator::current_iterator= NULL;
+Command_iterator *Command_iterator::current_iterator = NULL;
 
 static void handle_bootstrap_impl(THD *thd)
 {
@@ -118,10 +110,10 @@ static void handle_bootstrap_impl(THD *thd)
   File_command_iterator file_iter(bootstrap_file, mysql_file_fgets_fn);
   Compiled_in_command_iterator comp_iter;
   Query_command_iterator query_iter(bootstrap_query);
-  bool has_binlog_option= thd->variables.option_bits & OPTION_BIN_LOG;
-  int query_source, last_query_source= -1;
+  bool has_binlog_option = thd->variables.option_bits & OPTION_BIN_LOG;
+  int query_source, last_query_source = -1;
 
-  thd->thread_stack= (char*) &thd;
+  thd->thread_stack = (char *)&thd;
   thd->security_context()->assign_user(STRING_WITH_LEN("boot"));
   thd->security_context()->assign_priv_user("", 0);
   thd->security_context()->assign_priv_host("", 0);
@@ -130,8 +122,7 @@ static void handle_bootstrap_impl(THD *thd)
     to enable stored procedures with SELECTs and Dynamic SQL
     in init-file.
   */
-    thd->get_protocol_classic()->add_client_capability(
-    CLIENT_MULTI_RESULTS);
+  thd->get_protocol_classic()->add_client_capability(CLIENT_MULTI_RESULTS);
 
   thd->init_for_queries();
 
@@ -142,24 +133,24 @@ static void handle_bootstrap_impl(THD *thd)
   */
   if (bootstrap_query)
   {
-    Command_iterator::current_iterator= &query_iter;
-    bootstrap_query= NULL;
+    Command_iterator::current_iterator = &query_iter;
+    bootstrap_query = NULL;
   }
   else
   {
     if (opt_initialize)
-      Command_iterator::current_iterator= &comp_iter;
+      Command_iterator::current_iterator = &comp_iter;
     else
-      Command_iterator::current_iterator= &file_iter;
+      Command_iterator::current_iterator = &file_iter;
   }
 
   Command_iterator::current_iterator->begin();
-  for ( ; ; )
+  for (;;)
   {
-    int error= 0;
+    int error = 0;
     int rc;
 
-    rc= Command_iterator::current_iterator->next(query, &error, &query_source);
+    rc = Command_iterator::current_iterator->next(query, &error, &query_source);
 
     /*
       The server must avoid logging compiled statements into the binary log
@@ -173,24 +164,24 @@ static void handle_bootstrap_impl(THD *thd)
     {
       switch (query_source)
       {
-      case QUERY_SOURCE_COMPILED:
-        thd->variables.option_bits&= ~OPTION_BIN_LOG;
-        break;
-      case QUERY_SOURCE_FILE:
-        /*
-          Some compiled script might have disable binary logging session
-          variable during compiled scripts. Enabling it again as it was
-          enabled before applying the compiled statements.
-        */
-        thd->variables.sql_log_bin= true;
-        thd->variables.option_bits|= OPTION_BIN_LOG;
-        break;
-      default:
-        assert(false);
-        break;
+        case QUERY_SOURCE_COMPILED:
+          thd->variables.option_bits &= ~OPTION_BIN_LOG;
+          break;
+        case QUERY_SOURCE_FILE:
+          /*
+            Some compiled script might have disable binary logging session
+            variable during compiled scripts. Enabling it again as it was
+            enabled before applying the compiled statements.
+          */
+          thd->variables.sql_log_bin = true;
+          thd->variables.option_bits |= OPTION_BIN_LOG;
+          break;
+        default:
+          assert(false);
+          break;
       }
     }
-    last_query_source= query_source;
+    last_query_source = query_source;
 
     if (rc == READ_BOOTSTRAP_EOF)
       break;
@@ -207,43 +198,45 @@ static void handle_bootstrap_impl(THD *thd)
       thd->get_stmt_da()->reset_diagnostics_area();
 
       /* Get the nearest query text for reference. */
-      const char *err_ptr= query.c_str() + (query.length() <= MAX_BOOTSTRAP_ERROR_LEN ?
-                                        0 : (query.length() - MAX_BOOTSTRAP_ERROR_LEN));
+      const char *err_ptr =
+          query.c_str() + (query.length() <= MAX_BOOTSTRAP_ERROR_LEN ? 0 : (query.length() - MAX_BOOTSTRAP_ERROR_LEN));
       switch (rc)
       {
-      case READ_BOOTSTRAP_ERROR:
-        my_printf_error(ER_UNKNOWN_ERROR,
-                        "Bootstrap file error, return code (%d). "
-                        "Nearest query: '%s'", MYF(0), error, err_ptr);
-        break;
+        case READ_BOOTSTRAP_ERROR:
+          my_printf_error(ER_UNKNOWN_ERROR,
+                          "Bootstrap file error, return code (%d). "
+                          "Nearest query: '%s'",
+                          MYF(0), error, err_ptr);
+          break;
 
-      case READ_BOOTSTRAP_QUERY_SIZE:
-        my_printf_error(ER_UNKNOWN_ERROR, "Bootstrap file error. Query size "
-                        "exceeded %d bytes near '%s'.", MYF(0),
-                        MAX_BOOTSTRAP_LINE_SIZE, err_ptr);
-        break;
+        case READ_BOOTSTRAP_QUERY_SIZE:
+          my_printf_error(ER_UNKNOWN_ERROR,
+                          "Bootstrap file error. Query size "
+                          "exceeded %d bytes near '%s'.",
+                          MYF(0), MAX_BOOTSTRAP_LINE_SIZE, err_ptr);
+          break;
 
-      default:
-        assert(false);
-        break;
+        default:
+          assert(false);
+          break;
       }
 
       thd->send_statement_status();
-      bootstrap_error= 1;
+      bootstrap_error = 1;
       break;
     }
 
-    char *query_copy= static_cast<char*>(thd->alloc(query.length() + 1));
+    char *query_copy = static_cast< char * >(thd->alloc(query.length() + 1));
     if (query_copy == NULL)
     {
-      bootstrap_error= 1;
+      bootstrap_error = 1;
       break;
     }
     memcpy(query_copy, query.c_str(), query.length());
-    query_copy[query.length()]= '\0';
+    query_copy[query.length()] = '\0';
     thd->set_query(query_copy, query.length());
     thd->set_query_id(next_query_id());
-    DBUG_PRINT("query",("%-.4096s",thd->query().str));
+    DBUG_PRINT("query", ("%-.4096s", thd->query().str));
 #if defined(ENABLED_PROFILING)
     thd->profiling.start_new_query();
     thd->profiling.set_query_source(thd->query().str, thd->query().length);
@@ -254,13 +247,13 @@ static void handle_bootstrap_impl(THD *thd)
     if (parser_state.init(thd, thd->query().str, thd->query().length))
     {
       thd->send_statement_status();
-      bootstrap_error= 1;
+      bootstrap_error = 1;
       break;
     }
 
     mysql_parse(thd, &parser_state);
 
-    bootstrap_error= thd->is_error();
+    bootstrap_error = thd->is_error();
     thd->send_statement_status();
 
 #if defined(ENABLED_PROFILING)
@@ -270,17 +263,15 @@ static void handle_bootstrap_impl(THD *thd)
     if (bootstrap_error)
       break;
 
-    free_root(thd->mem_root,MYF(MY_KEEP_PREALLOC));
+    free_root(thd->mem_root, MYF(MY_KEEP_PREALLOC));
 
     /*
       If the last statement has enabled the session binary logging while
       processing queries that are compiled and must not be binary logged,
       we must disable binary logging again.
     */
-    if (last_query_source == QUERY_SOURCE_COMPILED &&
-        thd->variables.option_bits & OPTION_BIN_LOG)
-      thd->variables.option_bits&= ~OPTION_BIN_LOG;
-
+    if (last_query_source == QUERY_SOURCE_COMPILED && thd->variables.option_bits & OPTION_BIN_LOG)
+      thd->variables.option_bits &= ~OPTION_BIN_LOG;
   }
 
   Command_iterator::current_iterator->end();
@@ -291,13 +282,12 @@ static void handle_bootstrap_impl(THD *thd)
   */
   if (has_binlog_option)
   {
-    thd->variables.sql_log_bin= true;
-    thd->variables.option_bits|= OPTION_BIN_LOG;
+    thd->variables.sql_log_bin = true;
+    thd->variables.option_bits |= OPTION_BIN_LOG;
   }
 
   DBUG_VOID_RETURN;
 }
-
 
 /**
   Execute commands from bootstrap_file.
@@ -305,27 +295,28 @@ static void handle_bootstrap_impl(THD *thd)
   Used when creating the initial grant tables.
 */
 
-namespace {
+namespace
+{
 extern "C" void *handle_bootstrap(void *arg)
 {
-  THD *thd=(THD*) arg;
+  THD *thd = (THD *)arg;
 
   mysql_thread_set_psi_id(thd->thread_id());
 
   /* The following must be called before DBUG_ENTER */
-  thd->thread_stack= (char*) &thd;
+  thd->thread_stack = (char *)&thd;
   if (my_thread_init() || thd->store_globals())
   {
 #ifndef EMBEDDED_LIBRARY
     close_connection(thd, ER_OUT_OF_RESOURCES);
 #endif
     thd->fatal_error();
-    bootstrap_error= 1;
+    bootstrap_error = 1;
     thd->get_protocol_classic()->end_net();
   }
   else
   {
-    Global_THD_manager *thd_manager= Global_THD_manager::get_instance();
+    Global_THD_manager *thd_manager = Global_THD_manager::get_instance();
     thd_manager->add_thd(thd);
 
     handle_bootstrap_impl(thd);
@@ -337,21 +328,20 @@ extern "C" void *handle_bootstrap(void *arg)
   my_thread_end();
   return 0;
 }
-} // namespace
-
+}  // namespace
 
 int bootstrap(MYSQL_FILE *file)
 {
   DBUG_ENTER("bootstrap");
 
-  THD *thd= new THD;
-  thd->bootstrap= 1;
+  THD *thd = new THD;
+  thd->bootstrap = 1;
   thd->get_protocol_classic()->init_net(NULL);
   thd->security_context()->set_master_access(~(ulong)0);
 
   thd->set_new_thread_id();
 
-  bootstrap_file=file;
+  bootstrap_file = file;
 
   my_thread_attr_t thr_attr;
   my_thread_attr_init(&thr_attr);
@@ -361,12 +351,10 @@ int bootstrap(MYSQL_FILE *file)
   my_thread_attr_setdetachstate(&thr_attr, MY_THREAD_CREATE_JOINABLE);
   my_thread_handle thread_handle;
   // What about setting THD::real_id?
-  int error= mysql_thread_create(key_thread_bootstrap,
-                                 &thread_handle, &thr_attr, handle_bootstrap, thd);
+  int error = mysql_thread_create(key_thread_bootstrap, &thread_handle, &thr_attr, handle_bootstrap, thd);
   if (error)
   {
-    sql_print_warning("Can't create thread to handle bootstrap (errno= %d)",
-                      error);
+    sql_print_warning("Can't create thread to handle bootstrap (errno= %d)", error);
     DBUG_RETURN(-1);
   }
   /* Wait for thread to die */
@@ -375,8 +363,8 @@ int bootstrap(MYSQL_FILE *file)
   DBUG_RETURN(bootstrap_error);
 }
 
-int bootstrap_single_query(const char* query)
+int bootstrap_single_query(const char *query)
 {
-  bootstrap_query= query;
+  bootstrap_query = query;
   return bootstrap(NULL);
 }

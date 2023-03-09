@@ -20,7 +20,6 @@
    along with this program; if not, write to the Free Software Foundation,
    51 Franklin Street, Suite 500, Boston, MA 02110-1335 USA */
 
-
 /**
   @file
 
@@ -82,9 +81,9 @@
 
 #include "debug_sync.h"
 #include "lock.h"
-#include "sql_base.h"                       // close_tables_for_reopen
-#include "sql_parse.h"                     // is_log_table_write_query
-#include "auth_common.h"                   // SUPER_ACL
+#include "sql_base.h"     // close_tables_for_reopen
+#include "sql_parse.h"    // is_log_table_write_query
+#include "auth_common.h"  // SUPER_ACL
 #include "session_tracker.h"
 #include <hash.h>
 #include <assert.h>
@@ -97,18 +96,16 @@
 extern HASH open_cache;
 
 /* flags for get_lock_data */
-#define GET_LOCK_UNLOCK         1
-#define GET_LOCK_STORE_LOCKS    2
+#define GET_LOCK_UNLOCK 1
+#define GET_LOCK_STORE_LOCKS 2
 
-static MYSQL_LOCK *get_lock_data(THD *thd, TABLE **table_ptr, size_t count,
-                                 uint flags);
-static int lock_external(THD *thd, TABLE **table,uint count);
-static int unlock_external(THD *thd, TABLE **table,uint count);
+static MYSQL_LOCK *get_lock_data(THD *thd, TABLE **table_ptr, size_t count, uint flags);
+static int lock_external(THD *thd, TABLE **table, uint count);
+static int unlock_external(THD *thd, TABLE **table, uint count);
 static void print_lock_error(int error, const char *);
 
 /* Map the return value of thr_lock to an error from errmsg.txt */
-static int thr_lock_errno_to_mysql[]=
-{ 0, ER_LOCK_ABORTED, ER_LOCK_WAIT_TIMEOUT, ER_LOCK_DEADLOCK };
+static int thr_lock_errno_to_mysql[] = {0, ER_LOCK_ABORTED, ER_LOCK_WAIT_TIMEOUT, ER_LOCK_DEADLOCK};
 
 /**
   Perform semantic checks for mysql_lock_tables.
@@ -118,24 +115,22 @@ static int thr_lock_errno_to_mysql[]=
   @param flags Lock flags
   @return 0 if all the check passed, non zero if a check failed.
 */
-static int
-lock_tables_check(THD *thd, TABLE **tables, size_t count, uint flags)
+static int lock_tables_check(THD *thd, TABLE **tables, size_t count, uint flags)
 {
-  uint system_count= 0, i= 0;
+  uint system_count = 0, i = 0;
   /*
     Identifies if the executed sql command can updated either a log
     or rpl info table.
   */
-  bool log_table_write_query= false;
+  bool log_table_write_query = false;
 
   DBUG_ENTER("lock_tables_check");
 
-  log_table_write_query=
-     is_log_table_write_query(thd->lex->sql_command);
+  log_table_write_query = is_log_table_write_query(thd->lex->sql_command);
 
-  for (i=0 ; i<count; i++)
+  for (i = 0; i < count; i++)
   {
-    TABLE *t= tables[i];
+    TABLE *t = tables[i];
 
     /* Protect against 'fake' partially initialized TABLE_SHARE */
     assert(t->s->table_category != TABLE_UNKNOWN_CATEGORY);
@@ -146,17 +141,14 @@ lock_tables_check(THD *thd, TABLE **tables, size_t count, uint flags)
       When a user is requesting a lock, the following
       constraints are enforced:
     */
-    if (t->s->table_category == TABLE_CATEGORY_LOG &&
-        (flags & MYSQL_LOCK_LOG_TABLE) == 0 &&
-        !log_table_write_query)
+    if (t->s->table_category == TABLE_CATEGORY_LOG && (flags & MYSQL_LOCK_LOG_TABLE) == 0 && !log_table_write_query)
     {
       /*
         A user should not be able to prevent writes,
         or hold any type of lock in a session,
         since this would be a DOS attack.
       */
-      if (t->reginfo.lock_type >= TL_READ_NO_INSERT ||
-          thd->lex->sql_command == SQLCOM_LOCK_TABLES)
+      if (t->reginfo.lock_type >= TL_READ_NO_INSERT || thd->lex->sql_command == SQLCOM_LOCK_TABLES)
       {
         my_error(ER_CANT_LOCK_LOG_TABLE, MYF(0));
         DBUG_RETURN(1);
@@ -182,11 +174,9 @@ lock_tables_check(THD *thd, TABLE **tables, size_t count, uint flags)
       type. For table to be locked for read we must own metadata lock
       of MDL_SHARED_READ or stronger type).
     */
-    assert(t->s->tmp_table ||
-           thd->mdl_context.owns_equal_or_stronger_lock(MDL_key::TABLE,
-                                                        t->s->db.str, t->s->table_name.str,
-                                                        t->reginfo.lock_type >= TL_WRITE_ALLOW_WRITE ?
-                                                        MDL_SHARED_WRITE : MDL_SHARED_READ));
+    assert(t->s->tmp_table || thd->mdl_context.owns_equal_or_stronger_lock(
+                                  MDL_key::TABLE, t->s->db.str, t->s->table_name.str,
+                                  t->reginfo.lock_type >= TL_WRITE_ALLOW_WRITE ? MDL_SHARED_WRITE : MDL_SHARED_READ));
 
     /*
       Prevent modifications to base tables if READ_ONLY is activated.
@@ -196,9 +186,8 @@ lock_tables_check(THD *thd, TABLE **tables, size_t count, uint flags)
     if (!(flags & MYSQL_LOCK_IGNORE_GLOBAL_READ_ONLY) && !t->s->tmp_table &&
         !is_perfschema_db(t->s->db.str, t->s->db.length))
     {
-      if (t->reginfo.lock_type >= TL_WRITE_ALLOW_WRITE &&
-        check_readonly(thd, true))
-          DBUG_RETURN(1);
+      if (t->reginfo.lock_type >= TL_WRITE_ALLOW_WRITE && check_readonly(thd, true))
+        DBUG_RETURN(1);
     }
   }
 
@@ -236,23 +225,19 @@ lock_tables_check(THD *thd, TABLE **tables, size_t count, uint flags)
         lock request will set its lock type properly.
 */
 
-
 static void reset_lock_data(MYSQL_LOCK *sql_lock)
 {
   THR_LOCK_DATA **ldata, **ldata_end;
   DBUG_ENTER("reset_lock_data");
 
   /* Clear the lock type of all lock data to avoid reusage. */
-  for (ldata= sql_lock->locks, ldata_end= ldata + sql_lock->lock_count;
-       ldata < ldata_end;
-       ldata++)
+  for (ldata = sql_lock->locks, ldata_end = ldata + sql_lock->lock_count; ldata < ldata_end; ldata++)
   {
     /* Reset lock type. */
-    (*ldata)->type= TL_UNLOCK;
+    (*ldata)->type = TL_UNLOCK;
   }
   DBUG_VOID_RETURN;
 }
-
 
 /**
   Scan array of tables for access types; update transaction tracker
@@ -265,23 +250,21 @@ static void reset_lock_data(MYSQL_LOCK *sql_lock)
 
 static void track_table_access(THD *thd, TABLE **tables, size_t count)
 {
-  Transaction_state_tracker *tst= (Transaction_state_tracker *)
-    thd->session_tracker.get_tracker(TRANSACTION_INFO_TRACKER);
-  enum enum_tx_state         s;
+  Transaction_state_tracker *tst =
+      (Transaction_state_tracker *)thd->session_tracker.get_tracker(TRANSACTION_INFO_TRACKER);
+  enum enum_tx_state s;
 
   while (count--)
   {
-    TABLE *t= tables[count];
+    TABLE *t = tables[count];
 
     if (t)
     {
-      s= tst->calc_trx_state(thd, t->reginfo.lock_type,
-                             t->file->has_transactions());
+      s = tst->calc_trx_state(thd, t->reginfo.lock_type, t->file->has_transactions());
       tst->add_trx_state(thd, s);
     }
   }
 }
-
 
 /**
   Reset lock type in lock data and free.
@@ -294,9 +277,8 @@ static void reset_lock_data_and_free(MYSQL_LOCK **mysql_lock)
 {
   reset_lock_data(*mysql_lock);
   my_free(*mysql_lock);
-  *mysql_lock= 0;
+  *mysql_lock = 0;
 }
-
 
 /**
    Lock tables.
@@ -316,21 +298,19 @@ MYSQL_LOCK *mysql_lock_tables(THD *thd, TABLE **tables, size_t count, uint flags
 {
   int rc;
   MYSQL_LOCK *sql_lock;
-  ulong timeout= (flags & MYSQL_LOCK_IGNORE_TIMEOUT) ?
-    LONG_TIMEOUT : thd->variables.lock_wait_timeout;
+  ulong timeout = (flags & MYSQL_LOCK_IGNORE_TIMEOUT) ? LONG_TIMEOUT : thd->variables.lock_wait_timeout;
 
   DBUG_ENTER("mysql_lock_tables");
 
   if (lock_tables_check(thd, tables, count, flags))
     DBUG_RETURN(NULL);
 
-  if (! (sql_lock= get_lock_data(thd, tables, count, GET_LOCK_STORE_LOCKS)))
+  if (!(sql_lock = get_lock_data(thd, tables, count, GET_LOCK_STORE_LOCKS)))
     DBUG_RETURN(NULL);
 
   THD_STAGE_INFO(thd, stage_system_lock);
   DBUG_PRINT("info", ("thd->proc_info %s", thd->proc_info));
-  if (sql_lock->table_count && lock_external(thd, sql_lock->table,
-                                             sql_lock->table_count))
+  if (sql_lock->table_count && lock_external(thd, sql_lock->table, sql_lock->table_count))
   {
     /* Clear the lock type of all lock data to avoid reusage. */
     reset_lock_data_and_free(&sql_lock);
@@ -338,23 +318,19 @@ MYSQL_LOCK *mysql_lock_tables(THD *thd, TABLE **tables, size_t count, uint flags
   }
 
   /* Copy the lock data array. thr_multi_lock() reorders its contents. */
-  memcpy(sql_lock->locks + sql_lock->lock_count, sql_lock->locks,
-         sql_lock->lock_count * sizeof(*sql_lock->locks));
+  memcpy(sql_lock->locks + sql_lock->lock_count, sql_lock->locks, sql_lock->lock_count * sizeof(*sql_lock->locks));
   /* Lock on the copied half of the lock data array. */
-  rc= thr_lock_errno_to_mysql[(int) thr_multi_lock(sql_lock->locks +
-                                                   sql_lock->lock_count,
-                                                   sql_lock->lock_count,
+  rc = thr_lock_errno_to_mysql[(int)thr_multi_lock(sql_lock->locks + sql_lock->lock_count, sql_lock->lock_count,
                                                    &thd->lock_info, timeout)];
 
-  DBUG_EXECUTE_IF("mysql_lock_tables_kill_query",
-                  thd->killed= THD::KILL_QUERY;);
+  DBUG_EXECUTE_IF("mysql_lock_tables_kill_query", thd->killed = THD::KILL_QUERY;);
 
   if (rc)
   {
     if (sql_lock->table_count)
-      (void) unlock_external(thd, sql_lock->table, sql_lock->table_count);
+      (void)unlock_external(thd, sql_lock->table, sql_lock->table_count);
     reset_lock_data_and_free(&sql_lock);
-    if (! thd->killed)
+    if (!thd->killed)
       my_error(rc, MYF(0));
   }
 
@@ -365,7 +341,7 @@ end:
     if (sql_lock)
     {
       mysql_unlock_tables(thd, sql_lock);
-      sql_lock= 0;
+      sql_lock = 0;
     }
   }
 
@@ -376,51 +352,48 @@ end:
   DBUG_RETURN(sql_lock);
 }
 
-
 static int lock_external(THD *thd, TABLE **tables, uint count)
 {
   uint i;
-  int lock_type,error;
+  int lock_type, error;
   DBUG_ENTER("lock_external");
 
   DBUG_PRINT("info", ("count %d", count));
-  for (i=1 ; i <= count ; i++, tables++)
+  for (i = 1; i <= count; i++, tables++)
   {
     assert((*tables)->reginfo.lock_type >= TL_READ);
-    lock_type=F_WRLCK;				/* Lock exclusive */
+    lock_type = F_WRLCK; /* Lock exclusive */
     if ((*tables)->db_stat & HA_READ_ONLY ||
-	((*tables)->reginfo.lock_type >= TL_READ &&
-	 (*tables)->reginfo.lock_type <= TL_READ_NO_INSERT))
-      lock_type=F_RDLCK;
+        ((*tables)->reginfo.lock_type >= TL_READ && (*tables)->reginfo.lock_type <= TL_READ_NO_INSERT))
+      lock_type = F_RDLCK;
 
-    if ((error=(*tables)->file->ha_external_lock(thd,lock_type)))
+    if ((error = (*tables)->file->ha_external_lock(thd, lock_type)))
     {
       print_lock_error(error, (*tables)->file->table_type());
       while (--i)
       {
         tables--;
-	(*tables)->file->ha_external_lock(thd, F_UNLCK);
-	(*tables)->current_lock=F_UNLCK;
+        (*tables)->file->ha_external_lock(thd, F_UNLCK);
+        (*tables)->current_lock = F_UNLCK;
       }
       DBUG_RETURN(error);
     }
     else
     {
-      (*tables)->db_stat &= ~ HA_BLOCK_LOCK;
-      (*tables)->current_lock= lock_type;
+      (*tables)->db_stat &= ~HA_BLOCK_LOCK;
+      (*tables)->current_lock = lock_type;
     }
   }
   DBUG_RETURN(0);
 }
 
-
 void mysql_unlock_tables(THD *thd, MYSQL_LOCK *sql_lock)
 {
   DBUG_ENTER("mysql_unlock_tables");
   if (sql_lock->lock_count)
-    thr_multi_unlock(sql_lock->locks,sql_lock->lock_count);
+    thr_multi_unlock(sql_lock->locks, sql_lock->lock_count);
   if (sql_lock->table_count)
-    (void) unlock_external(thd,sql_lock->table,sql_lock->table_count);
+    (void)unlock_external(thd, sql_lock->table, sql_lock->table_count);
   my_free(sql_lock);
   DBUG_VOID_RETURN;
 }
@@ -431,13 +404,12 @@ void mysql_unlock_tables(THD *thd, MYSQL_LOCK *sql_lock)
   This will work even if get_lock_data fails (next unlock will free all)
 */
 
-void mysql_unlock_some_tables(THD *thd, TABLE **table,uint count)
+void mysql_unlock_some_tables(THD *thd, TABLE **table, uint count)
 {
   MYSQL_LOCK *sql_lock;
-  if ((sql_lock= get_lock_data(thd, table, count, GET_LOCK_UNLOCK)))
+  if ((sql_lock = get_lock_data(thd, table, count, GET_LOCK_UNLOCK)))
     mysql_unlock_tables(thd, sql_lock);
 }
-
 
 /**
   unlock all tables locked for read.
@@ -445,12 +417,12 @@ void mysql_unlock_some_tables(THD *thd, TABLE **table,uint count)
 
 void mysql_unlock_read_tables(THD *thd, MYSQL_LOCK *sql_lock)
 {
-  uint i,found;
+  uint i, found;
   DBUG_ENTER("mysql_unlock_read_tables");
 
   /* Move all write locks first */
-  THR_LOCK_DATA **lock=sql_lock->locks;
-  for (i=found=0 ; i < sql_lock->lock_count ; i++)
+  THR_LOCK_DATA **lock = sql_lock->locks;
+  for (i = found = 0; i < sql_lock->lock_count; i++)
   {
     if (sql_lock->locks[i]->type > TL_WRITE_ALLOW_WRITE)
     {
@@ -462,17 +434,17 @@ void mysql_unlock_read_tables(THD *thd, MYSQL_LOCK *sql_lock)
   /* unlock the read locked tables */
   if (i != found)
   {
-    thr_multi_unlock(lock,i-found);
-    sql_lock->lock_count= found;
+    thr_multi_unlock(lock, i - found);
+    sql_lock->lock_count = found;
   }
 
   /* Then do the same for the external locks */
   /* Move all write locked tables first */
-  TABLE **table=sql_lock->table;
-  for (i=found=0 ; i < sql_lock->table_count ; i++)
+  TABLE **table = sql_lock->table;
+  for (i = found = 0; i < sql_lock->table_count; i++)
   {
     assert(sql_lock->table[i]->lock_position == i);
-    if ((uint) sql_lock->table[i]->reginfo.lock_type > TL_WRITE_ALLOW_WRITE)
+    if ((uint)sql_lock->table[i]->reginfo.lock_type > TL_WRITE_ALLOW_WRITE)
     {
       swap_variables(TABLE *, *table, sql_lock->table[i]);
       table++;
@@ -482,23 +454,22 @@ void mysql_unlock_read_tables(THD *thd, MYSQL_LOCK *sql_lock)
   /* Unlock all read locked tables */
   if (i != found)
   {
-    (void) unlock_external(thd,table,i-found);
-    sql_lock->table_count=found;
+    (void)unlock_external(thd, table, i - found);
+    sql_lock->table_count = found;
   }
   /* Fix the lock positions in TABLE */
-  table= sql_lock->table;
-  found= 0;
-  for (i= 0; i < sql_lock->table_count; i++)
+  table = sql_lock->table;
+  found = 0;
+  for (i = 0; i < sql_lock->table_count; i++)
   {
-    TABLE *tbl= *table;
-    tbl->lock_position= (uint) (table - sql_lock->table);
-    tbl->lock_data_start= found;
-    found+= tbl->lock_count;
+    TABLE *tbl = *table;
+    tbl->lock_position = (uint)(table - sql_lock->table);
+    tbl->lock_data_start = found;
+    found += tbl->lock_count;
     table++;
   }
   DBUG_VOID_RETURN;
 }
-
 
 /**
   Try to find the table in the list of locked tables.
@@ -510,16 +481,16 @@ void mysql_unlock_read_tables(THD *thd, MYSQL_LOCK *sql_lock)
   @param  table           the table to unlock
 */
 
-void mysql_lock_remove(THD *thd, MYSQL_LOCK *locked,TABLE *table)
+void mysql_lock_remove(THD *thd, MYSQL_LOCK *locked, TABLE *table)
 {
   if (locked)
   {
     uint i;
-    for (i=0; i < locked->table_count; i++)
+    for (i = 0; i < locked->table_count; i++)
     {
       if (locked->table[i] == table)
       {
-        uint  j, removed_locks, old_tables;
+        uint j, removed_locks, old_tables;
         TABLE *tbl;
         uint lock_data_end;
 
@@ -529,22 +500,20 @@ void mysql_lock_remove(THD *thd, MYSQL_LOCK *locked,TABLE *table)
         mysql_unlock_some_tables(thd, &table, /* table count */ 1);
 
         /* Decrement table_count in advance, making below expressions easier */
-        old_tables= --locked->table_count;
+        old_tables = --locked->table_count;
 
         /* The table has 'removed_locks' lock data elements in locked->locks */
-        removed_locks= table->lock_count;
+        removed_locks = table->lock_count;
 
         /* Move down all table pointers above 'i'. */
-	memmove(reinterpret_cast<char*> (locked->table + i),
-                reinterpret_cast<char*> (locked->table + i + 1),
-                (old_tables - i) * sizeof(TABLE*));
+        memmove(reinterpret_cast< char * >(locked->table + i), reinterpret_cast< char * >(locked->table + i + 1),
+                (old_tables - i) * sizeof(TABLE *));
 
-        lock_data_end= table->lock_data_start + table->lock_count;
+        lock_data_end = table->lock_data_start + table->lock_count;
         /* Move down all lock data pointers above 'table->lock_data_end-1' */
-        memmove(reinterpret_cast<char*> (locked->locks + table->lock_data_start),
-                reinterpret_cast<char*> (locked->locks + lock_data_end),
-                (locked->lock_count - lock_data_end) *
-                sizeof(THR_LOCK_DATA*));
+        memmove(reinterpret_cast< char * >(locked->locks + table->lock_data_start),
+                reinterpret_cast< char * >(locked->locks + lock_data_end),
+                (locked->lock_count - lock_data_end) * sizeof(THR_LOCK_DATA *));
 
         /*
           Fix moved table elements.
@@ -554,22 +523,21 @@ void mysql_lock_remove(THD *thd, MYSQL_LOCK *locked,TABLE *table)
           in the 'locked->locks' array, they must be fixed by 'removed_locks',
           the lock data count of the removed table.
         */
-        for (j= i ; j < old_tables; j++)
+        for (j = i; j < old_tables; j++)
         {
-          tbl= locked->table[j];
+          tbl = locked->table[j];
           tbl->lock_position--;
           assert(tbl->lock_position == j);
-          tbl->lock_data_start-= removed_locks;
+          tbl->lock_data_start -= removed_locks;
         }
 
         /* Finally adjust lock_count. */
-        locked->lock_count-= removed_locks;
-	break;
+        locked->lock_count -= removed_locks;
+        break;
       }
     }
   }
 }
-
 
 /** Abort all other threads waiting to get lock in table. */
 
@@ -578,15 +546,13 @@ void mysql_lock_abort(THD *thd, TABLE *table, bool upgrade_lock)
   MYSQL_LOCK *locked;
   DBUG_ENTER("mysql_lock_abort");
 
-  if ((locked= get_lock_data(thd, &table, 1, GET_LOCK_UNLOCK)))
+  if ((locked = get_lock_data(thd, &table, 1, GET_LOCK_UNLOCK)))
   {
-    for (uint i=0; i < locked->lock_count; i++)
-      thr_abort_locks(locked->locks[i]->lock, upgrade_lock);
+    for (uint i = 0; i < locked->lock_count; i++) thr_abort_locks(locked->locks[i]->lock, upgrade_lock);
     my_free(locked);
   }
   DBUG_VOID_RETURN;
 }
-
 
 /**
   Abort one thread / table combination.
@@ -600,53 +566,46 @@ void mysql_lock_abort_for_thread(THD *thd, TABLE *table)
   MYSQL_LOCK *locked;
   DBUG_ENTER("mysql_lock_abort_for_thread");
 
-  if ((locked= get_lock_data(thd, &table, 1, GET_LOCK_UNLOCK)))
+  if ((locked = get_lock_data(thd, &table, 1, GET_LOCK_UNLOCK)))
   {
-    for (uint i=0; i < locked->lock_count; i++)
+    for (uint i = 0; i < locked->lock_count; i++)
     {
-      thr_abort_locks_for_thread(locked->locks[i]->lock,
-                                 table->in_use->thread_id());
+      thr_abort_locks_for_thread(locked->locks[i]->lock, table->in_use->thread_id());
     }
     my_free(locked);
   }
   DBUG_VOID_RETURN;
 }
 
-
-MYSQL_LOCK *mysql_lock_merge(MYSQL_LOCK *a,MYSQL_LOCK *b)
+MYSQL_LOCK *mysql_lock_merge(MYSQL_LOCK *a, MYSQL_LOCK *b)
 {
   MYSQL_LOCK *sql_lock;
   TABLE **table, **end_table;
   DBUG_ENTER("mysql_lock_merge");
 
-  if (!(sql_lock= (MYSQL_LOCK*)
-	my_malloc(key_memory_MYSQL_LOCK,
-                  sizeof(*sql_lock)+
-		  sizeof(THR_LOCK_DATA*)*(a->lock_count+b->lock_count)+
-		  sizeof(TABLE*)*(a->table_count+b->table_count),MYF(MY_WME))))
-    DBUG_RETURN(0);				// Fatal error
-  sql_lock->lock_count=a->lock_count+b->lock_count;
-  sql_lock->table_count=a->table_count+b->table_count;
-  sql_lock->locks=(THR_LOCK_DATA**) (sql_lock+1);
-  sql_lock->table=(TABLE**) (sql_lock->locks+sql_lock->lock_count);
-  memcpy(sql_lock->locks,a->locks,a->lock_count*sizeof(*a->locks));
-  memcpy(sql_lock->locks+a->lock_count,b->locks,
-	 b->lock_count*sizeof(*b->locks));
-  memcpy(sql_lock->table,a->table,a->table_count*sizeof(*a->table));
-  memcpy(sql_lock->table+a->table_count,b->table,
-	 b->table_count*sizeof(*b->table));
+  if (!(sql_lock =
+            (MYSQL_LOCK *)my_malloc(key_memory_MYSQL_LOCK,
+                                    sizeof(*sql_lock) + sizeof(THR_LOCK_DATA *) * (a->lock_count + b->lock_count) +
+                                        sizeof(TABLE *) * (a->table_count + b->table_count),
+                                    MYF(MY_WME))))
+    DBUG_RETURN(0);  // Fatal error
+  sql_lock->lock_count = a->lock_count + b->lock_count;
+  sql_lock->table_count = a->table_count + b->table_count;
+  sql_lock->locks = (THR_LOCK_DATA **)(sql_lock + 1);
+  sql_lock->table = (TABLE **)(sql_lock->locks + sql_lock->lock_count);
+  memcpy(sql_lock->locks, a->locks, a->lock_count * sizeof(*a->locks));
+  memcpy(sql_lock->locks + a->lock_count, b->locks, b->lock_count * sizeof(*b->locks));
+  memcpy(sql_lock->table, a->table, a->table_count * sizeof(*a->table));
+  memcpy(sql_lock->table + a->table_count, b->table, b->table_count * sizeof(*b->table));
 
   /*
     Now adjust lock_position and lock_data_start for all objects that was
     moved in 'b' (as there is now all objects in 'a' before these).
   */
-  for (table= sql_lock->table + a->table_count,
-         end_table= table + b->table_count;
-       table < end_table;
-       table++)
+  for (table = sql_lock->table + a->table_count, end_table = table + b->table_count; table < end_table; table++)
   {
-    (*table)->lock_position+=   a->table_count;
-    (*table)->lock_data_start+= a->lock_count;
+    (*table)->lock_position += a->table_count;
+    (*table)->lock_data_start += a->lock_count;
   }
 
   /* Delete old, not needed locks */
@@ -657,31 +616,29 @@ MYSQL_LOCK *mysql_lock_merge(MYSQL_LOCK *a,MYSQL_LOCK *b)
   DBUG_RETURN(sql_lock);
 }
 
-
 /** Unlock a set of external. */
 
-static int unlock_external(THD *thd, TABLE **table,uint count)
+static int unlock_external(THD *thd, TABLE **table, uint count)
 {
-  int error,error_code;
+  int error, error_code;
   DBUG_ENTER("unlock_external");
 
-  error_code=0;
+  error_code = 0;
   do
   {
     if ((*table)->current_lock != F_UNLCK)
     {
       (*table)->current_lock = F_UNLCK;
-      if ((error=(*table)->file->ha_external_lock(thd, F_UNLCK)))
+      if ((error = (*table)->file->ha_external_lock(thd, F_UNLCK)))
       {
-	error_code=error;
-	print_lock_error(error_code, (*table)->file->table_type());
+        error_code = error;
+        print_lock_error(error_code, (*table)->file->table_type());
       }
     }
     table++;
   } while (--count);
   DBUG_RETURN(error_code);
 }
-
 
 /**
   Get lock structures from table structs and initialize locks.
@@ -693,10 +650,9 @@ static int unlock_external(THD *thd, TABLE **table,uint count)
            - GET_LOCK_STORE_LOCKS : Store lock info in TABLE
 */
 
-static MYSQL_LOCK *get_lock_data(THD *thd, TABLE **table_ptr, size_t count,
-                                 uint flags)
+static MYSQL_LOCK *get_lock_data(THD *thd, TABLE **table_ptr, size_t count, uint flags)
 {
-  uint i,tables,lock_count;
+  uint i, tables, lock_count;
   MYSQL_LOCK *sql_lock;
   THR_LOCK_DATA **locks, **locks_buf, **locks_start;
   TABLE **to, **table_buf;
@@ -705,13 +661,13 @@ static MYSQL_LOCK *get_lock_data(THD *thd, TABLE **table_ptr, size_t count,
   assert((flags == GET_LOCK_UNLOCK) || (flags == GET_LOCK_STORE_LOCKS));
   DBUG_PRINT("info", ("count %zu", count));
 
-  for (i=tables=lock_count=0 ; i < count ; i++)
+  for (i = tables = lock_count = 0; i < count; i++)
   {
-    TABLE *t= table_ptr[i];
+    TABLE *t = table_ptr[i];
 
     if (t->s->tmp_table != NON_TRANSACTIONAL_TMP_TABLE)
     {
-      tables+= t->file->lock_count();
+      tables += t->file->lock_count();
       lock_count++;
     }
   }
@@ -722,45 +678,39 @@ static MYSQL_LOCK *get_lock_data(THD *thd, TABLE **table_ptr, size_t count,
     update the table values. So the second part of the array is copied
     from the first part immediately before calling thr_multi_lock().
   */
-  if (!(sql_lock= (MYSQL_LOCK*)
-	my_malloc(key_memory_MYSQL_LOCK,
-                  sizeof(*sql_lock) +
-		  sizeof(THR_LOCK_DATA*) * tables * 2 +
-                  sizeof(table_ptr) * lock_count,
-		  MYF(0))))
+  if (!(sql_lock = (MYSQL_LOCK *)my_malloc(
+            key_memory_MYSQL_LOCK,
+            sizeof(*sql_lock) + sizeof(THR_LOCK_DATA *) * tables * 2 + sizeof(table_ptr) * lock_count, MYF(0))))
     DBUG_RETURN(0);
-  locks= locks_buf= sql_lock->locks= (THR_LOCK_DATA**) (sql_lock + 1);
-  to= table_buf= sql_lock->table= (TABLE**) (locks + tables * 2);
-  sql_lock->table_count=lock_count;
+  locks = locks_buf = sql_lock->locks = (THR_LOCK_DATA **)(sql_lock + 1);
+  to = table_buf = sql_lock->table = (TABLE **)(locks + tables * 2);
+  sql_lock->table_count = lock_count;
 
-  for (i=0 ; i < count ; i++)
+  for (i = 0; i < count; i++)
   {
     TABLE *table;
     enum thr_lock_type lock_type;
     THR_LOCK_DATA **org_locks = locks;
 
-    if ((table=table_ptr[i])->s->tmp_table == NON_TRANSACTIONAL_TMP_TABLE)
+    if ((table = table_ptr[i])->s->tmp_table == NON_TRANSACTIONAL_TMP_TABLE)
       continue;
-    lock_type= table->reginfo.lock_type;
-    assert(lock_type != TL_WRITE_DEFAULT && lock_type != TL_READ_DEFAULT &&
-           lock_type != TL_WRITE_CONCURRENT_DEFAULT);
-    locks_start= locks;
-    locks= table->file->store_lock(thd, locks,
-                                   (flags & GET_LOCK_UNLOCK) ? TL_IGNORE :
-                                   lock_type);
+    lock_type = table->reginfo.lock_type;
+    assert(lock_type != TL_WRITE_DEFAULT && lock_type != TL_READ_DEFAULT && lock_type != TL_WRITE_CONCURRENT_DEFAULT);
+    locks_start = locks;
+    locks = table->file->store_lock(thd, locks, (flags & GET_LOCK_UNLOCK) ? TL_IGNORE : lock_type);
     if (flags & GET_LOCK_STORE_LOCKS)
     {
-      table->lock_position=   (uint) (to - table_buf);
-      table->lock_data_start= (uint) (locks_start - locks_buf);
-      table->lock_count=      (uint) (locks - locks_start);
+      table->lock_position = (uint)(to - table_buf);
+      table->lock_data_start = (uint)(locks_start - locks_buf);
+      table->lock_count = (uint)(locks - locks_start);
     }
-    *to++= table;
+    *to++ = table;
     if (locks)
     {
-      for ( ; org_locks != locks ; org_locks++)
+      for (; org_locks != locks; org_locks++)
       {
-	(*org_locks)->debug_print_param= (void *) table;
-        (*org_locks)->m_psi= table->file->m_psi;
+        (*org_locks)->debug_print_param = (void *)table;
+        (*org_locks)->m_psi = table->file->m_psi;
       }
     }
   }
@@ -778,12 +728,10 @@ static MYSQL_LOCK *get_lock_data(THD *thd, TABLE **table_ptr, size_t count,
     we may allocate too much, but better safe than memory overrun.
     And in the FLUSH case, the memory is released quickly anyway.
   */
-  sql_lock->lock_count= locks - locks_buf;
-  DBUG_PRINT("info", ("sql_lock->table_count %d sql_lock->lock_count %d",
-                      sql_lock->table_count, sql_lock->lock_count));
+  sql_lock->lock_count = locks - locks_buf;
+  DBUG_PRINT("info", ("sql_lock->table_count %d sql_lock->lock_count %d", sql_lock->table_count, sql_lock->lock_count));
   DBUG_RETURN(sql_lock);
 }
-
 
 /**
   Obtain an exclusive metadata lock on a schema name.
@@ -816,17 +764,13 @@ bool lock_schema_name(THD *thd, const char *db)
 
   if (thd->global_read_lock.can_acquire_protection())
     return TRUE;
-  MDL_REQUEST_INIT(&global_request,
-                   MDL_key::GLOBAL, "", "", MDL_INTENTION_EXCLUSIVE,
-                   MDL_STATEMENT);
-  MDL_REQUEST_INIT(&mdl_request,
-                   MDL_key::SCHEMA, db, "", MDL_EXCLUSIVE, MDL_TRANSACTION);
+  MDL_REQUEST_INIT(&global_request, MDL_key::GLOBAL, "", "", MDL_INTENTION_EXCLUSIVE, MDL_STATEMENT);
+  MDL_REQUEST_INIT(&mdl_request, MDL_key::SCHEMA, db, "", MDL_EXCLUSIVE, MDL_TRANSACTION);
 
   mdl_requests.push_front(&mdl_request);
   mdl_requests.push_front(&global_request);
 
-  if (thd->mdl_context.acquire_locks(&mdl_requests,
-                                     thd->variables.lock_wait_timeout))
+  if (thd->mdl_context.acquire_locks(&mdl_requests, thd->variables.lock_wait_timeout))
     return TRUE;
 
   /*
@@ -839,7 +783,6 @@ bool lock_schema_name(THD *thd, const char *db)
   DEBUG_SYNC(thd, "after_wait_locked_schema_name");
   return FALSE;
 }
-
 
 /**
   Obtain an exclusive metadata lock on a tablespace name.
@@ -873,19 +816,14 @@ bool lock_tablespace_name(THD *thd, const char *tablespace)
   if (thd->global_read_lock.can_acquire_protection())
     return true;
 
-  MDL_REQUEST_INIT(&global_request,
-                   MDL_key::GLOBAL, "", "", MDL_INTENTION_EXCLUSIVE,
-                   MDL_STATEMENT);
+  MDL_REQUEST_INIT(&global_request, MDL_key::GLOBAL, "", "", MDL_INTENTION_EXCLUSIVE, MDL_STATEMENT);
 
-  MDL_REQUEST_INIT(&mdl_request,
-                   MDL_key::TABLESPACE, "", tablespace,
-                   MDL_EXCLUSIVE, MDL_TRANSACTION);
+  MDL_REQUEST_INIT(&mdl_request, MDL_key::TABLESPACE, "", tablespace, MDL_EXCLUSIVE, MDL_TRANSACTION);
 
   mdl_requests.push_front(&mdl_request);
   mdl_requests.push_front(&global_request);
 
-  if (thd->mdl_context.acquire_locks(&mdl_requests,
-                                     thd->variables.lock_wait_timeout))
+  if (thd->mdl_context.acquire_locks(&mdl_requests, thd->variables.lock_wait_timeout))
     return true;
 
   /*
@@ -900,13 +838,11 @@ bool lock_tablespace_name(THD *thd, const char *tablespace)
 }
 
 // Function generating hash key for Tablespace_hash_set.
-extern "C" uchar *tablespace_set_get_key(const uchar *record,
-                                         size_t *length,
-                                         my_bool not_used MY_ATTRIBUTE((unused)))
+extern "C" uchar *tablespace_set_get_key(const uchar *record, size_t *length, my_bool not_used MY_ATTRIBUTE((unused)))
 {
-  const char *tblspace_name= reinterpret_cast<const char *>(record);
-  *length= strlen(tblspace_name);
-  return reinterpret_cast<uchar*>(const_cast<char*>(tblspace_name));
+  const char *tblspace_name = reinterpret_cast< const char * >(record);
+  *length = strlen(tblspace_name);
+  return reinterpret_cast< uchar * >(const_cast< char * >(tblspace_name));
 }
 
 /**
@@ -919,10 +855,7 @@ extern "C" uchar *tablespace_set_get_key(const uchar *record,
   @return true - On failure
   @return false - On Success.
 */
-bool lock_tablespace_names(
-       THD *thd,
-       Tablespace_hash_set *tablespace_set,
-       ulong lock_wait_timeout)
+bool lock_tablespace_names(THD *thd, Tablespace_hash_set *tablespace_set, ulong lock_wait_timeout)
 {
   // Stop if we have nothing to lock
   if (tablespace_set->is_empty())
@@ -931,23 +864,20 @@ bool lock_tablespace_names(
   // Prepare MDL_request's for all tablespace names.
   MDL_request_list mdl_tablespace_requests;
   Tablespace_hash_set::Iterator it(*tablespace_set);
-  char *tablespace= NULL;
-  while ((tablespace= it++))
+  char *tablespace = NULL;
+  while ((tablespace = it++))
   {
     assert(strlen(tablespace));
 
-    MDL_request *tablespace_request= new (thd->mem_root) MDL_request;
+    MDL_request *tablespace_request = new (thd->mem_root) MDL_request;
     if (tablespace_request == NULL)
       return true;
-    MDL_REQUEST_INIT(tablespace_request, MDL_key::TABLESPACE,
-                     "", tablespace, MDL_INTENTION_EXCLUSIVE,
-                     MDL_TRANSACTION);
+    MDL_REQUEST_INIT(tablespace_request, MDL_key::TABLESPACE, "", tablespace, MDL_INTENTION_EXCLUSIVE, MDL_TRANSACTION);
     mdl_tablespace_requests.push_front(tablespace_request);
   }
 
   // Finally, acquire IX MDL locks.
-  if (thd->mdl_context.acquire_locks(&mdl_tablespace_requests,
-                                     lock_wait_timeout))
+  if (thd->mdl_context.acquire_locks(&mdl_tablespace_requests, lock_wait_timeout))
     return true;
 
   DEBUG_SYNC(thd, "after_wait_locked_tablespace_name_for_table");
@@ -976,8 +906,7 @@ bool lock_tablespace_names(
                  or this connection was killed.
 */
 
-bool lock_object_name(THD *thd, MDL_key::enum_mdl_namespace mdl_type,
-                       const char *db, const char *name)
+bool lock_object_name(THD *thd, MDL_key::enum_mdl_namespace mdl_type, const char *db, const char *name)
 {
   MDL_request_list mdl_requests;
   MDL_request global_request;
@@ -995,21 +924,15 @@ bool lock_object_name(THD *thd, MDL_key::enum_mdl_namespace mdl_type,
 
   if (thd->global_read_lock.can_acquire_protection())
     return TRUE;
-  MDL_REQUEST_INIT(&global_request,
-                   MDL_key::GLOBAL, "", "", MDL_INTENTION_EXCLUSIVE,
-                   MDL_STATEMENT);
-  MDL_REQUEST_INIT(&schema_request,
-                   MDL_key::SCHEMA, db, "", MDL_INTENTION_EXCLUSIVE,
-                   MDL_TRANSACTION);
-  MDL_REQUEST_INIT(&mdl_request,
-                   mdl_type, db, name, MDL_EXCLUSIVE, MDL_TRANSACTION);
+  MDL_REQUEST_INIT(&global_request, MDL_key::GLOBAL, "", "", MDL_INTENTION_EXCLUSIVE, MDL_STATEMENT);
+  MDL_REQUEST_INIT(&schema_request, MDL_key::SCHEMA, db, "", MDL_INTENTION_EXCLUSIVE, MDL_TRANSACTION);
+  MDL_REQUEST_INIT(&mdl_request, mdl_type, db, name, MDL_EXCLUSIVE, MDL_TRANSACTION);
 
   mdl_requests.push_front(&mdl_request);
   mdl_requests.push_front(&schema_request);
   mdl_requests.push_front(&global_request);
 
-  if (thd->mdl_context.acquire_locks(&mdl_requests,
-                                     thd->variables.lock_wait_timeout))
+  if (thd->mdl_context.acquire_locks(&mdl_requests, thd->variables.lock_wait_timeout))
     return TRUE;
 
   /*
@@ -1023,30 +946,28 @@ bool lock_object_name(THD *thd, MDL_key::enum_mdl_namespace mdl_type,
   return FALSE;
 }
 
-
 static void print_lock_error(int error, const char *table)
 {
   DBUG_ENTER("print_lock_error");
 
-  switch (error) {
-  case HA_ERR_LOCK_WAIT_TIMEOUT:
-    my_error(ER_LOCK_WAIT_TIMEOUT, MYF(0), error);
-    break;
-  case HA_ERR_READ_ONLY_TRANSACTION:
-    my_error(ER_READ_ONLY_TRANSACTION, MYF(0),
-             error);
-    break;
-  case HA_ERR_LOCK_DEADLOCK:
-    my_error(ER_LOCK_DEADLOCK, MYF(0), error);
-    break;
-  case HA_ERR_WRONG_COMMAND:
-    my_error(ER_ILLEGAL_HA, MYF(0), table);
-    break;
-  default:
+  switch (error)
+  {
+    case HA_ERR_LOCK_WAIT_TIMEOUT:
+      my_error(ER_LOCK_WAIT_TIMEOUT, MYF(0), error);
+      break;
+    case HA_ERR_READ_ONLY_TRANSACTION:
+      my_error(ER_READ_ONLY_TRANSACTION, MYF(0), error);
+      break;
+    case HA_ERR_LOCK_DEADLOCK:
+      my_error(ER_LOCK_DEADLOCK, MYF(0), error);
+      break;
+    case HA_ERR_WRONG_COMMAND:
+      my_error(ER_ILLEGAL_HA, MYF(0), table);
+      break;
+    default:
     {
       char errbuf[MYSYS_STRERROR_SIZE];
-      my_error(ER_CANT_LOCK, MYF(0),
-               error, my_strerror(errbuf, sizeof(errbuf), error));
+      my_error(ER_CANT_LOCK, MYF(0), error, my_strerror(errbuf, sizeof(errbuf), error));
     }
     break;
   }
@@ -1131,24 +1052,20 @@ bool Global_read_lock::lock_global_read_lock(THD *thd)
   {
     MDL_request mdl_request;
 
-    assert(! thd->mdl_context.owns_equal_or_stronger_lock(MDL_key::GLOBAL,
-                                                          "", "",
-                                                          MDL_SHARED));
-    MDL_REQUEST_INIT(&mdl_request,
-                     MDL_key::GLOBAL, "", "", MDL_SHARED, MDL_EXPLICIT);
+    assert(!thd->mdl_context.owns_equal_or_stronger_lock(MDL_key::GLOBAL, "", "", MDL_SHARED));
+    MDL_REQUEST_INIT(&mdl_request, MDL_key::GLOBAL, "", "", MDL_SHARED, MDL_EXPLICIT);
 
     /* Increment static variable first to signal innodb memcached server
        to release mdl locks held by it */
     my_atomic_add32(&Global_read_lock::m_active_requests, 1);
-    if (thd->mdl_context.acquire_lock(&mdl_request,
-                                      thd->variables.lock_wait_timeout))
+    if (thd->mdl_context.acquire_lock(&mdl_request, thd->variables.lock_wait_timeout))
     {
       my_atomic_add32(&Global_read_lock::m_active_requests, -1);
       DBUG_RETURN(1);
     }
 
-    m_mdl_global_shared_lock= mdl_request.ticket;
-    m_state= GRL_ACQUIRED;
+    m_mdl_global_shared_lock = mdl_request.ticket;
+    m_state = GRL_ACQUIRED;
   }
   /*
     We DON'T set global_read_lock_blocks_commit now, it will be set after
@@ -1160,7 +1077,6 @@ bool Global_read_lock::lock_global_read_lock(THD *thd)
   */
   DBUG_RETURN(0);
 }
-
 
 /**
   Unlock global read lock.
@@ -1181,16 +1097,15 @@ void Global_read_lock::unlock_global_read_lock(THD *thd)
   if (m_mdl_blocks_commits_lock)
   {
     thd->mdl_context.release_lock(m_mdl_blocks_commits_lock);
-    m_mdl_blocks_commits_lock= NULL;
+    m_mdl_blocks_commits_lock = NULL;
   }
   thd->mdl_context.release_lock(m_mdl_global_shared_lock);
   my_atomic_add32(&Global_read_lock::m_active_requests, -1);
-  m_mdl_global_shared_lock= NULL;
-  m_state= GRL_NONE;
+  m_mdl_global_shared_lock = NULL;
+  m_state = GRL_NONE;
 
   DBUG_VOID_RETURN;
 }
-
 
 /**
   Make global read lock also block commits.
@@ -1218,19 +1133,16 @@ bool Global_read_lock::make_global_read_lock_block_commit(THD *thd)
   if (m_state != GRL_ACQUIRED)
     DBUG_RETURN(0);
 
-  MDL_REQUEST_INIT(&mdl_request,
-                   MDL_key::COMMIT, "", "", MDL_SHARED, MDL_EXPLICIT);
+  MDL_REQUEST_INIT(&mdl_request, MDL_key::COMMIT, "", "", MDL_SHARED, MDL_EXPLICIT);
 
-  if (thd->mdl_context.acquire_lock(&mdl_request,
-                                    thd->variables.lock_wait_timeout))
+  if (thd->mdl_context.acquire_lock(&mdl_request, thd->variables.lock_wait_timeout))
     DBUG_RETURN(TRUE);
 
-  m_mdl_blocks_commits_lock= mdl_request.ticket;
-  m_state= GRL_ACQUIRED_AND_BLOCKS_COMMIT;
+  m_mdl_blocks_commits_lock = mdl_request.ticket;
+  m_state = GRL_ACQUIRED_AND_BLOCKS_COMMIT;
 
   DBUG_RETURN(FALSE);
 }
-
 
 /**
   Set explicit duration for metadata locks which are used to implement GRL.

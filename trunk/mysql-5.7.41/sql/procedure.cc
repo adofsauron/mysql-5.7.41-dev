@@ -20,11 +20,10 @@
    along with this program; if not, write to the Free Software Foundation,
    51 Franklin Street, Suite 500, Boston, MA 02110-1335 USA */
 
-
 /* Procedures (functions with changes output of select) */
 
 #include "procedure.h"
-#include "sql_analyse.h"			// Includes procedure
+#include "sql_analyse.h"  // Includes procedure
 
 my_decimal *Item_proc_string::val_decimal(my_decimal *decimal_value)
 {
@@ -34,7 +33,6 @@ my_decimal *Item_proc_string::val_decimal(my_decimal *decimal_value)
   return (decimal_value);
 }
 
-
 my_decimal *Item_proc_int::val_decimal(my_decimal *decimal_value)
 {
   if (null_value)
@@ -42,4 +40,3 @@ my_decimal *Item_proc_int::val_decimal(my_decimal *decimal_value)
   int2my_decimal(E_DEC_FATAL_ERROR, value, unsigned_flag, decimal_value);
   return (decimal_value);
 }
-

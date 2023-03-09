@@ -24,7 +24,7 @@
 
 #include "sql_cmd_show.h"
 
-#include "sql_parse.h" // execute_sqlcom_select
+#include "sql_parse.h"  // execute_sqlcom_select
 
 /*
   MAINTAINER:
@@ -34,51 +34,55 @@
   See the full implementation in 8.0
 */
 
-bool Sql_cmd_show::execute(THD *thd) {
-  if (check_privileges(thd)) {
+bool Sql_cmd_show::execute(THD *thd)
+{
+  if (check_privileges(thd))
+  {
     return true;
   }
 
   return execute_inner(thd);
 }
 
-bool Sql_cmd_show::check_privileges(THD *thd) {
+bool Sql_cmd_show::check_privileges(THD *thd)
+{
   LEX *lex = thd->lex;
-  if (lex->query_tables == NULL) return false;
+  if (lex->query_tables == NULL)
+    return false;
   // If SHOW command is represented by a plan, ensure user has privileges:
-  return check_table_access(thd, SELECT_ACL, lex->query_tables, false, UINT_MAX,
-                            false);
+  return check_table_access(thd, SELECT_ACL, lex->query_tables, false, UINT_MAX, false);
 }
 
-bool Sql_cmd_show::execute_inner(THD *thd) {
-   return execute_sqlcom_select(thd, thd->lex->query_tables);
-}
+bool Sql_cmd_show::execute_inner(THD *thd) { return execute_sqlcom_select(thd, thd->lex->query_tables); }
 
-bool Sql_cmd_show_processlist::check_privileges(THD *thd) {
-  if (!thd->security_context()->priv_user().str[0] &&
-      check_global_access(thd, PROCESS_ACL)) {
+bool Sql_cmd_show_processlist::check_privileges(THD *thd)
+{
+  if (!thd->security_context()->priv_user().str[0] && check_global_access(thd, PROCESS_ACL))
+  {
     return true;
   }
   return Sql_cmd_show::check_privileges(thd);
 }
 
-bool Sql_cmd_show_processlist::execute_inner(THD *thd) {
+bool Sql_cmd_show_processlist::execute_inner(THD *thd)
+{
   bool rc;
   /*
     If the Performance Schema is configured to support SHOW PROCESSLIST,
     then execute a query on performance_schema.processlist. Otherwise,
     fall back to the legacy method.
   */
-  if (use_pfs()) {
+  if (use_pfs())
+  {
     DEBUG_SYNC(thd, "pfs_show_processlist_performance_schema");
     rc = Sql_cmd_show::execute_inner(thd);
-  } else {
+  }
+  else
+  {
     DEBUG_SYNC(thd, "pfs_show_processlist_legacy");
-    mysqld_list_processes(thd,
-                          thd->security_context()->check_access(PROCESS_ACL)
-                              ? NullS
-                              : thd->security_context()->priv_user().str,
-                          m_verbose);
+    mysqld_list_processes(
+        thd, thd->security_context()->check_access(PROCESS_ACL) ? NullS : thd->security_context()->priv_user().str,
+        m_verbose);
     rc = false;
   }
   return rc;

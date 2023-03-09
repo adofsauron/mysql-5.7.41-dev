@@ -20,7 +20,7 @@
    along with this program; if not, write to the Free Software Foundation,
    51 Franklin Street, Suite 500, Boston, MA 02110-1335 USA */
 
-/* 
+/*
  * sql_manager.cc
  * This thread manages various maintenance tasks.
  *
@@ -29,9 +29,9 @@
 
 #include "sql_manager.h"
 
-#include "my_thread.h"         // my_thread_t
-#include "log.h"               // sql_print_warning
-#include "sql_base.h"          // tdc_flush_unused_tables
+#include "my_thread.h"  // my_thread_t
+#include "log.h"        // sql_print_warning
+#include "sql_base.h"   // tdc_flush_unused_tables
 
 static bool volatile manager_thread_in_use;
 static bool abort_manager;
@@ -48,7 +48,7 @@ extern "C" void *handle_manager(void *arg MY_ATTRIBUTE((unused)))
   my_thread_init();
   DBUG_ENTER("handle_manager");
 
-  manager_thread= my_thread_self();
+  manager_thread = my_thread_self();
   manager_thread_in_use = 1;
 
   for (;;)
@@ -60,16 +60,15 @@ extern "C" void *handle_manager(void *arg MY_ATTRIBUTE((unused)))
     {
       if (reset_flush_time)
       {
-	set_timespec(&abstime, flush_time);
+        set_timespec(&abstime, flush_time);
         reset_flush_time = FALSE;
       }
       while ((!error || error == EINTR) && !abort_manager)
-        error= mysql_cond_timedwait(&COND_manager, &LOCK_manager, &abstime);
+        error = mysql_cond_timedwait(&COND_manager, &LOCK_manager, &abstime);
     }
     else
     {
-      while ((!error || error == EINTR) && !abort_manager)
-        error= mysql_cond_wait(&COND_manager, &LOCK_manager);
+      while ((!error || error == EINTR) && !abort_manager) error = mysql_cond_wait(&COND_manager, &LOCK_manager);
     }
     mysql_mutex_unlock(&LOCK_manager);
 
@@ -82,33 +81,27 @@ extern "C" void *handle_manager(void *arg MY_ATTRIBUTE((unused)))
       error = 0;
       reset_flush_time = TRUE;
     }
-
   }
   manager_thread_in_use = 0;
-  DBUG_LEAVE; // Can't use DBUG_RETURN after my_thread_end
+  DBUG_LEAVE;  // Can't use DBUG_RETURN after my_thread_end
   my_thread_end();
   return (NULL);
 }
-
 
 /* Start handle manager thread */
 void start_handle_manager()
 {
   DBUG_ENTER("start_handle_manager");
   abort_manager = false;
-  if (flush_time && flush_time != ~(ulong) 0L)
+  if (flush_time && flush_time != ~(ulong)0L)
   {
     my_thread_handle hThread;
     int error;
-    if ((error= mysql_thread_create(key_thread_handle_manager,
-                                    &hThread, &connection_attrib,
-                                    handle_manager, 0)))
-      sql_print_warning("Can't create handle_manager thread (errno= %d)",
-                        error);
+    if ((error = mysql_thread_create(key_thread_handle_manager, &hThread, &connection_attrib, handle_manager, 0)))
+      sql_print_warning("Can't create handle_manager thread (errno= %d)", error);
   }
   DBUG_VOID_RETURN;
 }
-
 
 /* Initiate shutdown of handle manager thread */
 void stop_handle_manager()
@@ -118,11 +111,9 @@ void stop_handle_manager()
   mysql_mutex_lock(&LOCK_manager);
   if (manager_thread_in_use)
   {
-    DBUG_PRINT("quit", ("initiate shutdown of handle manager thread: 0x%lx",
-                        (ulong)manager_thread));
+    DBUG_PRINT("quit", ("initiate shutdown of handle manager thread: 0x%lx", (ulong)manager_thread));
     mysql_cond_signal(&COND_manager);
   }
   mysql_mutex_unlock(&LOCK_manager);
   DBUG_VOID_RETURN;
 }
-

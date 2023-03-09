@@ -23,14 +23,12 @@
 
 #include "rpl_gtid.h"
 
-#include "rpl_rli.h"                          // Relay_log_info
-#include "sql_class.h"                        // THD
-#include "sql_parse.h"                        // stmt_causes_implicit_commit
+#include "rpl_rli.h"    // Relay_log_info
+#include "sql_class.h"  // THD
+#include "sql_parse.h"  // stmt_causes_implicit_commit
 
 #include "pfs_transaction_provider.h"
 #include "mysql/psi/mysql_transaction.h"
-
-
 
 bool set_gtid_next(THD *thd, const Gtid_specification &spec)
 {
@@ -38,15 +36,14 @@ bool set_gtid_next(THD *thd, const Gtid_specification &spec)
 
   spec.dbug_print();
   global_sid_lock->assert_some_lock();
-  int lock_count= 1;
-  bool ret= true;
+  int lock_count = 1;
+  bool ret = true;
 
   // we may acquire and release locks throughout this function; this
   // variable tells the error handler how many are left to release
 
   // Check that we don't own a GTID or ANONYMOUS.
-  if (thd->owned_gtid.sidno > 0 ||
-      thd->owned_gtid.sidno == THD::OWNED_SIDNO_ANONYMOUS)
+  if (thd->owned_gtid.sidno > 0 || thd->owned_gtid.sidno == THD::OWNED_SIDNO_ANONYMOUS)
   {
     char buf[Gtid::MAX_TEXT_LENGTH + 1];
     if (thd->owned_gtid.sidno > 0)
@@ -54,8 +51,7 @@ bool set_gtid_next(THD *thd, const Gtid_specification &spec)
 #ifndef NDEBUG
       global_sid_lock->unlock();
       global_sid_lock->wrlock();
-      assert(gtid_state->get_owned_gtids()->
-             thread_owns_anything(thd->thread_id()));
+      assert(gtid_state->get_owned_gtids()->thread_owns_anything(thd->thread_id()));
 #endif
       thd->owned_gtid.to_string(thd->owned_sid, buf);
     }
@@ -84,8 +80,8 @@ bool set_gtid_next(THD *thd, const Gtid_specification &spec)
     }
 
     thd->variables.gtid_next.set_anonymous();
-    thd->owned_gtid.sidno= THD::OWNED_SIDNO_ANONYMOUS;
-    thd->owned_gtid.gno= 0;
+    thd->owned_gtid.sidno = THD::OWNED_SIDNO_ANONYMOUS;
+    thd->owned_gtid.gno = 0;
     gtid_state->acquire_anonymous_ownership();
   }
   else
@@ -108,12 +104,12 @@ bool set_gtid_next(THD *thd, const Gtid_specification &spec)
 
       // acquire lock before checking conditions
       gtid_state->lock_sidno(spec.gtid.sidno);
-      lock_count= 2;
+      lock_count = 2;
 
       // GTID already logged
       if (gtid_state->is_executed(spec.gtid))
       {
-        thd->variables.gtid_next= spec;
+        thd->variables.gtid_next = spec;
         /*
           Don't skip the statement here, skip it in
           gtid_pre_statement_checks.
@@ -126,7 +122,7 @@ bool set_gtid_next(THD *thd, const Gtid_specification &spec)
       {
         // acquire_ownership can't fail
         gtid_state->acquire_ownership(thd, spec.gtid);
-        thd->variables.gtid_next= spec;
+        thd->variables.gtid_next = spec;
         assert(thd->owned_gtid.sidno >= 1);
         assert(thd->owned_gtid.gno >= 1);
         assert(thd->owned_gtid.gno < GNO_END);
@@ -140,7 +136,7 @@ bool set_gtid_next(THD *thd, const Gtid_specification &spec)
         gtid_state->wait_for_gtid(thd, spec.gtid);
 
         // global_sid_lock and mutex are now released
-        lock_count= 0;
+        lock_count = 0;
 
         // Check if thread was killed.
         if (thd->killed || abort_loop)
@@ -151,25 +147,24 @@ bool set_gtid_next(THD *thd, const Gtid_specification &spec)
         // If this thread is a slave SQL thread or slave SQL worker
         // thread, we need this additional condition to determine if it
         // has been stopped by STOP SLAVE [SQL_THREAD].
-        if ((thd->system_thread &
-             (SYSTEM_THREAD_SLAVE_SQL | SYSTEM_THREAD_SLAVE_WORKER)) != 0)
+        if ((thd->system_thread & (SYSTEM_THREAD_SLAVE_SQL | SYSTEM_THREAD_SLAVE_WORKER)) != 0)
         {
           // TODO: error is *not* reported on cancel
-          assert(thd->rli_slave!= NULL);
-          Relay_log_info *c_rli= thd->rli_slave->get_c_rli();
+          assert(thd->rli_slave != NULL);
+          Relay_log_info *c_rli = thd->rli_slave->get_c_rli();
           if (c_rli->abort_slave)
           {
             goto err;
           }
         }
-#endif // HAVE_REPLICATION
+#endif  // HAVE_REPLICATION
         global_sid_lock->rdlock();
-        lock_count= 1;
+        lock_count = 1;
       }
     }
   }
 
-  ret= false;
+  ret = false;
 
 err:
   if (lock_count == 2)
@@ -185,7 +180,6 @@ err:
   DBUG_RETURN(ret);
 }
 
-
 /**
   Acquire ownership of all groups in a Gtid_set.  This is used to
   begin a commit-sequence when @@SESSION.GTID_NEXT_LIST != NULL.
@@ -193,16 +187,16 @@ err:
 #ifdef HAVE_GTID_NEXT_LIST
 int gtid_acquire_ownership_multiple(THD *thd)
 {
-  const Gtid_set *gtid_next_list= thd->get_gtid_next_list_const();
-  rpl_sidno greatest_sidno= 0;
+  const Gtid_set *gtid_next_list = thd->get_gtid_next_list_const();
+  rpl_sidno greatest_sidno = 0;
   DBUG_ENTER("gtid_acquire_ownership_multiple");
   // first check if we need to wait for any group
   while (true)
   {
     Gtid_set::Gtid_iterator git(gtid_next_list);
-    Gtid g= git.get();
-    my_thread_id owner= 0;
-    rpl_sidno last_sidno= 0;
+    Gtid g = git.get();
+    my_thread_id owner = 0;
+    rpl_sidno last_sidno = 0;
     global_sid_lock->rdlock();
     while (g.sidno != 0)
     {
@@ -211,7 +205,7 @@ int gtid_acquire_ownership_multiple(THD *thd)
         gtid_state->lock_sidno(g.sidno);
       if (!gtid_state->is_executed(g))
       {
-        owner= gtid_state->get_owner(g);
+        owner = gtid_state->get_owner(g);
         // break the do-loop and wait for the sid to be updated
         if (owner != 0)
         {
@@ -219,10 +213,10 @@ int gtid_acquire_ownership_multiple(THD *thd)
           break;
         }
       }
-      last_sidno= g.sidno;
-      greatest_sidno= g.sidno;
+      last_sidno = g.sidno;
+      greatest_sidno = g.sidno;
       git.next();
-      g= git.get();
+      g = git.get();
     }
 
     // we don't need to wait for any groups, and all SIDNOs in the
@@ -232,7 +226,7 @@ int gtid_acquire_ownership_multiple(THD *thd)
 
     // unlock all previous sidnos to avoid blocking them
     // while waiting.  keep lock on g.sidno
-    for (rpl_sidno sidno= 1; sidno < g.sidno; sidno++)
+    for (rpl_sidno sidno = 1; sidno < g.sidno; sidno++)
       if (gtid_next_list->contains_sidno(sidno))
         gtid_state->unlock_sidno(sidno);
 
@@ -250,15 +244,14 @@ int gtid_acquire_ownership_multiple(THD *thd)
     // If this thread is a slave SQL thread or slave SQL worker
     // thread, we need this additional condition to determine if it
     // has been stopped by STOP SLAVE [SQL_THREAD].
-    if ((thd->system_thread &
-         (SYSTEM_THREAD_SLAVE_SQL | SYSTEM_THREAD_SLAVE_WORKER)) != 0)
+    if ((thd->system_thread & (SYSTEM_THREAD_SLAVE_SQL | SYSTEM_THREAD_SLAVE_WORKER)) != 0)
     {
       assert(thd->rli_slave != NULL);
-      Relay_log_info *c_rli= thd->rli_slave->get_c_rli();
+      Relay_log_info *c_rli = thd->rli_slave->get_c_rli();
       if (c_rli->abort_slave)
         DBUG_RETURN(1);
     }
-#endif // HAVE_REPLICATION
+#endif  // HAVE_REPLICATION
   }
 
   // global_sid_lock is now held
@@ -271,9 +264,9 @@ int gtid_acquire_ownership_multiple(THD *thd)
      - We hold a lock on all SIDNOs in GTID_NEXT_LIST.
     So we acquire ownership of all groups that we need.
   */
-  int ret= 0;
+  int ret = 0;
   Gtid_set::Gtid_iterator git(gtid_next_list);
-  Gtid g= git.get();
+  Gtid g = git.get();
   do
   {
     if (!gtid_state->is_executed(g))
@@ -281,18 +274,18 @@ int gtid_acquire_ownership_multiple(THD *thd)
       if (gtid_state->acquire_ownership(thd, g) != RETURN_STATUS_OK)
       {
         /// @todo release ownership on error
-        ret= 1;
+        ret = 1;
         break;
       }
       thd->owned_gtid_set._add_gtid(g);
     }
     git.next();
-    g= git.get();
+    g = git.get();
   } while (g.sidno != 0);
 
   // unlock all sidnos
-  rpl_sidno max_sidno= gtid_next_list->get_max_sidno();
-  for (rpl_sidno sidno= 1; sidno <= max_sidno; sidno++)
+  rpl_sidno max_sidno = gtid_next_list->get_max_sidno();
+  for (rpl_sidno sidno = 1; sidno <= max_sidno; sidno++)
     if (gtid_next_list->contains_sidno(sidno))
       gtid_state->unlock_sidno(sidno);
 
@@ -307,7 +300,6 @@ int gtid_acquire_ownership_multiple(THD *thd)
 }
 #endif
 
-
 /**
   Check if current transaction should be skipped, that is, if GTID_NEXT
   was already logged.
@@ -321,8 +313,8 @@ static inline bool is_already_logged_transaction(const THD *thd)
 {
   DBUG_ENTER("is_already_logged_transaction");
 
-  const Gtid_specification *gtid_next= &thd->variables.gtid_next;
-  const Gtid_set *gtid_next_list= thd->get_gtid_next_list_const();
+  const Gtid_specification *gtid_next = &thd->variables.gtid_next;
+  const Gtid_set *gtid_next_list = thd->get_gtid_next_list_const();
 
   if (gtid_next_list == NULL)
   {
@@ -334,8 +326,7 @@ static inline bool is_already_logged_transaction(const THD *thd)
         assert(thd->owned_gtid.equals(gtid_next->gtid));
     }
     else
-      assert(thd->owned_gtid.sidno == 0 ||
-             thd->owned_gtid.sidno == THD::OWNED_SIDNO_ANONYMOUS);
+      assert(thd->owned_gtid.sidno == 0 || thd->owned_gtid.sidno == THD::OWNED_SIDNO_ANONYMOUS);
   }
   else
   {
@@ -347,13 +338,12 @@ static inline bool is_already_logged_transaction(const THD *thd)
         DBUG_RETURN(true);
     }
 #else
-    assert(0);/*NOTREACHED*/
+    assert(0); /*NOTREACHED*/
 #endif
   }
 
   DBUG_RETURN(false);
 }
-
 
 /**
   Debug code executed when a transaction is skipped.
@@ -367,13 +357,10 @@ static inline void skip_statement(const THD *thd)
   DBUG_PRINT("info", ("skipping statement '%s'. "
                       "gtid_next->type=%d sql_command=%d "
                       "thd->thread_id=%u",
-                      thd->query().str,
-                      thd->variables.gtid_next.type,
-                      thd->lex->sql_command,
-                      thd->thread_id()));
+                      thd->query().str, thd->variables.gtid_next.type, thd->lex->sql_command, thd->thread_id()));
 
 #ifndef NDEBUG
-  const Gtid_set* executed_gtids= gtid_state->get_executed_gtids();
+  const Gtid_set *executed_gtids = gtid_state->get_executed_gtids();
   global_sid_lock->rdlock();
   gtid_state->lock_sidno(thd->variables.gtid_next.gtid.sidno);
   assert(executed_gtids->contains_gtid(thd->variables.gtid_next.gtid));
@@ -384,11 +371,10 @@ static inline void skip_statement(const THD *thd)
   DBUG_VOID_RETURN;
 }
 
-
 bool gtid_reacquire_ownership_if_anonymous(THD *thd)
 {
   DBUG_ENTER("gtid_reacquire_ownership_if_anonymous(THD *)");
-  Gtid_specification *gtid_next= &thd->variables.gtid_next;
+  Gtid_specification *gtid_next = &thd->variables.gtid_next;
   /*
     When the slave applier thread executes a
     Format_description_log_event originating from a master
@@ -397,11 +383,8 @@ bool gtid_reacquire_ownership_if_anonymous(THD *thd)
     Gtid_log_event to set the GTID appropriately, but if there is no
     Gtid_log_event, gtid_next will be converted to ANONYMOUS.
   */
-  DBUG_PRINT("info", ("gtid_next->type=%d gtid_mode=%s",
-                      gtid_next->type,
-                      get_gtid_mode_string(GTID_MODE_LOCK_NONE)));
-  if (gtid_next->type == NOT_YET_DETERMINED_GROUP ||
-      (gtid_next->type == ANONYMOUS_GROUP && thd->owned_gtid.sidno == 0))
+  DBUG_PRINT("info", ("gtid_next->type=%d gtid_mode=%s", gtid_next->type, get_gtid_mode_string(GTID_MODE_LOCK_NONE)));
+  if (gtid_next->type == NOT_YET_DETERMINED_GROUP || (gtid_next->type == ANONYMOUS_GROUP && thd->owned_gtid.sidno == 0))
   {
     Gtid_specification spec;
     spec.set_anonymous();
@@ -420,7 +403,6 @@ bool gtid_reacquire_ownership_if_anonymous(THD *thd)
   DBUG_RETURN(false);
 }
 
-
 /**
   Return true if the statement does not invoke any stored function,
   and is one of the following:
@@ -434,41 +416,30 @@ bool gtid_reacquire_ownership_if_anonymous(THD *thd)
 */
 static bool is_stmt_innocent(const THD *thd)
 {
-  LEX *lex= thd->lex;
-  enum_sql_command sql_command= lex->sql_command;
-  bool is_show=
-    (sql_command_flags[sql_command] & CF_STATUS_COMMAND) &&
-    (sql_command != SQLCOM_BINLOG_BASE64_EVENT);
-  bool is_set=
-    (sql_command == SQLCOM_SET_OPTION) && !lex->is_set_password_sql;
-  bool is_select= (sql_command == SQLCOM_SELECT);
-  bool is_do= (sql_command == SQLCOM_DO);
-  bool is_empty= (sql_command == SQLCOM_EMPTY_QUERY);
-  bool is_use= (sql_command == SQLCOM_CHANGE_DB);
-  return
-    (is_set || is_select || is_do || is_show || is_empty ||
-     is_use) &&
-    !lex->uses_stored_routines();
+  LEX *lex = thd->lex;
+  enum_sql_command sql_command = lex->sql_command;
+  bool is_show = (sql_command_flags[sql_command] & CF_STATUS_COMMAND) && (sql_command != SQLCOM_BINLOG_BASE64_EVENT);
+  bool is_set = (sql_command == SQLCOM_SET_OPTION) && !lex->is_set_password_sql;
+  bool is_select = (sql_command == SQLCOM_SELECT);
+  bool is_do = (sql_command == SQLCOM_DO);
+  bool is_empty = (sql_command == SQLCOM_EMPTY_QUERY);
+  bool is_use = (sql_command == SQLCOM_CHANGE_DB);
+  return (is_set || is_select || is_do || is_show || is_empty || is_use) && !lex->uses_stored_routines();
 }
-
 
 enum_gtid_statement_status gtid_pre_statement_checks(THD *thd)
 {
   DBUG_ENTER("gtid_pre_statement_checks");
 
-  Gtid_specification *gtid_next= &thd->variables.gtid_next;
+  Gtid_specification *gtid_next = &thd->variables.gtid_next;
 
   DBUG_PRINT("info", ("gtid_next->type=%d "
                       "owned_gtid.{sidno,gno}={%d,%lld}",
-                      gtid_next->type,
-                      thd->owned_gtid.sidno, thd->owned_gtid.gno));
-  assert(gtid_next->type != AUTOMATIC_GROUP ||
-         thd->owned_gtid.is_empty());
+                      gtid_next->type, thd->owned_gtid.sidno, thd->owned_gtid.gno));
+  assert(gtid_next->type != AUTOMATIC_GROUP || thd->owned_gtid.is_empty());
 
-  if ((stmt_causes_implicit_commit(thd, CF_IMPLICIT_COMMIT_BEGIN) ||
-       thd->lex->sql_command == SQLCOM_BEGIN) &&
-      thd->in_active_multi_stmt_transaction() &&
-      gtid_next->type == GTID_GROUP)
+  if ((stmt_causes_implicit_commit(thd, CF_IMPLICIT_COMMIT_BEGIN) || thd->lex->sql_command == SQLCOM_BEGIN) &&
+      thd->in_active_multi_stmt_transaction() && gtid_next->type == GTID_GROUP)
   {
     my_error(ER_CANT_DO_IMPLICIT_COMMIT_IN_TRX_WHEN_GTID_NEXT_IS_SET, MYF(0));
     DBUG_RETURN(GTID_STATEMENT_CANCEL);
@@ -486,9 +457,9 @@ enum_gtid_statement_status gtid_pre_statement_checks(THD *thd)
 
     @todo: figure out how to handle SQLCOM_XA_*
   */
-  const enum_sql_command sql_command= thd->lex->sql_command;
-  if (sql_command == SQLCOM_COMMIT || sql_command == SQLCOM_BEGIN ||
-      sql_command == SQLCOM_ROLLBACK || is_stmt_innocent(thd))
+  const enum_sql_command sql_command = thd->lex->sql_command;
+  if (sql_command == SQLCOM_COMMIT || sql_command == SQLCOM_BEGIN || sql_command == SQLCOM_ROLLBACK ||
+      is_stmt_innocent(thd))
     DBUG_RETURN(GTID_STATEMENT_EXECUTE);
 
   /*
@@ -523,17 +494,14 @@ enum_gtid_statement_status gtid_pre_statement_checks(THD *thd)
     DBUG_RETURN(GTID_STATEMENT_CANCEL);
   }
 
-  const Gtid_set *gtid_next_list= thd->get_gtid_next_list_const();
+  const Gtid_set *gtid_next_list = thd->get_gtid_next_list_const();
 
   DBUG_PRINT("info", ("gtid_next_list=%p gtid_next->type=%d "
                       "thd->owned_gtid.gtid.{sidno,gno}={%d,%lld} "
                       "thd->thread_id=%u",
-                      gtid_next_list, gtid_next->type,
-                      thd->owned_gtid.sidno,
-                      thd->owned_gtid.gno,
-                      thd->thread_id()));
+                      gtid_next_list, gtid_next->type, thd->owned_gtid.sidno, thd->owned_gtid.gno, thd->thread_id()));
 
-  const bool skip_transaction= is_already_logged_transaction(thd);
+  const bool skip_transaction = is_already_logged_transaction(thd);
   if (gtid_next_list == NULL)
   {
     if (skip_transaction)
@@ -548,30 +516,28 @@ enum_gtid_statement_status gtid_pre_statement_checks(THD *thd)
 #ifdef HAVE_GTID_NEXT_LIST
     switch (gtid_next->type)
     {
-    case AUTOMATIC_GROUP:
-      my_error(ER_GTID_NEXT_CANT_BE_AUTOMATIC_IF_GTID_NEXT_LIST_IS_NON_NULL,
-               MYF(0));
-      DBUG_RETURN(GTID_STATEMENT_CANCEL);
-    case GTID_GROUP:
-      if (skip_transaction)
-      {
-        skip_statement(thd);
-        DBUG_RETURN(GTID_STATEMENT_SKIP);
-      }
-      /*FALLTHROUGH*/
-    case ANONYMOUS_GROUP:
-      DBUG_RETURN(GTID_STATEMENT_EXECUTE);
-    case INVALID_GROUP:
-      assert(0);/*NOTREACHED*/
+      case AUTOMATIC_GROUP:
+        my_error(ER_GTID_NEXT_CANT_BE_AUTOMATIC_IF_GTID_NEXT_LIST_IS_NON_NULL, MYF(0));
+        DBUG_RETURN(GTID_STATEMENT_CANCEL);
+      case GTID_GROUP:
+        if (skip_transaction)
+        {
+          skip_statement(thd);
+          DBUG_RETURN(GTID_STATEMENT_SKIP);
+        }
+        /*FALLTHROUGH*/
+      case ANONYMOUS_GROUP:
+        DBUG_RETURN(GTID_STATEMENT_EXECUTE);
+      case INVALID_GROUP:
+        assert(0); /*NOTREACHED*/
     }
 #else
-    assert(0);/*NOTREACHED*/
+    assert(0); /*NOTREACHED*/
 #endif
   }
-  assert(0);/*NOTREACHED*/
+  assert(0); /*NOTREACHED*/
   DBUG_RETURN(GTID_STATEMENT_CANCEL);
 }
-
 
 bool gtid_pre_statement_post_implicit_commit_checks(THD *thd)
 {
@@ -605,7 +571,6 @@ bool gtid_pre_statement_post_implicit_commit_checks(THD *thd)
   DBUG_RETURN(false);
 }
 
-
 void gtid_set_performance_schema_values(const THD *thd)
 {
   DBUG_ENTER("gtid_set_performance_schema_values");
@@ -617,21 +582,21 @@ void gtid_set_performance_schema_values(const THD *thd)
     // Thread owns GTID.
     if (thd->owned_gtid.sidno >= 1)
     {
-      spec.type= GTID_GROUP;
-      spec.gtid= thd->owned_gtid;
+      spec.type = GTID_GROUP;
+      spec.gtid = thd->owned_gtid;
     }
 
     // Thread owns ANONYMOUS.
     else if (thd->owned_gtid.sidno == THD::OWNED_SIDNO_ANONYMOUS)
     {
-      spec.type= ANONYMOUS_GROUP;
+      spec.type = ANONYMOUS_GROUP;
     }
 
     // Thread does not own anything.
     else
     {
       assert(thd->owned_gtid.sidno == 0);
-      spec.type= AUTOMATIC_GROUP;
+      spec.type = AUTOMATIC_GROUP;
     }
     MYSQL_SET_TRANSACTION_GTID(thd->m_transaction_psi, &thd->owned_sid, &spec);
   }

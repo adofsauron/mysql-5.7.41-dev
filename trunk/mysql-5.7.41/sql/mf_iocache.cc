@@ -36,62 +36,58 @@
   also info->rc_pos is set to info->rc_end.
   If called through open_cached_file(), then the temporary file will
   only be created if a write exeeds the file buffer or if one calls
-  flush_io_cache().  
+  flush_io_cache().
 */
 
 #ifdef HAVE_REPLICATION
-#include "sql_class.h"                          // THD
+#include "sql_class.h"  // THD
 
-extern "C" {
-
-/**
-  Read buffered from the net.
-
-  @retval
-    1   if can't read requested characters
-  @retval
-    0   if record read
-*/
-
-
-int _my_b_net_read(IO_CACHE *info, uchar *Buffer,
-		   size_t Count MY_ATTRIBUTE((unused)))
+extern "C"
 {
-  ulong read_length;
-  NET *net= current_thd->get_protocol_classic()->get_net();
-  DBUG_ENTER("_my_b_net_read");
+  /**
+    Read buffered from the net.
 
-  if (!info->end_of_file)
-    DBUG_RETURN(1);	/* because my_b_get (no _) takes 1 byte at a time */
-  read_length=my_net_read(net);
-  if (read_length == packet_error)
-  {
-    info->error= -1;
-    DBUG_RETURN(1);
-  }
-  if (read_length == 0)
-  {
-    info->end_of_file= 0;			/* End of file from client */
-    DBUG_RETURN(1);
-  }
-  /* to set up stuff for my_b_get (no _) */
-  info->read_end = (info->read_pos = net->read_pos) + read_length;
-  Buffer[0] = info->read_pos[0];		/* length is always 1 */
-
-  /*
-    info->request_pos is used by log_loaded_block() to know the size
-    of the current block.
-    info->pos_in_file is used by log_loaded_block() too.
+    @retval
+      1   if can't read requested characters
+    @retval
+      0   if record read
   */
-  info->pos_in_file+= read_length;
-  info->request_pos=info->read_pos;
 
-  info->read_pos++;
+  int _my_b_net_read(IO_CACHE *info, uchar *Buffer, size_t Count MY_ATTRIBUTE((unused)))
+  {
+    ulong read_length;
+    NET *net = current_thd->get_protocol_classic()->get_net();
+    DBUG_ENTER("_my_b_net_read");
 
-  DBUG_RETURN(0);
-}
+    if (!info->end_of_file)
+      DBUG_RETURN(1); /* because my_b_get (no _) takes 1 byte at a time */
+    read_length = my_net_read(net);
+    if (read_length == packet_error)
+    {
+      info->error = -1;
+      DBUG_RETURN(1);
+    }
+    if (read_length == 0)
+    {
+      info->end_of_file = 0; /* End of file from client */
+      DBUG_RETURN(1);
+    }
+    /* to set up stuff for my_b_get (no _) */
+    info->read_end = (info->read_pos = net->read_pos) + read_length;
+    Buffer[0] = info->read_pos[0]; /* length is always 1 */
+
+    /*
+      info->request_pos is used by log_loaded_block() to know the size
+      of the current block.
+      info->pos_in_file is used by log_loaded_block() too.
+    */
+    info->pos_in_file += read_length;
+    info->request_pos = info->read_pos;
+
+    info->read_pos++;
+
+    DBUG_RETURN(0);
+  }
 
 } /* extern "C" */
 #endif /* HAVE_REPLICATION */
-
-

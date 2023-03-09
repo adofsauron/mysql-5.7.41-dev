@@ -30,19 +30,18 @@
 #include "ndb_thd.h"
 #include "ndb_thd_ndb.h"
 
-
 /*
   Make sure THD has a Thd_ndb struct allocated and associated
 
   - validate_ndb, check if the Ndb object need to be recycled
 */
 
-Ndb* check_ndb_in_thd(THD* thd, bool validate_ndb)
+Ndb *check_ndb_in_thd(THD *thd, bool validate_ndb)
 {
-  Thd_ndb *thd_ndb= get_thd_ndb(thd);
+  Thd_ndb *thd_ndb = get_thd_ndb(thd);
   if (!thd_ndb)
   {
-    if (!(thd_ndb= Thd_ndb::seize(thd)))
+    if (!(thd_ndb = Thd_ndb::seize(thd)))
       return NULL;
     thd_set_thd_ndb(thd, thd_ndb);
   }
@@ -60,25 +59,18 @@ Ndb* check_ndb_in_thd(THD* thd, bool validate_ndb)
 
 #include <sql_class.h>
 
-void
-thd_print_warning_list(THD* thd, const char* prefix)
+void thd_print_warning_list(THD *thd, const char *prefix)
 {
-  Diagnostics_area::Sql_condition_iterator
-   it(thd->get_stmt_da()->sql_conditions());
+  Diagnostics_area::Sql_condition_iterator it(thd->get_stmt_da()->sql_conditions());
 
   const Sql_condition *err;
-  while ((err= it++))
+  while ((err = it++))
   {
-    sql_print_warning("%s: (%d)%s",
-                      prefix,
-                      err->mysql_errno(),
-                      err->message_text());
+    sql_print_warning("%s: (%d)%s", prefix, err->mysql_errno(), err->message_text());
   }
 }
 
-
-bool
-applying_binlog(const THD* thd)
+bool applying_binlog(const THD *thd)
 {
   if (thd->slave_thread)
   {

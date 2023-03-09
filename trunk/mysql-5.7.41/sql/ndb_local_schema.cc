@@ -34,10 +34,9 @@
 #include "log.h"
 #include "table_trigger_dispatcher.h"
 #include "sql_trigger.h"
-#include "auth_common.h"              // check_readonly()
+#include "auth_common.h"  // check_readonly()
 
-static const char *ndb_ext=".ndb";
-
+static const char *ndb_ext = ".ndb";
 
 bool Ndb_local_schema::Base::mdl_try_lock(void) const
 {
@@ -46,22 +45,15 @@ bool Ndb_local_schema::Base::mdl_try_lock(void) const
   MDL_request schema_request;
   MDL_request mdl_request;
 
-  MDL_REQUEST_INIT(&global_request,
-                   MDL_key::GLOBAL, "", "", MDL_INTENTION_EXCLUSIVE,
-                   MDL_STATEMENT);
-  MDL_REQUEST_INIT(&schema_request,
-                   MDL_key::SCHEMA, m_db, "", MDL_INTENTION_EXCLUSIVE,
-                   MDL_TRANSACTION);
-  MDL_REQUEST_INIT(&mdl_request,
-                   MDL_key::TABLE, m_db, m_name, MDL_EXCLUSIVE,
-                   MDL_TRANSACTION);
+  MDL_REQUEST_INIT(&global_request, MDL_key::GLOBAL, "", "", MDL_INTENTION_EXCLUSIVE, MDL_STATEMENT);
+  MDL_REQUEST_INIT(&schema_request, MDL_key::SCHEMA, m_db, "", MDL_INTENTION_EXCLUSIVE, MDL_TRANSACTION);
+  MDL_REQUEST_INIT(&mdl_request, MDL_key::TABLE, m_db, m_name, MDL_EXCLUSIVE, MDL_TRANSACTION);
 
   mdl_requests.push_front(&mdl_request);
   mdl_requests.push_front(&schema_request);
   mdl_requests.push_front(&global_request);
 
-  if (m_thd->mdl_context.acquire_locks(&mdl_requests,
-                                       0 /* don't wait for lock */))
+  if (m_thd->mdl_context.acquire_locks(&mdl_requests, 0 /* don't wait for lock */))
   {
     // Check that an error has been pushed to thd and then
     // clear it since this is just a _try lock_
@@ -84,14 +76,9 @@ bool Ndb_local_schema::Base::mdl_try_lock(void) const
   return true;
 }
 
+void Ndb_local_schema::Base::mdl_unlock(void) { m_thd->mdl_context.release_transactional_locks(); }
 
-void Ndb_local_schema::Base::mdl_unlock(void)
-{
-  m_thd->mdl_context.release_transactional_locks();
-}
-
-
-void Ndb_local_schema::Base::log_warning(const char* fmt, ...) const
+void Ndb_local_schema::Base::log_warning(const char *fmt, ...) const
 {
   char buf[1024];
   va_list args;
@@ -102,22 +89,16 @@ void Ndb_local_schema::Base::log_warning(const char* fmt, ...) const
   if (m_push_warnings)
   {
     // Append the error which caused the error to thd's warning list
-    push_warning_printf(m_thd, Sql_condition::SL_NOTE,
-                        ER_GET_ERRMSG, "Ndb schema[%s.%s]: %s",
-                        m_db, m_name, buf);
+    push_warning_printf(m_thd, Sql_condition::SL_NOTE, ER_GET_ERRMSG, "Ndb schema[%s.%s]: %s", m_db, m_name, buf);
   }
   else
   {
     // Print the warning to log file
-    sql_print_warning("Ndb schema[%s.%s]: %s",
-                      m_db, m_name, buf);
+    sql_print_warning("Ndb schema[%s.%s]: %s", m_db, m_name, buf);
   }
 }
 
-
-Ndb_local_schema::Base::Base(THD* thd, const char* db, const char* name) :
-  m_thd(thd),
-  m_db(db), m_name(name)
+Ndb_local_schema::Base::Base(THD *thd, const char *db, const char *name) : m_thd(thd), m_db(db), m_name(name)
 {
   /*
     System(or daemon) threads report error to log file
@@ -125,27 +106,23 @@ Ndb_local_schema::Base::Base(THD* thd, const char* db, const char* name) :
   */
   m_push_warnings = (thd->get_command() != COM_DAEMON);
 
-  m_have_mdl_lock= mdl_try_lock();
+  m_have_mdl_lock = mdl_try_lock();
 }
-
 
 Ndb_local_schema::Base::~Base()
 {
   // Release MDL locks
   if (m_have_mdl_lock)
   {
-   DBUG_PRINT("info", ("releasing mdl lock"));
+    DBUG_PRINT("info", ("releasing mdl lock"));
     mdl_unlock();
   }
 }
 
-
-bool
-Ndb_local_schema::Table::file_exists(const char* ext) const
+bool Ndb_local_schema::Table::file_exists(const char *ext) const
 {
   char buf[FN_REFLEN + 1];
-  build_table_filename(buf, sizeof(buf)-1,
-                       m_db, m_name, ext, 0);
+  build_table_filename(buf, sizeof(buf) - 1, m_db, m_name, ext, 0);
 
   if (my_access(buf, F_OK))
   {
@@ -157,13 +134,10 @@ Ndb_local_schema::Table::file_exists(const char* ext) const
   return true;
 }
 
-
-bool
-Ndb_local_schema::Table::remove_file(const char* ext) const
+bool Ndb_local_schema::Table::remove_file(const char *ext) const
 {
   char buf[FN_REFLEN + 1];
-  build_table_filename(buf, sizeof(buf)-1,
-                       m_db, m_name, ext, 0);
+  build_table_filename(buf, sizeof(buf) - 1, m_db, m_name, ext, 0);
 
   int error = my_delete(buf, 0);
   if (!error || errno == ENOENT)
@@ -173,14 +147,10 @@ Ndb_local_schema::Table::remove_file(const char* ext) const
   return false;
 }
 
-
-bool
-Ndb_local_schema::Table::rename_file(const char* new_db, const char* new_name,
-                             const char* ext) const
+bool Ndb_local_schema::Table::rename_file(const char *new_db, const char *new_name, const char *ext) const
 {
   char from[FN_REFLEN + 1];
-  build_table_filename(from, sizeof(from)-1,
-                       m_db, m_name, ext, 0);
+  build_table_filename(from, sizeof(from) - 1, m_db, m_name, ext, 0);
 
   char to[FN_REFLEN + 1];
   build_table_filename(to, sizeof(to) - 1, new_db, new_name, ext, 0);
@@ -189,19 +159,15 @@ Ndb_local_schema::Table::rename_file(const char* new_db, const char* new_name,
   if (!error)
     return true;
 
-  log_warning("Failed to rename file '%s' to '%s', errno: %d",
-            from, to, errno);
+  log_warning("Failed to rename file '%s' to '%s', errno: %d", from, to, errno);
   return false;
 }
 
-
 // Read the engine type from .frm and return true if it says NDB
-bool
-Ndb_local_schema::Table::frm_engine_is_ndb(void) const
+bool Ndb_local_schema::Table::frm_engine_is_ndb(void) const
 {
   char buf[FN_REFLEN + 1];
-  build_table_filename(buf, sizeof(buf)-1,
-                       m_db, m_name, reg_ext, 0);
+  build_table_filename(buf, sizeof(buf) - 1, m_db, m_name, reg_ext, 0);
 
   legacy_db_type engine_type;
   (void)dd_frm_type(m_thd, buf, &engine_type);
@@ -210,12 +176,8 @@ Ndb_local_schema::Table::frm_engine_is_ndb(void) const
   return (engine_type == DB_TYPE_NDBCLUSTER);
 }
 
-
-Ndb_local_schema::Table::Table(THD* thd,
-                               const char* db, const char* name) :
-  Ndb_local_schema::Base(thd, db, name),
-  m_ndb_file_exist(false),
-  m_has_triggers(false)
+Ndb_local_schema::Table::Table(THD *thd, const char *db, const char *name)
+    : Ndb_local_schema::Base(thd, db, name), m_ndb_file_exist(false), m_has_triggers(false)
 {
   DBUG_ENTER("Ndb_local_table");
   DBUG_PRINT("enter", ("name: '%s.%s'", db, name));
@@ -238,9 +200,7 @@ Ndb_local_schema::Table::Table(THD* thd,
   DBUG_VOID_RETURN;
 }
 
-
-bool
-Ndb_local_schema::Table::is_local_table(void) const
+bool Ndb_local_schema::Table::is_local_table(void) const
 {
   if (m_frm_file_exist && !m_ndb_file_exist)
   {
@@ -254,9 +214,7 @@ Ndb_local_schema::Table::is_local_table(void) const
   return false;
 }
 
-
-void
-Ndb_local_schema::Table::remove_table(void) const
+void Ndb_local_schema::Table::remove_table(void) const
 {
   (void)remove_file(reg_ext);
   (void)remove_file(ndb_ext);
@@ -275,10 +233,7 @@ Ndb_local_schema::Table::remove_table(void) const
   }
 }
 
-
-void
-Ndb_local_schema::Table::rename_table(const char* new_db,
-                                      const char* new_name) const
+void Ndb_local_schema::Table::rename_table(const char *new_db, const char *new_name) const
 {
   (void)rename_file(new_db, new_name, reg_ext);
   (void)rename_file(new_db, new_name, ndb_ext);
@@ -293,9 +248,7 @@ Ndb_local_schema::Table::rename_table(const char* new_db,
     }
     else
     {
-      if (change_trigger_table_name(m_thd,
-                                    m_db, m_name, m_name,
-                                    new_db, new_name))
+      if (change_trigger_table_name(m_thd, m_db, m_name, m_name, new_db, new_name))
       {
         log_warning("Failed to rename all triggers");
       }

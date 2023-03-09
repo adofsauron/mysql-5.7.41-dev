@@ -20,24 +20,21 @@
    along with this program; if not, write to the Free Software Foundation,
    51 Franklin Street, Suite 500, Boston, MA 02110-1335 USA */
 
-
 /*
   Derived tables
   These were introduced by Sinisa <sinisa@mysql.com>
 */
 
-
-#include "my_global.h"                          /* NO_EMBEDDED_ACCESS_CHECKS */
+#include "my_global.h" /* NO_EMBEDDED_ACCESS_CHECKS */
 #include "sql_derived.h"
 #include "sql_select.h"
 #include "sql_resolver.h"
-#include "sql_optimizer.h"                    // JOIN
-#include "sql_view.h"                         // check_duplicate_names
-#include "auth_common.h"                      // SELECT_ACL
-#include "sql_tmp_table.h"                    // Tmp tables
-#include "sql_union.h"                        // Query_result_union
-#include "opt_trace.h"                        // opt_trace_disable_etc
-
+#include "sql_optimizer.h"  // JOIN
+#include "sql_view.h"       // check_duplicate_names
+#include "auth_common.h"    // SELECT_ACL
+#include "sql_tmp_table.h"  // Tmp tables
+#include "sql_union.h"      // Query_result_union
+#include "opt_trace.h"      // opt_trace_disable_etc
 
 /**
   Resolve a derived table or view reference, including recursively resolving
@@ -56,26 +53,25 @@ bool TABLE_LIST::resolve_derived(THD *thd, bool apply_semijoin)
   if (!is_view_or_derived() || is_merged())
     DBUG_RETURN(false);
 
-  const bool derived_tables_saved= thd->derived_tables_processing;
+  const bool derived_tables_saved = thd->derived_tables_processing;
 
-  thd->derived_tables_processing= true;
+  thd->derived_tables_processing = true;
 
 #ifndef NDEBUG
-  for (SELECT_LEX *sl= derived->first_select(); sl; sl= sl->next_select())
+  for (SELECT_LEX *sl = derived->first_select(); sl; sl = sl->next_select())
   {
     // Make sure there are no outer references
     assert(sl->context.outer_context == NULL);
   }
 #endif
-  if (!(derived_result= new (thd->mem_root) Query_result_union))
+  if (!(derived_result = new (thd->mem_root) Query_result_union))
     DBUG_RETURN(true);
 
   /*
     Prepare the underlying query expression of the derived table.
     The SELECT_STRAIGHT_JOIN option prevents semi-join transformation.
   */
-  if (derived->prepare(thd, derived_result,
-                       !apply_semijoin ? SELECT_NO_SEMI_JOIN : 0, 0))
+  if (derived->prepare(thd, derived_result, !apply_semijoin ? SELECT_NO_SEMI_JOIN : 0, 0))
     DBUG_RETURN(true);
 
   if (check_duplicate_names(derived->types, 0))
@@ -93,11 +89,10 @@ bool TABLE_LIST::resolve_derived(THD *thd, bool apply_semijoin)
     set_privileges(SELECT_ACL);
 #endif
 
-  thd->derived_tables_processing= derived_tables_saved;
+  thd->derived_tables_processing = derived_tables_saved;
 
   DBUG_RETURN(false);
 }
-
 
 /**
   Prepare a derived table or view for materialization.
@@ -115,35 +110,30 @@ bool TABLE_LIST::setup_materialized_derived(THD *thd)
 
   DBUG_PRINT("info", ("algorithm: TEMPORARY TABLE"));
 
-  Opt_trace_context *const trace= &thd->opt_trace;
+  Opt_trace_context *const trace = &thd->opt_trace;
   Opt_trace_object trace_wrapper(trace);
   Opt_trace_object trace_derived(trace, is_view() ? "view" : "derived");
-  trace_derived.add_utf8_table(this).
-    add("select#", derived->first_select()->select_number).
-    add("materialized", true);
+  trace_derived.add_utf8_table(this).add("select#", derived->first_select()->select_number).add("materialized", true);
 
   set_uses_materialization();
 
   // Create the result table for the materialization
-  const ulonglong create_options= derived->first_select()->active_options() |
-                                  TMP_TABLE_ALL_COLUMNS;
-  if (derived_result->create_result_table(thd, &derived->types, false, 
-                                          create_options,
-                                          alias, false, false))
-    DBUG_RETURN(true);        /* purecov: inspected */
+  const ulonglong create_options = derived->first_select()->active_options() | TMP_TABLE_ALL_COLUMNS;
+  if (derived_result->create_result_table(thd, &derived->types, false, create_options, alias, false, false))
+    DBUG_RETURN(true); /* purecov: inspected */
 
-  table= derived_result->table;
-  table->pos_in_table_list= this;
+  table = derived_result->table;
+  table->pos_in_table_list = this;
 
   // Make table's name same as the underlying materialized table
   set_name_temporary();
 
-  table->s->tmp_table= NON_TRANSACTIONAL_TMP_TABLE;
+  table->s->tmp_table = NON_TRANSACTIONAL_TMP_TABLE;
 #ifndef NO_EMBEDDED_ACCESS_CHECKS
   if (referencing_view)
-    table->grant= grant;
+    table->grant = grant;
   else
-    table->grant.privilege= SELECT_ACL;
+    table->grant.privilege = SELECT_ACL;
 #endif
 
   // Table is "nullable" if inner table of an outer_join
@@ -151,10 +141,10 @@ bool TABLE_LIST::setup_materialized_derived(THD *thd)
     table->set_nullable();
 
   // Add new temporary table to list of open derived tables
-  table->next= thd->derived_tables;
-  thd->derived_tables= table;
+  table->next = thd->derived_tables;
+  thd->derived_tables = table;
 
-  for (SELECT_LEX *sl= derived->first_select(); sl; sl= sl->next_select())
+  for (SELECT_LEX *sl = derived->first_select(); sl; sl = sl->next_select())
   {
     /*
       Derived tables/view are materialized prior to UPDATE, thus we can skip
@@ -175,14 +165,13 @@ bool TABLE_LIST::setup_materialized_derived(THD *thd)
     // Set all selected fields to be read:
     // @todo Do not set fields that are not referenced from outer query
     assert(thd->mark_used_columns == MARK_COLUMNS_READ);
-    List_iterator<Item> it(sl->all_fields);
+    List_iterator< Item > it(sl->all_fields);
     Item *item;
     Column_privilege_tracker tracker(thd, SELECT_ACL);
     Mark_field mf(thd->mark_used_columns);
-    while ((item= it++))
+    while ((item = it++))
     {
-      if (item->walk(&Item::check_column_privileges, Item::WALK_PREFIX,
-                     (uchar *)thd))
+      if (item->walk(&Item::check_column_privileges, Item::WALK_PREFIX, (uchar *)thd))
         DBUG_RETURN(true);
       item->walk(&Item::mark_field_in_map, Item::WALK_POSTFIX, (uchar *)&mf);
     }
@@ -190,7 +179,6 @@ bool TABLE_LIST::setup_materialized_derived(THD *thd)
 
   DBUG_RETURN(false);
 }
-
 
 /**
   Optimize the query expression representing a derived table/view.
@@ -208,20 +196,18 @@ bool TABLE_LIST::optimize_derived(THD *thd)
 {
   DBUG_ENTER("TABLE_LIST::optimize_derived");
 
-  SELECT_LEX_UNIT *const unit= derived_unit();
+  SELECT_LEX_UNIT *const unit = derived_unit();
 
   assert(unit && !unit->is_optimized());
 
   if (unit->optimize(thd) || thd->is_error())
     DBUG_RETURN(true);
 
-  if (materializable_is_const() &&
-      (create_derived(thd) || materialize_derived(thd)))
+  if (materializable_is_const() && (create_derived(thd) || materialize_derived(thd)))
     DBUG_RETURN(true);
 
   DBUG_RETURN(false);
 }
-
 
 /**
   Create result table for a materialized derived table/view.
@@ -238,7 +224,7 @@ bool TABLE_LIST::create_derived(THD *thd)
 {
   DBUG_ENTER("TABLE_LIST::create_derived");
 
-  SELECT_LEX_UNIT *const unit= derived_unit();
+  SELECT_LEX_UNIT *const unit = derived_unit();
 
   // @todo: Be able to assert !table->is_created() as well
   assert(unit && uses_materialization() && table);
@@ -248,9 +234,9 @@ bool TABLE_LIST::create_derived(THD *thd)
     1) Table is already created, or
     2) Table is a constant one with all NULL values.
   */
-  if (table->is_created() ||                              // 1
-      (select_lex->join != NULL &&                        // 2
-       (select_lex->join->const_table_map & map())))      // 2
+  if (table->is_created() ||                          // 1
+      (select_lex->join != NULL &&                    // 2
+       (select_lex->join->const_table_map & map())))  // 2
   {
     /*
       At this point, JT_CONST derived tables should be null rows. Otherwise
@@ -259,25 +245,20 @@ bool TABLE_LIST::create_derived(THD *thd)
 #ifndef NDEBUG
     if (table != NULL)
     {
-      QEP_TAB *tab= table->reginfo.qep_tab;
-      assert(tab == NULL ||
-             tab->type() != JT_CONST ||
-             table->has_null_row());
+      QEP_TAB *tab = table->reginfo.qep_tab;
+      assert(tab == NULL || tab->type() != JT_CONST || table->has_null_row());
     }
 #endif
     DBUG_RETURN(false);
   }
   /* create tmp table */
-  Query_result_union *result= (Query_result_union*)unit->query_result();
+  Query_result_union *result = (Query_result_union *)unit->query_result();
 
-  if (instantiate_tmp_table(table, table->key_info,
-                            result->tmp_table_param.start_recinfo,
-                            &result->tmp_table_param.recinfo,
-                            unit->first_select()->active_options() |
-                            thd->lex->select_lex->active_options() |
-                            TMP_TABLE_ALL_COLUMNS,
-                            thd->variables.big_tables, &thd->opt_trace))
-    DBUG_RETURN(true);        /* purecov: inspected */
+  if (instantiate_tmp_table(
+          table, table->key_info, result->tmp_table_param.start_recinfo, &result->tmp_table_param.recinfo,
+          unit->first_select()->active_options() | thd->lex->select_lex->active_options() | TMP_TABLE_ALL_COLUMNS,
+          thd->variables.big_tables, &thd->opt_trace))
+    DBUG_RETURN(true); /* purecov: inspected */
 
   table->file->extra(HA_EXTRA_WRITE_CACHE);
   table->file->extra(HA_EXTRA_IGNORE_DUP_KEY);
@@ -286,7 +267,6 @@ bool TABLE_LIST::create_derived(THD *thd)
 
   DBUG_RETURN(false);
 }
-
 
 /**
   Materialize derived table
@@ -309,21 +289,21 @@ bool TABLE_LIST::materialize_derived(THD *thd)
 
   assert(is_view_or_derived() && uses_materialization());
 
-  SELECT_LEX_UNIT *const unit= derived_unit();
-  bool res= false;
+  SELECT_LEX_UNIT *const unit = derived_unit();
+  bool res = false;
 
   assert(table && table->is_created());
 
   if (unit->is_union())
   {
     // execute union without clean up
-    res= unit->execute(thd);
+    res = unit->execute(thd);
   }
   else
   {
-    SELECT_LEX *first_select= unit->first_select();
-    JOIN *join= first_select->join;
-    SELECT_LEX *save_current_select= thd->lex->current_select();
+    SELECT_LEX *first_select = unit->first_select();
+    JOIN *join = first_select->join;
+    SELECT_LEX *save_current_select = thd->lex->current_select();
     thd->lex->set_current_select(first_select);
 
     assert(join && join->is_optimized());
@@ -331,7 +311,7 @@ bool TABLE_LIST::materialize_derived(THD *thd)
     unit->set_limit(first_select);
 
     join->exec();
-    res= join->error;
+    res = join->error;
     thd->lex->set_current_select(save_current_select);
   }
 
@@ -342,12 +322,11 @@ bool TABLE_LIST::materialize_derived(THD *thd)
       there were no derived tables
     */
     if (derived_result->flush())
-      res= true;                  /* purecov: inspected */
+      res = true; /* purecov: inspected */
   }
 
   DBUG_RETURN(res);
 }
-
 
 /**
    Clean up the query expression for a materialized derived table

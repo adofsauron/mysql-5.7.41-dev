@@ -1,4 +1,4 @@
-/* Copyright (c) 2010, 2022, Oracle and/or its affiliates. 
+/* Copyright (c) 2010, 2022, Oracle and/or its affiliates.
 
    This program is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License, version 2.0,
@@ -26,7 +26,7 @@
 
 extern "C" void sql_alloc_error_handler(void)
 {
-  THD *thd= current_thd;
+  THD *thd = current_thd;
   if (thd && !thd->is_error())
   {
     /*

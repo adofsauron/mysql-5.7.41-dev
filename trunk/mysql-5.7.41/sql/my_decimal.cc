@@ -24,7 +24,7 @@
 #include <time.h>
 
 #ifndef MYSQL_CLIENT
-#include "sql_class.h"                          // THD
+#include "sql_class.h"  // THD
 #endif
 
 #ifndef MYSQL_CLIENT
@@ -41,42 +41,37 @@ int my_decimal::check_result(uint mask, int result) const
 {
   if (result & mask)
   {
-    int length= DECIMAL_MAX_STR_LENGTH + 1;
+    int length = DECIMAL_MAX_STR_LENGTH + 1;
     char strbuff[DECIMAL_MAX_STR_LENGTH + 2];
 
-    switch (result) {
-    case E_DEC_TRUNCATED:
-      // "Data truncated for column \'%s\' at row %ld"
-      push_warning_printf(current_thd, Sql_condition::SL_WARNING,
-                          WARN_DATA_TRUNCATED, ER(WARN_DATA_TRUNCATED),
-                          "", -1L);
-      break;
-    case E_DEC_OVERFLOW:
-      // "Truncated incorrect %-.32s value: \'%-.128s\'"
-      decimal2string(this, strbuff, &length, 0, 0, 0);
-      push_warning_printf(current_thd, Sql_condition::SL_WARNING,
-                          ER_TRUNCATED_WRONG_VALUE,
-                          ER(ER_TRUNCATED_WRONG_VALUE),
-                          "DECIMAL", strbuff);
-      break;
-    case E_DEC_DIV_ZERO:
-      // "Division by 0"
-      push_warning(current_thd, Sql_condition::SL_WARNING,
-                   ER_DIVISION_BY_ZERO, ER(ER_DIVISION_BY_ZERO));
-      break;
-    case E_DEC_BAD_NUM:
-      // "Incorrect %-.32s value: \'%-.128s\' for column \'%.192s\' at row %ld"
-      decimal2string(this, strbuff, &length, 0, 0, 0);
-      push_warning_printf(current_thd, Sql_condition::SL_WARNING,
-                          ER_TRUNCATED_WRONG_VALUE_FOR_FIELD,
-                          ER(ER_TRUNCATED_WRONG_VALUE_FOR_FIELD),
-                          "DECIMAL", strbuff, "", -1L);
-      break;
-    case E_DEC_OOM:
-      my_error(ER_OUT_OF_RESOURCES, MYF(0));
-      break;
-    default:
-      assert(0);
+    switch (result)
+    {
+      case E_DEC_TRUNCATED:
+        // "Data truncated for column \'%s\' at row %ld"
+        push_warning_printf(current_thd, Sql_condition::SL_WARNING, WARN_DATA_TRUNCATED, ER(WARN_DATA_TRUNCATED), "",
+                            -1L);
+        break;
+      case E_DEC_OVERFLOW:
+        // "Truncated incorrect %-.32s value: \'%-.128s\'"
+        decimal2string(this, strbuff, &length, 0, 0, 0);
+        push_warning_printf(current_thd, Sql_condition::SL_WARNING, ER_TRUNCATED_WRONG_VALUE,
+                            ER(ER_TRUNCATED_WRONG_VALUE), "DECIMAL", strbuff);
+        break;
+      case E_DEC_DIV_ZERO:
+        // "Division by 0"
+        push_warning(current_thd, Sql_condition::SL_WARNING, ER_DIVISION_BY_ZERO, ER(ER_DIVISION_BY_ZERO));
+        break;
+      case E_DEC_BAD_NUM:
+        // "Incorrect %-.32s value: \'%-.128s\' for column \'%.192s\' at row %ld"
+        decimal2string(this, strbuff, &length, 0, 0, 0);
+        push_warning_printf(current_thd, Sql_condition::SL_WARNING, ER_TRUNCATED_WRONG_VALUE_FOR_FIELD,
+                            ER(ER_TRUNCATED_WRONG_VALUE_FOR_FIELD), "DECIMAL", strbuff, "", -1L);
+        break;
+      case E_DEC_OOM:
+        my_error(ER_OUT_OF_RESOURCES, MYF(0));
+        break;
+      default:
+        assert(0);
     }
   }
   return result;
@@ -101,9 +96,7 @@ int my_decimal::check_result(uint mask, int result) const
     @retval E_DEC_OOM
 */
 
-int my_decimal2string(uint mask, const my_decimal *d,
-                      uint fixed_prec, uint fixed_dec,
-                      char filler, String *str)
+int my_decimal2string(uint mask, const my_decimal *d, uint fixed_prec, uint fixed_dec, char filler, String *str)
 {
   /*
     Calculate the size of the string: For DECIMAL(a,b), fixed_prec==a
@@ -117,20 +110,15 @@ int my_decimal2string(uint mask, const my_decimal *d,
     my_decimal_string_length() will be called instead to calculate the
     required size of the buffer.
   */
-  int length= (fixed_prec
-               ? (fixed_prec + ((fixed_prec == fixed_dec) ? 1 : 0) + 1 + 1)
-               : my_decimal_string_length(d));
+  int length = (fixed_prec ? (fixed_prec + ((fixed_prec == fixed_dec) ? 1 : 0) + 1 + 1) : my_decimal_string_length(d));
   int result;
   if (str->alloc(length))
     return d->check_result(mask, E_DEC_OOM);
-  result= decimal2string((decimal_t*) d, (char*) str->ptr(),
-                         &length, (int)fixed_prec, fixed_dec,
-                         filler);
+  result = decimal2string((decimal_t *)d, (char *)str->ptr(), &length, (int)fixed_prec, fixed_dec, filler);
   str->length(length);
   str->set_charset(&my_charset_numeric);
   return d->check_result(mask, result);
 }
-
 
 /**
   @brief Converting decimal to string with character set conversion
@@ -155,10 +143,8 @@ int my_decimal2string(uint mask, const my_decimal *d,
   but this would need to include
   my_decimal.h from sql_string.h and sql_string.cc, which is not desirable.
 */
-bool
-str_set_decimal(uint mask, const my_decimal *val,
-                uint fixed_prec, uint fixed_dec, char filler,
-                String *str, const CHARSET_INFO *cs)
+bool str_set_decimal(uint mask, const my_decimal *val, uint fixed_prec, uint fixed_dec, char filler, String *str,
+                     const CHARSET_INFO *cs)
 {
   if (!(cs->state & MY_CS_NONASCII))
   {
@@ -183,7 +169,6 @@ str_set_decimal(uint mask, const my_decimal *val,
   }
 }
 
-
 /*
   Convert from decimal to binary representation
 
@@ -205,25 +190,23 @@ str_set_decimal(uint mask, const my_decimal *val,
     E_DEC_OVERFLOW
 */
 
-int my_decimal2binary(uint mask, const my_decimal *d, uchar *bin, int prec,
-		      int scale)
+int my_decimal2binary(uint mask, const my_decimal *d, uchar *bin, int prec, int scale)
 {
-  int err1= E_DEC_OK, err2;
+  int err1 = E_DEC_OK, err2;
   my_decimal rounded;
   my_decimal2decimal(d, &rounded);
-  rounded.frac= decimal_actual_fraction(&rounded);
+  rounded.frac = decimal_actual_fraction(&rounded);
   if (scale < rounded.frac)
   {
-    err1= E_DEC_TRUNCATED;
+    err1 = E_DEC_TRUNCATED;
     /* decimal_round can return only E_DEC_TRUNCATED */
     decimal_round(&rounded, &rounded, scale, HALF_UP);
   }
-  err2= decimal2bin(&rounded, bin, prec, scale);
+  err2 = decimal2bin(&rounded, bin, prec, scale);
   if (!err2)
-    err2= err1;
+    err2 = err1;
   return d->check_result(mask, err2);
 }
-
 
 /*
   Convert string for decimal when string can be in some multibyte charset
@@ -244,8 +227,7 @@ int my_decimal2binary(uint mask, const my_decimal *d, uchar *bin, int prec,
     E_DEC_OOM
 */
 
-int str2my_decimal(uint mask, const char *from, size_t length,
-                   const CHARSET_INFO *charset, my_decimal *decimal_value)
+int str2my_decimal(uint mask, const char *from, size_t length, const CHARSET_INFO *charset, my_decimal *decimal_value)
 {
   char *end, *from_end;
   int err;
@@ -255,20 +237,20 @@ int str2my_decimal(uint mask, const char *from, size_t length,
   {
     uint dummy_errors;
     tmp.copy(from, length, charset, &my_charset_latin1, &dummy_errors);
-    from= tmp.ptr();
-    length=  tmp.length();
-    charset= &my_charset_bin;
+    from = tmp.ptr();
+    length = tmp.length();
+    charset = &my_charset_bin;
   }
-  from_end= end= (char*) from+length;
-  err= string2decimal((char *)from, (decimal_t*) decimal_value, &end);
+  from_end = end = (char *)from + length;
+  err = string2decimal((char *)from, (decimal_t *)decimal_value, &end);
   if (end != from_end && !err)
   {
     /* Give warning if there is something other than end space */
-    for ( ; end < from_end; end++)
+    for (; end < from_end; end++)
     {
       if (!my_isspace(&my_charset_latin1, *end))
       {
-        err= E_DEC_TRUNCATED;
+        err = E_DEC_TRUNCATED;
         break;
       }
     }
@@ -276,7 +258,6 @@ int str2my_decimal(uint mask, const char *from, size_t length,
   check_result_and_overflow(mask, err, decimal_value);
   return err;
 }
-
 
 /**
   Convert lldiv_t value to my_decimal value.
@@ -287,21 +268,19 @@ int str2my_decimal(uint mask, const char *from, size_t length,
   @param       neg  Sign flag (negative, 0 positive).
   @param  OUT  dec  Decimal numbert to convert to.
 */
-static my_decimal *lldiv_t2my_decimal(const lldiv_t *lld, bool neg,
-                                      my_decimal *dec)
+static my_decimal *lldiv_t2my_decimal(const lldiv_t *lld, bool neg, my_decimal *dec)
 {
   if (int2my_decimal(E_DEC_FATAL_ERROR, lld->quot, FALSE, dec))
     return dec;
   if (lld->rem)
   {
-    dec->buf[(dec->intg-1) / 9 + 1]= static_cast<decimal_digit_t>(lld->rem);
-    dec->frac= 6;
+    dec->buf[(dec->intg - 1) / 9 + 1] = static_cast< decimal_digit_t >(lld->rem);
+    dec->frac = 6;
   }
   if (neg)
     my_decimal_neg(dec);
   return dec;
 }
-
 
 /**
   Convert datetime value to my_decimal in format YYYYMMDDhhmmss.ffffff
@@ -311,13 +290,11 @@ static my_decimal *lldiv_t2my_decimal(const lldiv_t *lld, bool neg,
 my_decimal *date2my_decimal(const MYSQL_TIME *ltime, my_decimal *dec)
 {
   lldiv_t lld;
-  lld.quot= ltime->time_type > MYSQL_TIMESTAMP_DATE ?
-            TIME_to_ulonglong_datetime(ltime) :
-            TIME_to_ulonglong_date(ltime);
-  lld.rem= (longlong) ltime->second_part * 1000;
+  lld.quot =
+      ltime->time_type > MYSQL_TIMESTAMP_DATE ? TIME_to_ulonglong_datetime(ltime) : TIME_to_ulonglong_date(ltime);
+  lld.rem = (longlong)ltime->second_part * 1000;
   return lldiv_t2my_decimal(&lld, ltime->neg, dec);
 }
-
 
 /**
   Convert time value to my_decimal in format hhmmss.ffffff
@@ -327,11 +304,10 @@ my_decimal *date2my_decimal(const MYSQL_TIME *ltime, my_decimal *dec)
 my_decimal *time2my_decimal(const MYSQL_TIME *ltime, my_decimal *dec)
 {
   lldiv_t lld;
-  lld.quot= TIME_to_ulonglong_time(ltime);
-  lld.rem= (longlong) ltime->second_part * 1000;
+  lld.quot = TIME_to_ulonglong_time(ltime);
+  lld.rem = (longlong)ltime->second_part * 1000;
   return lldiv_t2my_decimal(&lld, ltime->neg, dec);
 }
-
 
 /**
   Convert timeval value to my_decimal.
@@ -339,70 +315,61 @@ my_decimal *time2my_decimal(const MYSQL_TIME *ltime, my_decimal *dec)
 my_decimal *timeval2my_decimal(const struct timeval *tm, my_decimal *dec)
 {
   lldiv_t lld;
-  lld.quot= tm->tv_sec;
-  lld.rem= (longlong) tm->tv_usec * 1000;
+  lld.quot = tm->tv_sec;
+  lld.rem = (longlong)tm->tv_usec * 1000;
   return lldiv_t2my_decimal(&lld, 0, dec);
 }
-
 
 void my_decimal_trim(ulong *precision, uint *scale)
 {
   if (!(*precision) && !(*scale))
   {
-    *precision= 10;
-    *scale= 0;
+    *precision = 10;
+    *scale = 0;
     return;
   }
 }
-
 
 #ifndef NDEBUG
 /* routines for debugging print */
 
 #define DIG_PER_DEC1 9
-#define ROUND_UP(X)  (((X)+DIG_PER_DEC1-1)/DIG_PER_DEC1)
+#define ROUND_UP(X) (((X) + DIG_PER_DEC1 - 1) / DIG_PER_DEC1)
 
 /* print decimal */
-void
-print_decimal(const my_decimal *dec)
+void print_decimal(const my_decimal *dec)
 {
   int i, end;
   char buff[512], *pos;
-  pos= buff;
-  pos+= sprintf(buff, "Decimal: sign: %d  intg: %d  frac: %d  { ",
-                dec->sign(), dec->intg, dec->frac);
-  end= ROUND_UP(dec->frac)+ROUND_UP(dec->intg)-1;
-  for (i=0; i < end; i++)
-    pos+= sprintf(pos, "%09d, ", dec->buf[i]);
-  pos+= sprintf(pos, "%09d }\n", dec->buf[i]);
+  pos = buff;
+  pos += sprintf(buff, "Decimal: sign: %d  intg: %d  frac: %d  { ", dec->sign(), dec->intg, dec->frac);
+  end = ROUND_UP(dec->frac) + ROUND_UP(dec->intg) - 1;
+  for (i = 0; i < end; i++) pos += sprintf(pos, "%09d, ", dec->buf[i]);
+  pos += sprintf(pos, "%09d }\n", dec->buf[i]);
   fputs(buff, DBUG_FILE);
 }
 
-
 /* print decimal with its binary representation */
-void
-print_decimal_buff(const my_decimal *dec, const uchar* ptr, int length)
+void print_decimal_buff(const my_decimal *dec, const uchar *ptr, int length)
 {
   print_decimal(dec);
   fprintf(DBUG_FILE, "Record: ");
-  for (int i= 0; i < length; i++)
+  for (int i = 0; i < length; i++)
   {
     fprintf(DBUG_FILE, "%02X ", (uint)((uchar *)ptr)[i]);
   }
   fprintf(DBUG_FILE, "\n");
 }
 
-
 const char *dbug_decimal_as_string(char *buff, const my_decimal *val)
 {
-  int length= DECIMAL_MAX_STR_LENGTH + 1;     /* minimum size for buff */
+  int length = DECIMAL_MAX_STR_LENGTH + 1; /* minimum size for buff */
   if (!val)
     return "NULL";
-  (void)decimal2string((decimal_t*) val, buff, &length, 0,0,0);
+  (void)decimal2string((decimal_t *)val, buff, &length, 0, 0, 0);
   return buff;
 }
 
 #endif /*NDEBUG*/
-
 
 #endif /*MYSQL_CLIENT*/

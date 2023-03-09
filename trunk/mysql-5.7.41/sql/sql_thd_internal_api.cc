@@ -22,15 +22,14 @@
 
 #include "sql_thd_internal_api.h"
 
-#include "mysqld_thd_manager.h"   // Global_THD_manager
-#include "sql_class.h"            // THD
-
+#include "mysqld_thd_manager.h"  // Global_THD_manager
+#include "sql_class.h"           // THD
 
 int thd_init(THD *thd, char *stack_start, bool bound, PSI_thread_key psi_key)
 {
   DBUG_ENTER("thd_new_connection_setup");
   thd->set_time();
-  thd->thr_create_utime= thd->start_utime= my_micro_time();
+  thd->thr_create_utime = thd->start_utime = my_micro_time();
 
   // TODO: Purge threads currently terminate too late for them to be added.
   // Note that P_S interprets all threads with thread_id != 0 as
@@ -39,12 +38,12 @@ int thd_init(THD *thd, char *stack_start, bool bound, PSI_thread_key psi_key)
   if (thd->system_thread != SYSTEM_THREAD_BACKGROUND)
   {
     thd->set_new_thread_id();
-    Global_THD_manager *thd_manager= Global_THD_manager::get_instance();
+    Global_THD_manager *thd_manager = Global_THD_manager::get_instance();
     thd_manager->add_thd(thd);
   }
 #ifdef HAVE_PSI_INTERFACE
   PSI_thread *psi;
-  psi= PSI_THREAD_CALL(new_thread)(psi_key, thd, thd->thread_id());
+  psi = PSI_THREAD_CALL(new_thread)(psi_key, thd, thd->thread_id());
   if (bound)
   {
     PSI_THREAD_CALL(set_thread_os_id)(psi);
@@ -55,26 +54,23 @@ int thd_init(THD *thd, char *stack_start, bool bound, PSI_thread_key psi_key)
 
   if (!thd->system_thread)
   {
-    DBUG_PRINT("info", ("init new connection. thd: %p fd: %d",
-                        thd, mysql_socket_getfd(
-            thd->get_protocol_classic()->get_vio()->mysql_socket)));
+    DBUG_PRINT("info", ("init new connection. thd: %p fd: %d", thd,
+                        mysql_socket_getfd(thd->get_protocol_classic()->get_vio()->mysql_socket)));
   }
   thd_set_thread_stack(thd, stack_start);
 
-  int retval= thd->store_globals();
+  int retval = thd->store_globals();
   DBUG_RETURN(retval);
 }
 
-
 THD *create_thd(bool enable_plugins, bool background_thread, bool bound, PSI_thread_key psi_key)
 {
-  THD *thd= new THD(enable_plugins);
+  THD *thd = new THD(enable_plugins);
   if (background_thread)
-    thd->system_thread= SYSTEM_THREAD_BACKGROUND;
-  (void)thd_init(thd, reinterpret_cast<char*>(&thd), bound, psi_key);
+    thd->system_thread = SYSTEM_THREAD_BACKGROUND;
+  (void)thd_init(thd, reinterpret_cast< char * >(&thd), bound, psi_key);
   return thd;
 }
-
 
 void destroy_thd(THD *thd)
 {
@@ -82,17 +78,13 @@ void destroy_thd(THD *thd)
   // TODO: Purge threads currently terminate too late for them to be added.
   if (thd->system_thread != SYSTEM_THREAD_BACKGROUND)
   {
-    Global_THD_manager *thd_manager= Global_THD_manager::get_instance();
+    Global_THD_manager *thd_manager = Global_THD_manager::get_instance();
     thd_manager->remove_thd(thd);
   }
   delete thd;
 }
 
-
-void thd_set_thread_stack(THD *thd, const char *stack_start)
-{
-  thd->thread_stack= stack_start;
-}
+void thd_set_thread_stack(THD *thd, const char *stack_start) { thd->thread_stack = stack_start; }
 
 bool is_mysql_datadir_path(const char *path)
 {
@@ -102,8 +94,8 @@ bool is_mysql_datadir_path(const char *path)
   char mysql_data_dir[FN_REFLEN], path_dir[FN_REFLEN];
   convert_dirname(path_dir, path, NullS);
   convert_dirname(mysql_data_dir, mysql_unpacked_real_data_home, NullS);
-  size_t mysql_data_home_len= dirname_length(mysql_data_dir);
-  size_t path_len= dirname_length(path_dir);
+  size_t mysql_data_home_len = dirname_length(mysql_data_dir);
+  size_t path_len = dirname_length(path_dir);
 
   if (path_len < mysql_data_home_len)
     return true;
@@ -111,14 +103,9 @@ bool is_mysql_datadir_path(const char *path)
   if (!lower_case_file_system)
     return memcmp(mysql_data_dir, path_dir, mysql_data_home_len);
 
-  return files_charset_info->coll->strnncoll(files_charset_info,
-                                             reinterpret_cast<uchar*>(path_dir),
-                                             path_len,
-                                             reinterpret_cast<uchar*>(mysql_data_dir),
-                                             mysql_data_home_len,
-                                             TRUE);
+  return files_charset_info->coll->strnncoll(files_charset_info, reinterpret_cast< uchar * >(path_dir), path_len,
+                                             reinterpret_cast< uchar * >(mysql_data_dir), mysql_data_home_len, TRUE);
 }
-
 
 int mysql_tmpfile_path(const char *path, const char *prefix)
 {
@@ -128,12 +115,12 @@ int mysql_tmpfile_path(const char *path, const char *prefix)
   char filename[FN_REFLEN];
   File fd = create_temp_file(filename, path, prefix,
 #ifdef _WIN32
-                             O_BINARY | O_TRUNC | O_SEQUENTIAL |
-                             O_SHORT_LIVED |
+                             O_BINARY | O_TRUNC | O_SEQUENTIAL | O_SHORT_LIVED |
 #endif /* _WIN32 */
-                             O_CREAT | O_EXCL | O_RDWR | O_TEMPORARY,
+                                 O_CREAT | O_EXCL | O_RDWR | O_TEMPORARY,
                              MYF(MY_WME));
-  if (fd >= 0) {
+  if (fd >= 0)
+  {
 #ifndef _WIN32
     /*
       This can be removed once the following bug is fixed:

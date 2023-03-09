@@ -22,11 +22,10 @@
 
 #include "rpl_transaction_ctx.h"
 
-#include "mysqld_thd_manager.h" // Global_THD_manager
-#include "rpl_gtid.h"           // rpl_sidno
-#include "sql_class.h"          // THD
-#include "sql_parse.h"          // Find_thd_with_id
-
+#include "mysqld_thd_manager.h"  // Global_THD_manager
+#include "rpl_gtid.h"            // rpl_sidno
+#include "sql_class.h"           // THD
+#include "sql_parse.h"           // Find_thd_with_id
 
 Rpl_transaction_ctx::Rpl_transaction_ctx()
 {
@@ -38,12 +37,12 @@ Rpl_transaction_ctx::Rpl_transaction_ctx()
 void Rpl_transaction_ctx::cleanup()
 {
   DBUG_ENTER("Rpl_transaction_ctx::cleanup");
-  m_transaction_ctx.m_thread_id= 0;
-  m_transaction_ctx.m_flags= 0;
-  m_transaction_ctx.m_rollback_transaction= FALSE;
-  m_transaction_ctx.m_generated_gtid= FALSE;
-  m_transaction_ctx.m_sidno= 0;
-  m_transaction_ctx.m_gno= 0;
+  m_transaction_ctx.m_thread_id = 0;
+  m_transaction_ctx.m_flags = 0;
+  m_transaction_ctx.m_rollback_transaction = FALSE;
+  m_transaction_ctx.m_generated_gtid = FALSE;
+  m_transaction_ctx.m_sidno = 0;
+  m_transaction_ctx.m_gno = 0;
   DBUG_VOID_RETURN;
 }
 
@@ -53,13 +52,12 @@ int Rpl_transaction_ctx::set_rpl_transaction_ctx(Transaction_termination_ctx tra
 
   if (transaction_termination_ctx.m_generated_gtid)
   {
-    if (transaction_termination_ctx.m_rollback_transaction ||
-        transaction_termination_ctx.m_sidno <= 0 ||
+    if (transaction_termination_ctx.m_rollback_transaction || transaction_termination_ctx.m_sidno <= 0 ||
         transaction_termination_ctx.m_gno <= 0)
       DBUG_RETURN(1);
   }
 
-  m_transaction_ctx= transaction_termination_ctx;
+  m_transaction_ctx = transaction_termination_ctx;
   DBUG_RETURN(0);
 }
 
@@ -96,20 +94,18 @@ int set_transaction_ctx(Transaction_termination_ctx transaction_termination_ctx)
   DBUG_ENTER("set_transaction_ctx");
   DBUG_PRINT("enter", ("thread_id=%lu, rollback_transaction=%d, "
                        "generated_gtid=%d, sidno=%d, gno=%lld",
-                       transaction_termination_ctx.m_thread_id,
-                       transaction_termination_ctx.m_rollback_transaction,
-                       transaction_termination_ctx.m_generated_gtid,
-                       transaction_termination_ctx.m_sidno,
+                       transaction_termination_ctx.m_thread_id, transaction_termination_ctx.m_rollback_transaction,
+                       transaction_termination_ctx.m_generated_gtid, transaction_termination_ctx.m_sidno,
                        transaction_termination_ctx.m_gno));
 
-  THD *thd= NULL;
-  uint error=ER_NO_SUCH_THREAD;
+  THD *thd = NULL;
+  uint error = ER_NO_SUCH_THREAD;
   Find_thd_with_id find_thd_with_id(transaction_termination_ctx.m_thread_id);
 
-  thd= Global_THD_manager::get_instance()->find_thd(&find_thd_with_id);
+  thd = Global_THD_manager::get_instance()->find_thd(&find_thd_with_id);
   if (thd)
   {
-    error= thd->get_transaction()->get_rpl_transaction_ctx()->set_rpl_transaction_ctx(transaction_termination_ctx);
+    error = thd->get_transaction()->get_rpl_transaction_ctx()->set_rpl_transaction_ctx(transaction_termination_ctx);
     mysql_mutex_unlock(&thd->LOCK_thd_data);
   }
   DBUG_RETURN(error);

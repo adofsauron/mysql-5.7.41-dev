@@ -22,40 +22,36 @@
 
 #include "rpl_record_old.h"
 
-#include "my_bitmap.h"     // MY_BITMAP
-#include "field.h"         // Field
-#include "rpl_rli.h"       // Relay_log_info
-#include "table.h"         // TABLE
+#include "my_bitmap.h"  // MY_BITMAP
+#include "field.h"      // Field
+#include "rpl_rli.h"    // Relay_log_info
+#include "table.h"      // TABLE
 
 using binary_log::Log_event_type;
 
-size_t
-pack_row_old(TABLE *table, MY_BITMAP const* cols,
-             uchar *row_data, const uchar *record)
+size_t pack_row_old(TABLE *table, MY_BITMAP const *cols, uchar *row_data, const uchar *record)
 {
-  Field **p_field= table->field, *field;
-  int n_null_bytes= table->s->null_bytes;
+  Field **p_field = table->field, *field;
+  int n_null_bytes = table->s->null_bytes;
   uchar *ptr;
   uint i;
-  my_ptrdiff_t const rec_offset= record - table->record[0];
-  my_ptrdiff_t const def_offset= table->default_values_offset();
+  my_ptrdiff_t const rec_offset = record - table->record[0];
+  my_ptrdiff_t const def_offset = table->default_values_offset();
   memcpy(row_data, record, n_null_bytes);
-  ptr= row_data+n_null_bytes;
+  ptr = row_data + n_null_bytes;
 
-  for (i= 0 ; (field= *p_field) ; i++, p_field++)
+  for (i = 0; (field = *p_field); i++, p_field++)
   {
-    if (bitmap_is_set(cols,i))
+    if (bitmap_is_set(cols, i))
     {
-      my_ptrdiff_t const offset=
-        field->is_null(rec_offset) ? def_offset : rec_offset;
+      my_ptrdiff_t const offset = field->is_null(rec_offset) ? def_offset : rec_offset;
       field->move_field_offset(offset);
-      ptr= field->pack(ptr, field->ptr);
+      ptr = field->pack(ptr, field->ptr);
       field->move_field_offset(-offset);
     }
   }
-  return (static_cast<size_t>(ptr - row_data));
+  return (static_cast< size_t >(ptr - row_data));
 }
-
 
 /*
   Unpack a row into a record.
@@ -95,24 +91,19 @@ pack_row_old(TABLE *table, MY_BITMAP const* cols,
         the master does not have a default value (and isn't nullable)
  */
 #if !defined(MYSQL_CLIENT) && defined(HAVE_REPLICATION)
-int
-unpack_row_old(Relay_log_info *rli,
-               TABLE *table, uint const colcnt, uchar *record,
-               uchar const *row, MY_BITMAP const *cols,
-               uchar const **row_end, ulong *master_reclength,
-               MY_BITMAP* const rw_set, Log_event_type const event_type)
+int unpack_row_old(Relay_log_info *rli, TABLE *table, uint const colcnt, uchar *record, uchar const *row,
+                   MY_BITMAP const *cols, uchar const **row_end, ulong *master_reclength, MY_BITMAP *const rw_set,
+                   Log_event_type const event_type)
 {
   assert(record && row);
-  my_ptrdiff_t const offset= record - table->record[0];
-  size_t master_null_bytes= table->s->null_bytes;
+  my_ptrdiff_t const offset = record - table->record[0];
+  size_t master_null_bytes = table->s->null_bytes;
 
   if (colcnt != table->s->fields)
   {
-    Field **fptr= &table->field[colcnt-1];
-    do
-      master_null_bytes= (*fptr)->last_null_byte();
-    while (master_null_bytes == Field::LAST_NULL_BYTE_UNDEF &&
-           fptr-- > table->field);
+    Field **fptr = &table->field[colcnt - 1];
+    do master_null_bytes = (*fptr)->last_null_byte();
+    while (master_null_bytes == Field::LAST_NULL_BYTE_UNDEF && fptr-- > table->field);
 
     /*
       If master_null_bytes is LAST_NULL_BYTE_UNDEF (0) at this time,
@@ -124,27 +115,27 @@ unpack_row_old(Relay_log_info *rli,
       common columns, so table->s->null_bytes might be greater than 1.
      */
     if (master_null_bytes == Field::LAST_NULL_BYTE_UNDEF)
-      master_null_bytes= 1;
+      master_null_bytes = 1;
   }
 
   assert(master_null_bytes <= table->s->null_bytes);
-  memcpy(record, row, master_null_bytes);            // [1]
-  int error= 0;
+  memcpy(record, row, master_null_bytes);  // [1]
+  int error = 0;
 
   bitmap_set_all(rw_set);
 
   Field **const begin_ptr = table->field;
   Field **field_ptr;
-  uchar const *ptr= row + master_null_bytes;
-  Field **const end_ptr= begin_ptr + colcnt;
-  for (field_ptr= begin_ptr ; field_ptr < end_ptr ; ++field_ptr)
+  uchar const *ptr = row + master_null_bytes;
+  Field **const end_ptr = begin_ptr + colcnt;
+  for (field_ptr = begin_ptr; field_ptr < end_ptr; ++field_ptr)
   {
-    Field *const f= *field_ptr;
+    Field *const f = *field_ptr;
 
-    if (bitmap_is_set(cols, field_ptr -  begin_ptr))
+    if (bitmap_is_set(cols, field_ptr - begin_ptr))
     {
       f->move_field_offset(offset);
-      ptr= f->unpack(f->ptr, ptr);
+      ptr = f->unpack(f->ptr, ptr);
       f->move_field_offset(-offset);
       /* Field...::unpack() cannot return 0 */
       assert(ptr != NULL);
@@ -173,22 +164,19 @@ unpack_row_old(Relay_log_info *rli,
     This generation of error messages is only relevant when inserting
     new rows.
    */
-  for ( ; *field_ptr ; ++field_ptr)
+  for (; *field_ptr; ++field_ptr)
   {
-    uint32 const mask= NOT_NULL_FLAG | NO_DEFAULT_VALUE_FLAG;
+    uint32 const mask = NOT_NULL_FLAG | NO_DEFAULT_VALUE_FLAG;
 
-    DBUG_PRINT("debug", ("flags = 0x%x, mask = 0x%x, flags & mask = 0x%x",
-                         (*field_ptr)->flags, mask,
+    DBUG_PRINT("debug", ("flags = 0x%x, mask = 0x%x, flags & mask = 0x%x", (*field_ptr)->flags, mask,
                          (*field_ptr)->flags & mask));
 
-    if (event_type == binary_log::WRITE_ROWS_EVENT &&
-        ((*field_ptr)->flags & mask) == mask)
+    if (event_type == binary_log::WRITE_ROWS_EVENT && ((*field_ptr)->flags & mask) == mask)
     {
       rli->report(ERROR_LEVEL, ER_NO_DEFAULT_FOR_FIELD,
                   "Field `%s` of table `%s`.`%s` "
                   "has no default value and cannot be NULL",
-                  (*field_ptr)->field_name, table->s->db.str,
-                  table->s->table_name.str);
+                  (*field_ptr)->field_name, table->s->db.str, table->s->table_name.str);
       error = ER_NO_DEFAULT_FOR_FIELD;
     }
     else

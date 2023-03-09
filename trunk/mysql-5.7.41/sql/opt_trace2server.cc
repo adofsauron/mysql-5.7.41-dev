@@ -32,16 +32,17 @@
 
 #include "opt_trace.h"
 
-#include "auth_common.h" // check_table_access
-#include "sql_show.h"    // schema_table_stored_record
-#include "sql_parse.h"   // sql_command_flags
-#include "sp_head.h"     // sp_head
+#include "auth_common.h"  // check_table_access
+#include "sql_show.h"     // schema_table_stored_record
+#include "sql_parse.h"    // sql_command_flags
+#include "sp_head.h"      // sp_head
 
 #ifdef OPTIMIZER_TRACE
 
-namespace {
+namespace
+{
 
-const char I_S_table_name[]= "OPTIMIZER_TRACE";
+const char I_S_table_name[] = "OPTIMIZER_TRACE";
 
 /* Standalone functions */
 
@@ -55,15 +56,13 @@ const char I_S_table_name[]= "OPTIMIZER_TRACE";
 */
 bool list_has_optimizer_trace_table(const TABLE_LIST *tbl)
 {
-  for( ; tbl ; tbl= tbl->next_global)
+  for (; tbl; tbl = tbl->next_global)
   {
-    if (tbl->schema_table &&
-        0 == strcmp(tbl->schema_table->table_name, I_S_table_name))
+    if (tbl->schema_table && 0 == strcmp(tbl->schema_table->table_name, I_S_table_name))
       return true;
   }
   return false;
 }
-
 
 /**
    Whether a SQL command qualifies for optimizer tracing.
@@ -95,16 +94,14 @@ inline bool sql_command_can_be_traced(enum enum_sql_command sql_command)
   return (sql_command_flags[sql_command] & CF_OPTIMIZER_TRACE);
 }
 
-
 /// @returns whether this command is "SET ... @@@@OPTIMIZER_TRACE=..."
-bool sets_var_optimizer_trace(enum enum_sql_command sql_command,
-                              List<set_var_base> *set_vars)
+bool sets_var_optimizer_trace(enum enum_sql_command sql_command, List< set_var_base > *set_vars)
 {
   if (sql_command == SQLCOM_SET_OPTION)
   {
-    List_iterator_fast<set_var_base> it(*set_vars);
+    List_iterator_fast< set_var_base > it(*set_vars);
     const set_var_base *var;
-    while ((var= it++))
+    while ((var = it++))
       if (var->is_var_optimizer_trace())
         return true;
   }
@@ -113,16 +110,12 @@ bool sets_var_optimizer_trace(enum enum_sql_command sql_command,
 
 void opt_trace_disable_if_no_tables_access(THD *thd, TABLE_LIST *tbl);
 
-} // namespace
+}  // namespace
 
-
-Opt_trace_start::Opt_trace_start(THD *thd, TABLE_LIST *tbl,
-                                 enum enum_sql_command sql_command,
-                                 List<set_var_base> *set_vars,
-                                 const char *query, size_t query_length,
-                                 sp_printable *instr,
-                                 const CHARSET_INFO *query_charset)
-  : ctx(&thd->opt_trace)
+Opt_trace_start::Opt_trace_start(THD *thd, TABLE_LIST *tbl, enum enum_sql_command sql_command,
+                                 List< set_var_base > *set_vars, const char *query, size_t query_length,
+                                 sp_printable *instr, const CHARSET_INFO *query_charset)
+    : ctx(&thd->opt_trace)
 {
   DBUG_ENTER("opt_trace_start");
 
@@ -132,19 +125,19 @@ Opt_trace_start::Opt_trace_start(THD *thd, TABLE_LIST *tbl,
     - if we are using --debug (because the trace serves as a relay for it, for
     optimizer debug printouts).
   */
-  const ulonglong var= thd->variables.optimizer_trace;
-  bool support_I_S= false, support_dbug_or_missing_priv= false;
+  const ulonglong var = thd->variables.optimizer_trace;
+  bool support_I_S = false, support_dbug_or_missing_priv = false;
 
   /* This will be triggered if --debug or --debug=d:opt_trace is used */
-  DBUG_EXECUTE("opt", support_dbug_or_missing_priv= true;);
+  DBUG_EXECUTE("opt", support_dbug_or_missing_priv = true;);
 
   // First step, decide on what type of I_S support we want
   if (unlikely(var & Opt_trace_context::FLAG_ENABLED))
   {
-    if (sql_command_can_be_traced(sql_command) &&           // (1)
-        !sets_var_optimizer_trace(sql_command, set_vars) && // (2)
-        !list_has_optimizer_trace_table(tbl) &&             // (3)
-        !thd->system_thread)                                // (4)
+    if (sql_command_can_be_traced(sql_command) &&            // (1)
+        !sets_var_optimizer_trace(sql_command, set_vars) &&  // (2)
+        !list_has_optimizer_trace_table(tbl) &&              // (3)
+        !thd->system_thread)                                 // (4)
     {
       /*
         (1) This command is interesting Optimizer-wise.
@@ -178,7 +171,7 @@ Opt_trace_start::Opt_trace_start(THD *thd, TABLE_LIST *tbl,
         - row-based replication of the INSERT SELECT above is still allowed,
         it does not require enabling optimizer trace on the slave.
       */
-      support_I_S= true;
+      support_I_S = true;
     }
     else
     {
@@ -200,16 +193,13 @@ Opt_trace_start::Opt_trace_start(THD *thd, TABLE_LIST *tbl,
       So we will do security checks. So need to inform the trace system that
       it should be ready for a possible call to missing_privilege() later:
     */
-    support_dbug_or_missing_priv= true;
+    support_dbug_or_missing_priv = true;
   }
 
-  error= ctx->start(support_I_S, support_dbug_or_missing_priv,
-                    thd->variables.end_markers_in_json,
-                    (var & Opt_trace_context::FLAG_ONE_LINE),
-                    thd->variables.optimizer_trace_offset,
-                    thd->variables.optimizer_trace_limit,
-                    thd->variables.optimizer_trace_max_mem_size,
-                    thd->variables.optimizer_trace_features);
+  error = ctx->start(support_I_S, support_dbug_or_missing_priv, thd->variables.end_markers_in_json,
+                     (var & Opt_trace_context::FLAG_ONE_LINE), thd->variables.optimizer_trace_offset,
+                     thd->variables.optimizer_trace_limit, thd->variables.optimizer_trace_max_mem_size,
+                     thd->variables.optimizer_trace_features);
 
   if (likely(!error))
   {
@@ -230,7 +220,6 @@ Opt_trace_start::Opt_trace_start(THD *thd, TABLE_LIST *tbl,
   DBUG_VOID_RETURN;
 }
 
-
 Opt_trace_start::~Opt_trace_start()
 {
   DBUG_ENTER("~opt_trace_start");
@@ -239,12 +228,10 @@ Opt_trace_start::~Opt_trace_start()
   DBUG_VOID_RETURN;
 }
 
-
-void opt_trace_print_expanded_query(THD *thd, st_select_lex *select_lex,
-                                    Opt_trace_object *trace_object)
+void opt_trace_print_expanded_query(THD *thd, st_select_lex *select_lex, Opt_trace_object *trace_object)
 
 {
-  Opt_trace_context * const trace= &thd->opt_trace;
+  Opt_trace_context *const trace = &thd->opt_trace;
   /**
      It's hard to prove that st_select_lex::print() doesn't modify any of its
      Item-s in a dangerous way. Item_int::print(), for example, modifies its
@@ -266,20 +253,16 @@ void opt_trace_print_expanded_query(THD *thd, st_select_lex *select_lex,
     This is acceptable given the audience (developers) and the goal (the
     inexact parts are irrelevant for the optimizer).
   */
-  select_lex->print(thd, &str, enum_query_type(QT_TO_SYSTEM_CHARSET |
-                                               QT_SHOW_SELECT_NUMBER |
-                                               QT_NO_DEFAULT_DB));
+  select_lex->print(thd, &str, enum_query_type(QT_TO_SYSTEM_CHARSET | QT_SHOW_SELECT_NUMBER | QT_NO_DEFAULT_DB));
   trace_object->add_utf8("expanded_query", str.ptr(), str.length());
 }
-
 
 void opt_trace_disable_if_no_security_context_access(THD *thd)
 {
 #ifndef NO_EMBEDDED_ACCESS_CHECKS
   DBUG_ENTER("opt_trace_check_disable_if_no_security_context_access");
-  if (likely(!(thd->variables.optimizer_trace &
-               Opt_trace_context::FLAG_ENABLED)) || // (1)
-      thd->system_thread)                           // (2)
+  if (likely(!(thd->variables.optimizer_trace & Opt_trace_context::FLAG_ENABLED)) ||  // (1)
+      thd->system_thread)                                                             // (2)
   {
     /*
       (1) We know that the routine's execution starts with "enabled=off".
@@ -295,7 +278,7 @@ void opt_trace_disable_if_no_security_context_access(THD *thd)
     */
     DBUG_VOID_RETURN;
   }
-  Opt_trace_context * const trace= &thd->opt_trace;
+  Opt_trace_context *const trace = &thd->opt_trace;
   if (!trace->is_started())
   {
     /*
@@ -337,25 +320,21 @@ void opt_trace_disable_if_no_security_context_access(THD *thd)
     existing connection, per the manual.
   */
   if (!(thd->m_main_security_ctx.check_access(GLOBAL_ACLS & ~GRANT_ACL)) &&
-      (0 != strcmp(thd->m_main_security_ctx.priv_user().str,
-                   thd->security_context()->priv_user().str) ||
-       0 != my_strcasecmp(system_charset_info,
-                          thd->m_main_security_ctx.priv_host().str,
+      (0 != strcmp(thd->m_main_security_ctx.priv_user().str, thd->security_context()->priv_user().str) ||
+       0 != my_strcasecmp(system_charset_info, thd->m_main_security_ctx.priv_host().str,
                           thd->security_context()->priv_host().str)))
     trace->missing_privilege();
   DBUG_VOID_RETURN;
 #endif
 }
 
-
 void opt_trace_disable_if_no_stored_proc_func_access(THD *thd, sp_head *sp)
 {
 #ifndef NO_EMBEDDED_ACCESS_CHECKS
   DBUG_ENTER("opt_trace_disable_if_no_stored_proc_func_access");
-  if (likely(!(thd->variables.optimizer_trace &
-               Opt_trace_context::FLAG_ENABLED)) || thd->system_thread)
+  if (likely(!(thd->variables.optimizer_trace & Opt_trace_context::FLAG_ENABLED)) || thd->system_thread)
     DBUG_VOID_RETURN;
-  Opt_trace_context * const trace= &thd->opt_trace;
+  Opt_trace_context *const trace = &thd->opt_trace;
   if (!trace->is_started())
   {
     assert(false);
@@ -363,11 +342,10 @@ void opt_trace_disable_if_no_stored_proc_func_access(THD *thd, sp_head *sp)
     DBUG_VOID_RETURN;
   }
   bool full_access;
-  Security_context * const backup_thd_sctx= thd->security_context();
+  Security_context *const backup_thd_sctx = thd->security_context();
   DBUG_PRINT("opt", ("routine: '%s'", sp->m_name.str));
   thd->set_security_context(&thd->m_main_security_ctx);
-  const bool rc= sp->check_show_access(thd, &full_access) ||
-    !full_access;
+  const bool rc = sp->check_show_access(thd, &full_access) || !full_access;
   thd->set_security_context(backup_thd_sctx);
   if (rc)
     trace->missing_privilege();
@@ -375,16 +353,13 @@ void opt_trace_disable_if_no_stored_proc_func_access(THD *thd, sp_head *sp)
 #endif
 }
 
-
-void opt_trace_disable_if_no_view_access(THD *thd, TABLE_LIST *view,
-                                         TABLE_LIST *underlying_tables)
+void opt_trace_disable_if_no_view_access(THD *thd, TABLE_LIST *view, TABLE_LIST *underlying_tables)
 {
 #ifndef NO_EMBEDDED_ACCESS_CHECKS
   DBUG_ENTER("opt_trace_disable_if_no_view_access");
-  if (likely(!(thd->variables.optimizer_trace &
-               Opt_trace_context::FLAG_ENABLED)) || thd->system_thread)
+  if (likely(!(thd->variables.optimizer_trace & Opt_trace_context::FLAG_ENABLED)) || thd->system_thread)
     DBUG_VOID_RETURN;
-  Opt_trace_context * const trace= &thd->opt_trace;
+  Opt_trace_context *const trace = &thd->opt_trace;
   if (!trace->is_started())
   {
     assert(false);
@@ -392,18 +367,18 @@ void opt_trace_disable_if_no_view_access(THD *thd, TABLE_LIST *view,
     DBUG_VOID_RETURN;
   }
   DBUG_PRINT("opt", ("view: '%s'", view->table_name));
-  Security_context * const backup_table_sctx= view->security_ctx;
-  Security_context * const backup_thd_sctx= thd->security_context();
-  const GRANT_INFO backup_grant_info= view->grant;
+  Security_context *const backup_table_sctx = view->security_ctx;
+  Security_context *const backup_thd_sctx = thd->security_context();
+  const GRANT_INFO backup_grant_info = view->grant;
 
-  view->security_ctx= NULL;                   // no SUID context for view
+  view->security_ctx = NULL;  // no SUID context for view
   // no SUID context for THD
   thd->set_security_context(&thd->m_main_security_ctx);
-  const int rc= check_table_access(thd, SHOW_VIEW_ACL, view, false, 1, true);
+  const int rc = check_table_access(thd, SHOW_VIEW_ACL, view, false, 1, true);
 
-  view->security_ctx= backup_table_sctx;
+  view->security_ctx = backup_table_sctx;
   thd->set_security_context(backup_thd_sctx);
-  view->grant= backup_grant_info;
+  view->grant = backup_grant_info;
 
   if (rc)
   {
@@ -421,8 +396,8 @@ void opt_trace_disable_if_no_view_access(THD *thd, TABLE_LIST *view,
 #endif
 }
 
-
-namespace {
+namespace
+{
 
 /**
    If tracing is on, checks additional privileges on a list of tables/views,
@@ -443,23 +418,19 @@ void opt_trace_disable_if_no_tables_access(THD *thd, TABLE_LIST *tbl)
 {
 #ifndef NO_EMBEDDED_ACCESS_CHECKS
   DBUG_ENTER("opt_trace_disable_if_no_tables_access");
-  if (likely(!(thd->variables.optimizer_trace &
-               Opt_trace_context::FLAG_ENABLED)) || thd->system_thread)
+  if (likely(!(thd->variables.optimizer_trace & Opt_trace_context::FLAG_ENABLED)) || thd->system_thread)
     DBUG_VOID_RETURN;
-  Opt_trace_context * const trace= &thd->opt_trace;
+  Opt_trace_context *const trace = &thd->opt_trace;
   if (!trace->is_started())
   {
     assert(false);
     trace->disable_I_S_for_this_and_children();
     DBUG_VOID_RETURN;
   }
-  Security_context * const backup_thd_sctx= thd->security_context();
+  Security_context *const backup_thd_sctx = thd->security_context();
   thd->set_security_context(&thd->m_main_security_ctx);
-  const TABLE_LIST * const first_not_own_table=
-    thd->lex->first_not_own_table();
-  for (TABLE_LIST *t= tbl;
-       t != NULL && t != first_not_own_table;
-       t= t->next_global)
+  const TABLE_LIST *const first_not_own_table = thd->lex->first_not_own_table();
+  for (TABLE_LIST *t = tbl; t != NULL && t != first_not_own_table; t = t->next_global)
   {
     DBUG_PRINT("opt", ("table: '%s'", t->table_name));
     /*
@@ -468,9 +439,9 @@ void opt_trace_disable_if_no_tables_access(THD *thd, TABLE_LIST *tbl)
     */
     if (!t->is_derived())
     {
-      const GRANT_INFO backup_grant_info= t->grant;
-      Security_context * const backup_table_sctx= t->security_ctx;
-      t->security_ctx= NULL;
+      const GRANT_INFO backup_grant_info = t->grant;
+      Security_context *const backup_table_sctx = t->security_ctx;
+      t->security_ctx = NULL;
       /*
         (1) check_table_access() fills t->grant.privilege.
         (2) Because SELECT privileges can be column-based,
@@ -478,9 +449,8 @@ void opt_trace_disable_if_no_tables_access(THD *thd, TABLE_LIST *tbl)
         privilege on one column. But we want a table-level privilege.
       */
 
-      bool rc=
-        check_table_access(thd, SELECT_ACL, t, false, 1, true) || // (1)
-        ((t->grant.privilege & SELECT_ACL) == 0); // (2)
+      bool rc = check_table_access(thd, SELECT_ACL, t, false, 1, true) ||  // (1)
+                ((t->grant.privilege & SELECT_ACL) == 0);                  // (2)
       if (t->is_view())
       {
         /*
@@ -489,10 +459,10 @@ void opt_trace_disable_if_no_tables_access(THD *thd, TABLE_LIST *tbl)
           tables. So underlying tables will be automatically checked in the
           present function, but we need an explicit check of SHOW VIEW:
         */
-        rc|= check_table_access(thd, SHOW_VIEW_ACL, t, false, 1, true);
+        rc |= check_table_access(thd, SHOW_VIEW_ACL, t, false, 1, true);
       }
-      t->security_ctx= backup_table_sctx;
-      t->grant= backup_grant_info;
+      t->security_ctx = backup_table_sctx;
+      t->grant = backup_grant_info;
       if (rc)
       {
         trace->missing_privilege();
@@ -505,12 +475,11 @@ void opt_trace_disable_if_no_tables_access(THD *thd, TABLE_LIST *tbl)
 #endif
 }
 
-} // namespace
-
+}  // namespace
 
 int fill_optimizer_trace_info(THD *thd, TABLE_LIST *tables, Item *cond)
 {
-  TABLE *table= tables->table;
+  TABLE *table = tables->table;
   Opt_trace_info info;
 
   /*
@@ -531,17 +500,15 @@ int fill_optimizer_trace_info(THD *thd, TABLE_LIST *tables, Item *cond)
     body of such object before invoking it.
   */
   if (!(thd->security_context()->check_access(GLOBAL_ACLS & ~GRANT_ACL)) &&
-      (0 != strcmp(thd->m_main_security_ctx.priv_user().str,
-                   thd->security_context()->priv_user().str) ||
-       0 != my_strcasecmp(system_charset_info,
-                          thd->m_main_security_ctx.priv_host().str,
+      (0 != strcmp(thd->m_main_security_ctx.priv_user().str, thd->security_context()->priv_user().str) ||
+       0 != my_strcasecmp(system_charset_info, thd->m_main_security_ctx.priv_host().str,
                           thd->security_context()->priv_host().str)))
     return 0;
   /*
     The list must not change during the iterator's life time. This is ok as
     the life time is only the present block which cannot change the list.
   */
-  for (Opt_trace_iterator it(&thd->opt_trace) ; !it.at_end() ; it.next())
+  for (Opt_trace_iterator it(&thd->opt_trace); !it.at_end(); it.next())
   {
     it.get_value(&info);
     restore_record(table, s->default_values);
@@ -551,12 +518,8 @@ int fill_optimizer_trace_info(THD *thd, TABLE_LIST *tables, Item *cond)
       When literals with introducers are used, see "LiteralsWithIntroducers"
       in this file.
     */
-    table->field[0]->store(info.query_ptr,
-                           static_cast<uint>(info.query_length),
-                           info.query_charset);
-    table->field[1]->store(info.trace_ptr,
-                           static_cast<uint>(info.trace_length),
-                           system_charset_info);
+    table->field[0]->store(info.query_ptr, static_cast< uint >(info.query_length), info.query_charset);
+    table->field[1]->store(info.trace_ptr, static_cast< uint >(info.trace_length), system_charset_info);
     table->field[2]->store(info.missing_bytes, true);
     table->field[3]->store(info.missing_priv, true);
     if (schema_table_store_record(thd, table))
@@ -566,20 +529,15 @@ int fill_optimizer_trace_info(THD *thd, TABLE_LIST *tables, Item *cond)
   return 0;
 }
 
-#endif // OPTIMIZER_TRACE
+#endif  // OPTIMIZER_TRACE
 
-ST_FIELD_INFO optimizer_trace_info[]=
-{
-  /* name, length, type, value, maybe_null, old_name, open_method */
-  {"QUERY", 65535, MYSQL_TYPE_STRING, 0, false, NULL, SKIP_OPEN_TABLE},
-  {"TRACE", 65535, MYSQL_TYPE_STRING, 0, false, NULL, SKIP_OPEN_TABLE},
-  {"MISSING_BYTES_BEYOND_MAX_MEM_SIZE", 20, MYSQL_TYPE_LONG,
-   0, false, NULL, SKIP_OPEN_TABLE},
-  {"INSUFFICIENT_PRIVILEGES", 1, MYSQL_TYPE_TINY,
-   0, false, NULL, SKIP_OPEN_TABLE},
-  {NULL, 0,  MYSQL_TYPE_STRING, 0, true, NULL, 0}
-};
-
+ST_FIELD_INFO optimizer_trace_info[] = {
+    /* name, length, type, value, maybe_null, old_name, open_method */
+    {"QUERY", 65535, MYSQL_TYPE_STRING, 0, false, NULL, SKIP_OPEN_TABLE},
+    {"TRACE", 65535, MYSQL_TYPE_STRING, 0, false, NULL, SKIP_OPEN_TABLE},
+    {"MISSING_BYTES_BEYOND_MAX_MEM_SIZE", 20, MYSQL_TYPE_LONG, 0, false, NULL, SKIP_OPEN_TABLE},
+    {"INSUFFICIENT_PRIVILEGES", 1, MYSQL_TYPE_TINY, 0, false, NULL, SKIP_OPEN_TABLE},
+    {NULL, 0, MYSQL_TYPE_STRING, 0, true, NULL, 0}};
 
 /*
   LiteralsWithIntroducers :

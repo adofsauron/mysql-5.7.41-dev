@@ -43,7 +43,7 @@ int mysqld::runtime::mysqld_daemonize()
   if (pipe(pipe_fd) < 0)
     return -1;
 
-  pid_t pid= fork();
+  pid_t pid = fork();
   if (pid == -1)
   {
     // Error
@@ -58,30 +58,27 @@ int mysqld::runtime::mysqld_daemonize()
     close(pipe_fd[1]);
 
     // Wait for first child to fork successfully.
-    int rc,status;
+    int rc, status;
     char waitstatus;
-    while ((rc= waitpid(pid, &status, 0)) == -1 &&
-           errno == EINTR)
+    while ((rc = waitpid(pid, &status, 0)) == -1 && errno == EINTR)
     {
       // Retry if errno is EINTR.
     }
     if (rc == -1)
     {
-      fprintf(stderr, "Unable to wait for process %lld\n",
-                      static_cast<long long>(pid));
+      fprintf(stderr, "Unable to wait for process %lld\n", static_cast< long long >(pid));
       close(pipe_fd[0]);
       close(pipe_fd[1]);
       return -1;
     }
 
     // Exit parent on signal from grand child
-    rc= read(pipe_fd[0], &waitstatus, 1);
+    rc = read(pipe_fd[0], &waitstatus, 1);
     close(pipe_fd[0]);
 
     if (rc != 1)
     {
-      fprintf(stderr, "Unable to determine if daemon is running: %s\n",
-                      strerror(errno));
+      fprintf(stderr, "Unable to determine if daemon is running: %s\n", strerror(errno));
       exit(MYSQLD_ABORT_EXIT);
     }
     else if (waitstatus != 1)
@@ -97,20 +94,19 @@ int mysqld::runtime::mysqld_daemonize()
     close(pipe_fd[0]);
 
     int stdinfd;
-    if ((stdinfd= open("/dev/null", O_RDONLY)) <= STDERR_FILENO)
+    if ((stdinfd = open("/dev/null", O_RDONLY)) <= STDERR_FILENO)
     {
       close(pipe_fd[1]);
       exit(MYSQLD_ABORT_EXIT);
     }
 
-    if (! (dup2(stdinfd, STDIN_FILENO) != STDIN_FILENO)
-        && (setsid() > -1))
+    if (!(dup2(stdinfd, STDIN_FILENO) != STDIN_FILENO) && (setsid() > -1))
     {
       close(stdinfd);
-      pid_t grand_child_pid= fork();
+      pid_t grand_child_pid = fork();
       switch (grand_child_pid)
       {
-        case 0: // Grand child
+        case 0:  // Grand child
           return pipe_fd[1];
         case -1:
           close(pipe_fd[1]);
@@ -147,7 +143,7 @@ void mysqld::runtime::signal_parent(int pipe_write_fd, char status)
   {
     while (write(pipe_write_fd, &status, 1) == -1 && errno == EINTR)
     {
-    // Retry write syscall if errno is EINTR.
+      // Retry write syscall if errno is EINTR.
     }
 
     close(pipe_write_fd);

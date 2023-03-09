@@ -20,36 +20,33 @@
    along with this program; if not, write to the Free Software Foundation,
    51 Franklin Street, Suite 500, Boston, MA 02110-1335 USA */
 
-/** @file "EXPLAIN <command>" implementation */ 
+/** @file "EXPLAIN <command>" implementation */
 
 #include "opt_explain.h"
 #include "sql_select.h"
-#include "sql_optimizer.h" // JOIN
-#include "sql_partition.h" // for make_used_partitions_str()
-#include "sql_join_buffer.h" // JOIN_CACHE
-#include "filesort.h"        // Filesort
+#include "sql_optimizer.h"    // JOIN
+#include "sql_partition.h"    // for make_used_partitions_str()
+#include "sql_join_buffer.h"  // JOIN_CACHE
+#include "filesort.h"         // Filesort
 #include "opt_explain_format.h"
-#include "sql_base.h"      // lock_tables
-#include "sql_acl.h"       // check_global_access, PROCESS_ACL
-#include "debug_sync.h"    // DEBUG_SYNC
-#include "opt_trace.h"     // Opt_trace_*
-#include "sql_parse.h"     // is_explainable_query
+#include "sql_base.h"            // lock_tables
+#include "sql_acl.h"             // check_global_access, PROCESS_ACL
+#include "debug_sync.h"          // DEBUG_SYNC
+#include "opt_trace.h"           // Opt_trace_*
+#include "sql_parse.h"           // is_explainable_query
 #include "mysqld_thd_manager.h"  // Global_THD_manager
 
 typedef qep_row::extra extra;
 
 static bool mysql_explain_unit(THD *thd, SELECT_LEX_UNIT *unit);
 
-const char *join_type_str[]={ "UNKNOWN","system","const","eq_ref","ref",
-			      "ALL","range","index","fulltext",
-			      "ref_or_null","unique_subquery","index_subquery",
-                              "index_merge"
-};
+const char *join_type_str[] = {
+    "UNKNOWN",  "system",      "const",           "eq_ref",         "ref",        "ALL", "range", "index",
+    "fulltext", "ref_or_null", "unique_subquery", "index_subquery", "index_merge"};
 
-static const enum_query_type cond_print_flags=
-  enum_query_type(QT_ORDINARY | QT_SHOW_SELECT_NUMBER);
+static const enum_query_type cond_print_flags = enum_query_type(QT_ORDINARY | QT_SHOW_SELECT_NUMBER);
 
-static const char plan_not_ready[]= "Plan isn't ready yet";
+static const char plan_not_ready[] = "Plan isn't ready yet";
 
 /**
   A base for all Explain_* classes
@@ -61,9 +58,9 @@ static const char plan_not_ready[]= "Plan isn't ready yet";
 
 class Explain
 {
-protected:
-  THD *const thd; ///< cached THD which runs the EXPLAIN command
-  const CHARSET_INFO *const cs; ///< cached pointer to system_charset_info
+ protected:
+  THD *const thd;                ///< cached THD which runs the EXPLAIN command
+  const CHARSET_INFO *const cs;  ///< cached pointer to system_charset_info
   /**
      Cached SELECT_LEX of the explained query. Used for all explained stmts,
      including single-table UPDATE (provides way to access ORDER BY of
@@ -71,19 +68,20 @@ protected:
   */
   SELECT_LEX *const select_lex;
 
-  Explain_format *const fmt; ///< shortcut for thd->lex->explain_format
-  enum_parsing_context context_type; ///< associated value for struct. explain
+  Explain_format *const fmt;          ///< shortcut for thd->lex->explain_format
+  enum_parsing_context context_type;  ///< associated value for struct. explain
 
-  bool order_list; ///< if query block has ORDER BY
+  bool order_list;  ///< if query block has ORDER BY
 
-  const bool explain_other; ///< if we explain other thread than us
+  const bool explain_other;  ///< if we explain other thread than us
 
-protected:
-  class Lazy_condition: public Lazy
+ protected:
+  class Lazy_condition : public Lazy
   {
     Item *const condition;
-  public:
-    Lazy_condition(Item *condition_arg): condition(condition_arg) {}
+
+   public:
+    Lazy_condition(Item *condition_arg) : condition(condition_arg) {}
     virtual bool eval(String *ret)
     {
       ret->length(0);
@@ -93,22 +91,20 @@ protected:
     }
   };
 
-  explicit Explain(enum_parsing_context context_type_arg,
-                   THD *thd_arg, SELECT_LEX *select_lex_arg)
-  : thd(thd_arg),
-    cs(system_charset_info),
-    select_lex(select_lex_arg),
-    fmt(thd->lex->explain_format),
-    context_type(context_type_arg),
-    order_list(false),
-    explain_other(thd_arg != select_lex_arg->master_unit()->thd)
+  explicit Explain(enum_parsing_context context_type_arg, THD *thd_arg, SELECT_LEX *select_lex_arg)
+      : thd(thd_arg),
+        cs(system_charset_info),
+        select_lex(select_lex_arg),
+        fmt(thd->lex->explain_format),
+        context_type(context_type_arg),
+        order_list(false),
+        explain_other(thd_arg != select_lex_arg->master_unit()->thd)
   {
     if (explain_other)
-      select_lex_arg->master_unit()
-        ->thd->query_plan.assert_plan_is_locked_if_other();
+      select_lex_arg->master_unit()->thd->query_plan.assert_plan_is_locked_if_other();
   }
 
-public:
+ public:
   virtual ~Explain() {}
 
   bool send();
@@ -130,7 +126,7 @@ public:
     return !explain_other;
   }
 
-protected:
+ protected:
   /**
     Explain everything but subqueries
   */
@@ -156,7 +152,7 @@ protected:
   */
   bool push_extra(Extra_tag tag)
   {
-    extra *e= new extra(tag);
+    extra *e = new extra(tag);
     return e == NULL || fmt->entry()->col_extra.push_back(e);
   }
 
@@ -174,7 +170,7 @@ protected:
   {
     if (arg.is_empty())
       return push_extra(tag);
-    extra *e= new extra(tag, arg.dup(thd->mem_root));
+    extra *e = new extra(tag, arg.dup(thd->mem_root));
     return !e || !e->data || fmt->entry()->col_extra.push_back(e);
   }
 
@@ -192,7 +188,7 @@ protected:
   */
   bool push_extra(Extra_tag tag, const char *arg)
   {
-    extra *e= new extra(tag, arg);
+    extra *e = new extra(tag, arg);
     return !e || fmt->entry()->col_extra.push_back(e);
   }
 
@@ -216,7 +212,7 @@ protected:
   virtual bool explain_extra() { return false; }
   virtual bool explain_modify_flags() { return false; }
 
-protected:
+ protected:
   /**
      Returns true if the WHERE, ORDER BY, GROUP BY, etc clauses can safely be
      traversed: it means that we can iterate through them (no element is
@@ -226,14 +222,10 @@ protected:
      By default, if we are explaining another connection, this is not safe.
   */
   virtual bool can_walk_clauses() { return !explain_other; }
-  virtual enum_parsing_context
-  get_subquery_context(SELECT_LEX_UNIT *unit) const;
+  virtual enum_parsing_context get_subquery_context(SELECT_LEX_UNIT *unit) const;
 };
 
-enum_parsing_context Explain::get_subquery_context(SELECT_LEX_UNIT *unit) const
-{
-  return unit->get_explain_marker();
-}
+enum_parsing_context Explain::get_subquery_context(SELECT_LEX_UNIT *unit) const { return unit->get_explain_marker(); }
 
 /**
   Explain_no_table class outputs a trivial EXPLAIN row with "extra" column
@@ -246,34 +238,31 @@ enum_parsing_context Explain::get_subquery_context(SELECT_LEX_UNIT *unit) const
   @note This class also produces EXPLAIN rows for inner units (if any).
 */
 
-class Explain_no_table: public Explain
+class Explain_no_table : public Explain
 {
-private:
-  const char *message; ///< cached "message" argument
-  const ha_rows rows; ///< HA_POS_ERROR or cached "rows" argument
+ private:
+  const char *message;  ///< cached "message" argument
+  const ha_rows rows;   ///< HA_POS_ERROR or cached "rows" argument
 
-public:
-  Explain_no_table(THD *thd_arg, SELECT_LEX *select_lex_arg,
-                   const char *message_arg,
-                   enum_parsing_context context_type_arg= CTX_JOIN,
-                   ha_rows rows_arg= HA_POS_ERROR)
-  : Explain(context_type_arg, thd_arg, select_lex_arg),
-    message(message_arg), rows(rows_arg)
+ public:
+  Explain_no_table(THD *thd_arg, SELECT_LEX *select_lex_arg, const char *message_arg,
+                   enum_parsing_context context_type_arg = CTX_JOIN, ha_rows rows_arg = HA_POS_ERROR)
+      : Explain(context_type_arg, thd_arg, select_lex_arg), message(message_arg), rows(rows_arg)
   {
     if (can_walk_clauses())
-      order_list= MY_TEST(select_lex_arg->order_list.elements);
+      order_list = MY_TEST(select_lex_arg->order_list.elements);
   }
 
-protected:
+ protected:
   virtual bool shallow_explain();
 
   virtual bool explain_rows_and_filtered();
   virtual bool explain_extra();
   virtual bool explain_modify_flags();
-private:
+
+ private:
   enum_parsing_context get_subquery_context(SELECT_LEX_UNIT *unit) const;
 };
-
 
 /**
   Explain_union_result class outputs EXPLAIN row for UNION
@@ -281,20 +270,18 @@ private:
 
 class Explain_union_result : public Explain
 {
-public:
-  Explain_union_result(THD *thd_arg, SELECT_LEX *select_lex_arg)
-  : Explain(CTX_UNION_RESULT, thd_arg, select_lex_arg)
+ public:
+  Explain_union_result(THD *thd_arg, SELECT_LEX *select_lex_arg) : Explain(CTX_UNION_RESULT, thd_arg, select_lex_arg)
   {
     /* it's a UNION: */
-    assert(select_lex_arg ==
-           select_lex_arg->master_unit()->fake_select_lex);
+    assert(select_lex_arg == select_lex_arg->master_unit()->fake_select_lex);
     // Use optimized values from fake_select_lex's join
-    order_list= MY_TEST(select_lex_arg->join->order);
+    order_list = MY_TEST(select_lex_arg->join->order);
     // A plan exists so the reads above are safe:
     assert(select_lex_arg->join->get_plan_state() != JOIN::NO_PLAN);
   }
 
-protected:
+ protected:
   virtual bool explain_id();
   virtual bool explain_table_name();
   virtual bool explain_join_type();
@@ -302,20 +289,19 @@ protected:
   /* purecov: begin deadcode */
   virtual bool can_walk_clauses()
   {
-    assert(0);   // UNION result can't have conditions
-    return true;                        // Because we know that we have a plan
+    assert(0);    // UNION result can't have conditions
+    return true;  // Because we know that we have a plan
   }
   /* purecov: end */
 };
-
-
 
 /**
   Common base class for Explain_join and Explain_table
 */
 
-class Explain_table_base : public Explain {
-protected:
+class Explain_table_base : public Explain
+{
+ protected:
   const TABLE *table;
   /**
      The QEP_TAB which we are currently explaining. It is NULL for the
@@ -327,12 +313,11 @@ protected:
   QEP_TAB *tab;
   key_map usable_keys;
 
-  Explain_table_base(enum_parsing_context context_type_arg,
-                     THD *const thd_arg, SELECT_LEX *select_lex= NULL,
-                     TABLE *const table_arg= NULL)
-    : Explain(context_type_arg, thd_arg, select_lex), table(table_arg),
-      tab(NULL)
-  {}
+  Explain_table_base(enum_parsing_context context_type_arg, THD *const thd_arg, SELECT_LEX *select_lex = NULL,
+                     TABLE *const table_arg = NULL)
+      : Explain(context_type_arg, thd_arg, select_lex), table(table_arg), tab(NULL)
+  {
+  }
 
   virtual bool explain_partitions();
   virtual bool explain_possible_keys();
@@ -341,12 +326,9 @@ protected:
   bool explain_key_and_len_quick(QUICK_SELECT_I *quick);
   bool explain_key_and_len_index(int key);
   bool explain_key_and_len_index(int key, uint key_length, uint key_parts);
-  bool explain_extra_common(int quick_type,
-                            uint keyno);
-  bool explain_tmptable_and_filesort(bool need_tmp_table_arg,
-                                     bool need_sort_arg);
+  bool explain_extra_common(int quick_type, uint keyno);
+  bool explain_tmptable_and_filesort(bool need_tmp_table_arg, bool need_sort_arg);
 };
-
 
 /**
   Explain_join class produces EXPLAIN output for JOINs
@@ -354,42 +336,41 @@ protected:
 
 class Explain_join : public Explain_table_base
 {
-private:
-  bool need_tmp_table; ///< add "Using temporary" to "extra" if true
-  bool need_order; ///< add "Using filesort"" to "extra" if true
-  const bool distinct; ///< add "Distinct" string to "extra" column if true
+ private:
+  bool need_tmp_table;  ///< add "Using temporary" to "extra" if true
+  bool need_order;      ///< add "Using filesort"" to "extra" if true
+  const bool distinct;  ///< add "Distinct" string to "extra" column if true
 
-  JOIN *join; ///< current JOIN
-  int quick_type; ///< current quick type, see anon. enum at QUICK_SELECT_I
-  table_map used_tables; ///< accumulate used tables bitmap
+  JOIN *join;             ///< current JOIN
+  int quick_type;         ///< current quick type, see anon. enum at QUICK_SELECT_I
+  table_map used_tables;  ///< accumulate used tables bitmap
 
-public:
-  Explain_join(THD *thd_arg, SELECT_LEX *select_lex_arg,
-               bool need_tmp_table_arg, bool need_order_arg,
+ public:
+  Explain_join(THD *thd_arg, SELECT_LEX *select_lex_arg, bool need_tmp_table_arg, bool need_order_arg,
                bool distinct_arg)
-  : Explain_table_base(CTX_JOIN, thd_arg, select_lex_arg),
-    need_tmp_table(need_tmp_table_arg),
-    need_order(need_order_arg), distinct(distinct_arg),
-    join(select_lex_arg->join), used_tables(0)
+      : Explain_table_base(CTX_JOIN, thd_arg, select_lex_arg),
+        need_tmp_table(need_tmp_table_arg),
+        need_order(need_order_arg),
+        distinct(distinct_arg),
+        join(select_lex_arg->join),
+        used_tables(0)
   {
     assert(select_lex->join->thd == select_lex->master_unit()->thd);
     assert(join->get_plan_state() == JOIN::PLAN_READY);
     /* it is not UNION: */
     assert(join->select_lex != join->unit->fake_select_lex);
-    order_list= MY_TEST(join->order);
+    order_list = MY_TEST(join->order);
   }
 
-private:
+ private:
   // Next 4 functions begin and end context for GROUP BY, ORDER BY and DISTINC
   bool begin_sort_context(Explain_sort_clause clause, enum_parsing_context ctx);
   bool end_sort_context(Explain_sort_clause clause, enum_parsing_context ctx);
-  bool begin_simple_sort_context(Explain_sort_clause clause,
-                                 enum_parsing_context ctx);
-  bool end_simple_sort_context(Explain_sort_clause clause,
-                               enum_parsing_context ctx);
+  bool begin_simple_sort_context(Explain_sort_clause clause, enum_parsing_context ctx);
+  bool end_simple_sort_context(Explain_sort_clause clause, enum_parsing_context ctx);
   bool explain_qep_tab(size_t tab_num);
 
-protected:
+ protected:
   virtual bool shallow_explain();
 
   virtual bool explain_table_name();
@@ -403,10 +384,9 @@ protected:
   virtual bool explain_modify_flags();
   virtual bool can_walk_clauses()
   {
-    return true;                        // Because we know that we have a plan
+    return true;  // Because we know that we have a plan
   }
 };
-
 
 /**
   Explain_table class produce EXPLAIN output for queries without top-level JOIN
@@ -416,43 +396,40 @@ protected:
   single-table UPDATE and DELETE).
 */
 
-class Explain_table: public Explain_table_base
+class Explain_table : public Explain_table_base
 {
-private:
-  const uint       key;        ///< cached "key" number argument
-  const ha_rows    limit;      ///< HA_POS_ERROR or cached "limit" argument
-  const bool       need_tmp_table; ///< cached need_tmp_table argument
-  const bool       need_sort;  ///< cached need_sort argument
-  const enum_mod_type mod_type; ///< Table modification type
-  const bool       used_key_is_modified; ///< UPDATE command updates used key
-  const char *message; ///< cached "message" argument
+ private:
+  const uint key;                   ///< cached "key" number argument
+  const ha_rows limit;              ///< HA_POS_ERROR or cached "limit" argument
+  const bool need_tmp_table;        ///< cached need_tmp_table argument
+  const bool need_sort;             ///< cached need_sort argument
+  const enum_mod_type mod_type;     ///< Table modification type
+  const bool used_key_is_modified;  ///< UPDATE command updates used key
+  const char *message;              ///< cached "message" argument
 
-public:
-  Explain_table(THD *const thd_arg, SELECT_LEX *select_lex_arg,
-                TABLE *const table_arg,
-                QEP_TAB *tab_arg,
-                uint key_arg, ha_rows limit_arg,
-                bool need_tmp_table_arg, bool need_sort_arg,
-                enum_mod_type mod_type_arg, bool used_key_is_modified_arg,
-                const char *msg)
-  : Explain_table_base(CTX_JOIN, thd_arg, select_lex_arg, table_arg),
-    key(key_arg),
-    limit(limit_arg),
-    need_tmp_table(need_tmp_table_arg), need_sort(need_sort_arg),
-    mod_type(mod_type_arg), used_key_is_modified(used_key_is_modified_arg),
-    message(msg)
+ public:
+  Explain_table(THD *const thd_arg, SELECT_LEX *select_lex_arg, TABLE *const table_arg, QEP_TAB *tab_arg, uint key_arg,
+                ha_rows limit_arg, bool need_tmp_table_arg, bool need_sort_arg, enum_mod_type mod_type_arg,
+                bool used_key_is_modified_arg, const char *msg)
+      : Explain_table_base(CTX_JOIN, thd_arg, select_lex_arg, table_arg),
+        key(key_arg),
+        limit(limit_arg),
+        need_tmp_table(need_tmp_table_arg),
+        need_sort(need_sort_arg),
+        mod_type(mod_type_arg),
+        used_key_is_modified(used_key_is_modified_arg),
+        message(msg)
   {
-    tab= tab_arg;
-    usable_keys= table->possible_quick_keys;
+    tab = tab_arg;
+    usable_keys = table->possible_quick_keys;
     if (can_walk_clauses())
-      order_list= MY_TEST(select_lex_arg->order_list.elements);
+      order_list = MY_TEST(select_lex_arg->order_list.elements);
   }
 
   virtual bool explain_modify_flags();
 
-private:
-  virtual bool explain_tmptable_and_filesort(bool need_tmp_table_arg,
-                                             bool need_sort_arg);
+ private:
+  virtual bool explain_tmptable_and_filesort(bool need_tmp_table_arg, bool need_sort_arg);
   virtual bool shallow_explain();
 
   virtual bool explain_ref();
@@ -464,19 +441,13 @@ private:
 
   virtual bool can_walk_clauses()
   {
-    return true;                        // Because we know that we have a plan
+    return true;  // Because we know that we have a plan
   }
 };
 
-
 /* Explain class functions ****************************************************/
 
-
-bool Explain::shallow_explain()
-{
-  return prepare_columns() || fmt->flush_entry();
-}
-
+bool Explain::shallow_explain() { return prepare_columns() || fmt->flush_entry(); }
 
 /**
   Qualify subqueries with WHERE/HAVING/ORDER BY/GROUP BY clause type marker
@@ -497,22 +468,19 @@ bool Explain::mark_subqueries(Item *item, qep_row *destination)
   if (item == NULL || !fmt->is_hierarchical())
     return false;
 
-  item->compile(&Item::explain_subquery_checker,
-                reinterpret_cast<uchar **>(&destination),
-                &Item::explain_subquery_propagator,
-                NULL);
+  item->compile(&Item::explain_subquery_checker, reinterpret_cast< uchar ** >(&destination),
+                &Item::explain_subquery_propagator, NULL);
   return false;
 }
 
-static bool explain_ref_key(Explain_format *fmt,
-                            uint key_parts, store_key *key_copy[])
+static bool explain_ref_key(Explain_format *fmt, uint key_parts, store_key *key_copy[])
 {
   if (key_parts == 0)
     return false;
 
-  for (uint part_no= 0; part_no < key_parts; part_no++)
+  for (uint part_no = 0; part_no < key_parts; part_no++)
   {
-    const store_key *const s_key= key_copy[part_no];
+    const store_key *const s_key = key_copy[part_no];
     if (s_key == NULL)
     {
       // Const keys don't need to be copied
@@ -525,11 +493,9 @@ static bool explain_ref_key(Explain_format *fmt,
   return false;
 }
 
-
-enum_parsing_context
-Explain_no_table::get_subquery_context(SELECT_LEX_UNIT *unit) const
+enum_parsing_context Explain_no_table::get_subquery_context(SELECT_LEX_UNIT *unit) const
 {
-  const enum_parsing_context context= Explain::get_subquery_context(unit);
+  const enum_parsing_context context = Explain::get_subquery_context(unit);
   if (context == CTX_OPTIMIZED_AWAY_SUBQUERY)
     return context;
   if (context == CTX_DERIVED)
@@ -542,7 +508,6 @@ Explain_no_table::get_subquery_context(SELECT_LEX_UNIT *unit) const
     return CTX_OPTIMIZED_AWAY_SUBQUERY;
   return context;
 }
-
 
 /**
   Traverses SQL clauses of this query specification to identify children
@@ -557,15 +522,13 @@ Explain_no_table::get_subquery_context(SELECT_LEX_UNIT *unit) const
 */
 bool Explain::explain_subqueries()
 {
-  for (SELECT_LEX_UNIT *unit= select_lex->first_inner_unit();
-       unit;
-       unit= unit->next_unit())
+  for (SELECT_LEX_UNIT *unit = select_lex->first_inner_unit(); unit; unit = unit->next_unit())
   {
     assert(explain_other || unit->is_optimized());
-    SELECT_LEX *sl= unit->first_select();
-    enum_parsing_context context= get_subquery_context(unit);
+    SELECT_LEX *sl = unit->first_select();
+    enum_parsing_context context = get_subquery_context(unit);
     if (context == CTX_NONE)
-      context= CTX_OPTIMIZED_AWAY_SUBQUERY;
+      context = CTX_OPTIMIZED_AWAY_SUBQUERY;
 
     if (fmt->begin_context(context, unit))
       return true;
@@ -578,34 +541,27 @@ bool Explain::explain_subqueries()
       and had a chance to choose materialization.
     */
     if (fmt->is_hierarchical() &&
-        (context == CTX_WHERE || context == CTX_HAVING ||
-         context == CTX_SELECT_LIST ||
-         context == CTX_GROUP_BY_SQ || context == CTX_ORDER_BY_SQ) &&
-        (!explain_other ||
-         (sl->join && sl->join->get_plan_state() != JOIN::NO_PLAN)) &&
+        (context == CTX_WHERE || context == CTX_HAVING || context == CTX_SELECT_LIST || context == CTX_GROUP_BY_SQ ||
+         context == CTX_ORDER_BY_SQ) &&
+        (!explain_other || (sl->join && sl->join->get_plan_state() != JOIN::NO_PLAN)) &&
         // Check below requires complete plan
-        unit->item &&
-        (unit->item->get_engine_for_explain()->engine_type() ==
-         subselect_engine::HASH_SJ_ENGINE))
+        unit->item && (unit->item->get_engine_for_explain()->engine_type() == subselect_engine::HASH_SJ_ENGINE))
     {
-      fmt->entry()->is_materialized_from_subquery= true;
+      fmt->entry()->is_materialized_from_subquery = true;
       fmt->entry()->col_table_name.set_const("<materialized_subquery>");
-      fmt->entry()->using_temporary= true;
+      fmt->entry()->using_temporary = true;
       fmt->entry()->col_join_type.set_const(join_type_str[JT_EQ_REF]);
       fmt->entry()->col_key.set_const("<auto_key>");
 
-      const subselect_hash_sj_engine * const engine=
-        static_cast<const subselect_hash_sj_engine *>
-        (unit->item->get_engine_for_explain());
-      const QEP_TAB * const tmp_tab= engine->get_qep_tab();
+      const subselect_hash_sj_engine *const engine =
+          static_cast< const subselect_hash_sj_engine * >(unit->item->get_engine_for_explain());
+      const QEP_TAB *const tmp_tab = engine->get_qep_tab();
 
       char buff_key_len[24];
-      fmt->entry()->col_key_len.set(buff_key_len,
-                                    longlong2str(tmp_tab->table()->key_info[0].key_length,
-                                                 buff_key_len, 10) - buff_key_len);
+      fmt->entry()->col_key_len.set(
+          buff_key_len, longlong2str(tmp_tab->table()->key_info[0].key_length, buff_key_len, 10) - buff_key_len);
 
-      if (explain_ref_key(fmt, tmp_tab->ref().key_parts,
-                          tmp_tab->ref().key_copy))
+      if (explain_ref_key(fmt, tmp_tab->ref().key_parts, tmp_tab->ref().key_copy))
         return true;
 
       fmt->entry()->col_rows.set(1);
@@ -613,8 +569,8 @@ bool Explain::explain_subqueries()
        The value to look up depends on the outer value, so the materialized
        subquery is dependent and not cacheable:
       */
-      fmt->entry()->is_dependent= true;
-      fmt->entry()->is_cacheable= false;
+      fmt->entry()->is_dependent = true;
+      fmt->entry()->is_cacheable = false;
     }
 
     if (fmt->end_context(context))
@@ -623,25 +579,15 @@ bool Explain::explain_subqueries()
   return false;
 }
 
-
 /**
   Pre-calculate table property values for further EXPLAIN output
 */
 bool Explain::prepare_columns()
 {
-  return explain_id() ||
-    explain_select_type() ||
-    explain_table_name() ||
-    explain_partitions() ||
-    explain_join_type() ||
-    explain_possible_keys() ||
-    explain_key_and_len() ||
-    explain_ref() ||
-    explain_modify_flags() ||
-    explain_rows_and_filtered() ||
-    explain_extra();
+  return explain_id() || explain_select_type() || explain_table_name() || explain_partitions() || explain_join_type() ||
+         explain_possible_keys() || explain_key_and_len() || explain_ref() || explain_modify_flags() ||
+         explain_rows_and_filtered() || explain_extra();
 }
-
 
 /**
   Explain class main function
@@ -661,17 +607,15 @@ bool Explain::send()
     DBUG_RETURN(true);
 
   /* Don't log this into the slow query log */
-  thd->server_status&= ~(SERVER_QUERY_NO_INDEX_USED |
-                         SERVER_QUERY_NO_GOOD_INDEX_USED);
+  thd->server_status &= ~(SERVER_QUERY_NO_INDEX_USED | SERVER_QUERY_NO_GOOD_INDEX_USED);
 
-  bool ret= shallow_explain() || explain_subqueries();
+  bool ret = shallow_explain() || explain_subqueries();
 
   if (!ret)
-    ret= fmt->end_context(context_type);
+    ret = fmt->end_context(context_type);
 
   DBUG_RETURN(ret);
 }
-
 
 bool Explain::explain_id()
 {
@@ -680,99 +624,80 @@ bool Explain::explain_id()
   return false;
 }
 
-
 bool Explain::explain_select_type()
 {
   // ignore top-level SELECT_LEXes
   // Elaborate only when plan is ready
-  if (select_lex->master_unit()->outer_select() &&
-      select_lex->join &&
+  if (select_lex->master_unit()->outer_select() && select_lex->join &&
       select_lex->join->get_plan_state() != JOIN::NO_PLAN)
   {
-    fmt->entry()->is_dependent= select_lex->is_dependent();
+    fmt->entry()->is_dependent = select_lex->is_dependent();
     if (select_lex->type() != SELECT_LEX::SLT_DERIVED)
-      fmt->entry()->is_cacheable= select_lex->is_cacheable();
+      fmt->entry()->is_cacheable = select_lex->is_cacheable();
   }
   fmt->entry()->col_select_type.set(select_lex->type());
   return false;
 }
 
-
 /* Explain_no_table class functions *******************************************/
-
 
 bool Explain_no_table::shallow_explain()
 {
-  return (fmt->begin_context(CTX_MESSAGE) ||
-          Explain::shallow_explain() ||
-          (can_walk_clauses() &&
-           mark_subqueries(select_lex->where_cond(), fmt->entry())) ||
+  return (fmt->begin_context(CTX_MESSAGE) || Explain::shallow_explain() ||
+          (can_walk_clauses() && mark_subqueries(select_lex->where_cond(), fmt->entry())) ||
           fmt->end_context(CTX_MESSAGE));
 }
-
 
 bool Explain_no_table::explain_rows_and_filtered()
 {
   /* Don't print estimated # of rows in table for INSERT/REPLACE. */
-  if (rows == HA_POS_ERROR || fmt->entry()->mod_type == MT_INSERT ||
-      fmt->entry()->mod_type == MT_REPLACE)
+  if (rows == HA_POS_ERROR || fmt->entry()->mod_type == MT_INSERT || fmt->entry()->mod_type == MT_REPLACE)
     return false;
   fmt->entry()->col_rows.set(rows);
   return false;
 }
 
-
-bool Explain_no_table::explain_extra()
-{
-  return fmt->entry()->col_message.set(message);
-}
-
+bool Explain_no_table::explain_extra() { return fmt->entry()->col_message.set(message); }
 
 bool Explain_no_table::explain_modify_flags()
 {
-  THD *const query_thd= select_lex->master_unit()->thd;
-  switch (query_thd->query_plan.get_command()) {
-  case SQLCOM_UPDATE_MULTI:
-  case SQLCOM_UPDATE:
-    fmt->entry()->mod_type= MT_UPDATE;
-    break;
-  case SQLCOM_DELETE_MULTI:
-  case SQLCOM_DELETE:
-    fmt->entry()->mod_type= MT_DELETE;
-    break;
-  case SQLCOM_INSERT_SELECT:
-  case SQLCOM_INSERT:
-    fmt->entry()->mod_type= MT_INSERT;
-    break;
-  case SQLCOM_REPLACE_SELECT:
-  case SQLCOM_REPLACE:
-    fmt->entry()->mod_type= MT_REPLACE;
-    break;
-  default: ;
+  THD *const query_thd = select_lex->master_unit()->thd;
+  switch (query_thd->query_plan.get_command())
+  {
+    case SQLCOM_UPDATE_MULTI:
+    case SQLCOM_UPDATE:
+      fmt->entry()->mod_type = MT_UPDATE;
+      break;
+    case SQLCOM_DELETE_MULTI:
+    case SQLCOM_DELETE:
+      fmt->entry()->mod_type = MT_DELETE;
+      break;
+    case SQLCOM_INSERT_SELECT:
+    case SQLCOM_INSERT:
+      fmt->entry()->mod_type = MT_INSERT;
+      break;
+    case SQLCOM_REPLACE_SELECT:
+    case SQLCOM_REPLACE:
+      fmt->entry()->mod_type = MT_REPLACE;
+      break;
+    default:;
   }
   return false;
 }
 
-
 /* Explain_union_result class functions ****************************************/
 
-
-bool Explain_union_result::explain_id()
-{
-  return false;
-}
-
+bool Explain_union_result::explain_id() { return false; }
 
 bool Explain_union_result::explain_table_name()
 {
   // Get the last of UNION's selects
-  SELECT_LEX *last_select=
-    select_lex->master_unit()->first_select()->last_select();
+  SELECT_LEX *last_select = select_lex->master_unit()->first_select()->last_select();
   // # characters needed to print select_number of last select
-  int last_length= (int)log10((double)last_select->select_number)+1;
+  int last_length = (int)log10((double)last_select->select_number) + 1;
 
-  SELECT_LEX *sl= select_lex->master_unit()->first_select();
-  size_t len= 6, lastop= 0;
+  SELECT_LEX *sl = select_lex->master_unit()->first_select();
+  size_t len = 6, lastop = 0;
   char table_name_buffer[NAME_LEN];
   memcpy(table_name_buffer, STRING_WITH_LEN("<union"));
   /*
@@ -780,34 +705,28 @@ bool Explain_union_result::explain_table_name()
     - 6 + last_length: the number of characters needed to print
       '...,'<last_select->select_number>'>\0'
   */
-  for (;
-       sl && len + lastop + 6 + last_length < NAME_CHAR_LEN;
-       sl= sl->next_select())
+  for (; sl && len + lastop + 6 + last_length < NAME_CHAR_LEN; sl = sl->next_select())
   {
-    len+= lastop;
-    lastop= my_snprintf(table_name_buffer + len, NAME_CHAR_LEN - len,
-                        "%u,", sl->select_number);
+    len += lastop;
+    lastop = my_snprintf(table_name_buffer + len, NAME_CHAR_LEN - len, "%u,", sl->select_number);
   }
   if (sl || len + lastop >= NAME_CHAR_LEN)
   {
     memcpy(table_name_buffer + len, STRING_WITH_LEN("...,"));
-    len+= 4;
-    lastop= my_snprintf(table_name_buffer + len, NAME_CHAR_LEN - len,
-                        "%u,", last_select->select_number);
+    len += 4;
+    lastop = my_snprintf(table_name_buffer + len, NAME_CHAR_LEN - len, "%u,", last_select->select_number);
   }
-  len+= lastop;
-  table_name_buffer[len - 1]= '>';  // change ',' to '>'
+  len += lastop;
+  table_name_buffer[len - 1] = '>';  // change ',' to '>'
 
   return fmt->entry()->col_table_name.set(table_name_buffer, len);
 }
-
 
 bool Explain_union_result::explain_join_type()
 {
   fmt->entry()->col_join_type.set_const(join_type_str[JT_ALL]);
   return false;
 }
-
 
 bool Explain_union_result::explain_extra()
 {
@@ -833,90 +752,72 @@ bool Explain_union_result::explain_extra()
   return Explain::explain_extra();
 }
 
-
 /* Explain_table_base class functions *****************************************/
-
 
 bool Explain_table_base::explain_partitions()
 {
   if (table->part_info)
-    return make_used_partitions_str(table->part_info,
-                                    &fmt->entry()->col_partitions);
+    return make_used_partitions_str(table->part_info, &fmt->entry()->col_partitions);
   return false;
 }
-
 
 bool Explain_table_base::explain_possible_keys()
 {
   if (usable_keys.is_clear_all())
     return false;
 
-  for (uint j= 0 ; j < table->s->keys ; j++)
+  for (uint j = 0; j < table->s->keys; j++)
   {
-    if (usable_keys.is_set(j) &&
-        fmt->entry()->col_possible_keys.push_back(table->key_info[j].name))
+    if (usable_keys.is_set(j) && fmt->entry()->col_possible_keys.push_back(table->key_info[j].name))
       return true;
   }
   return false;
 }
 
-
 bool Explain_table_base::explain_key_parts(int key, uint key_parts)
 {
-  KEY_PART_INFO *kp= table->key_info[key].key_part;
-  for (uint i= 0; i < key_parts; i++, kp++)
+  KEY_PART_INFO *kp = table->key_info[key].key_part;
+  for (uint i = 0; i < key_parts; i++, kp++)
     if (fmt->entry()->col_key_parts.push_back(kp->field->field_name))
       return true;
   return false;
 }
 
-
 bool Explain_table_base::explain_key_and_len_quick(QUICK_SELECT_I *quick)
 {
-  bool ret= false;
-  StringBuffer<512> str_key(cs);
-  StringBuffer<512> str_key_len(cs);
+  bool ret = false;
+  StringBuffer< 512 > str_key(cs);
+  StringBuffer< 512 > str_key_len(cs);
 
   if (quick->index != MAX_KEY)
-    ret= explain_key_parts(quick->index,
-                           quick->used_key_parts);
+    ret = explain_key_parts(quick->index, quick->used_key_parts);
   quick->add_keys_and_lengths(&str_key, &str_key_len);
-  return (ret || fmt->entry()->col_key.set(str_key) ||
-          fmt->entry()->col_key_len.set(str_key_len));
+  return (ret || fmt->entry()->col_key.set(str_key) || fmt->entry()->col_key_len.set(str_key_len));
 }
-
 
 bool Explain_table_base::explain_key_and_len_index(int key)
 {
   assert(key != MAX_KEY);
-  return explain_key_and_len_index(key, table->key_info[key].key_length,
-                                   table->key_info[key].user_defined_key_parts);
+  return explain_key_and_len_index(key, table->key_info[key].key_length, table->key_info[key].user_defined_key_parts);
 }
 
-
-bool Explain_table_base::explain_key_and_len_index(int key, uint key_length,
-                                                   uint key_parts)
+bool Explain_table_base::explain_key_and_len_index(int key, uint key_length, uint key_parts)
 {
   assert(key != MAX_KEY);
 
   char buff_key_len[24];
-  const KEY *key_info= table->key_info + key;
-  const size_t length= longlong2str(key_length, buff_key_len, 10) - buff_key_len;
-  const bool ret= explain_key_parts(key, key_parts);
-  return (ret || fmt->entry()->col_key.set(key_info->name) ||
-          fmt->entry()->col_key_len.set(buff_key_len, length));
+  const KEY *key_info = table->key_info + key;
+  const size_t length = longlong2str(key_length, buff_key_len, 10) - buff_key_len;
+  const bool ret = explain_key_parts(key, key_parts);
+  return (ret || fmt->entry()->col_key.set(key_info->name) || fmt->entry()->col_key_len.set(buff_key_len, length));
 }
 
-
-bool Explain_table_base::explain_extra_common(int quick_type,
-                                              uint keyno)
+bool Explain_table_base::explain_extra_common(int quick_type, uint keyno)
 {
-  if (((keyno != MAX_KEY &&
-        keyno == table->file->pushed_idx_cond_keyno &&
-        table->file->pushed_idx_cond) ||
+  if (((keyno != MAX_KEY && keyno == table->file->pushed_idx_cond_keyno && table->file->pushed_idx_cond) ||
        (tab && tab->cache_idx_cond)))
   {
-    StringBuffer<160> buff(cs);
+    StringBuffer< 160 > buff(cs);
     if (fmt->is_hierarchical() && can_print_clauses())
     {
       if (table->file->pushed_idx_cond)
@@ -928,16 +829,15 @@ bool Explain_table_base::explain_extra_common(int quick_type,
       return true; /* purecov: inspected */
   }
 
-  const TABLE* pushed_root= table->file->root_of_pushed_join();
-  if (pushed_root && select_lex->join &&
-      select_lex->join->get_plan_state() == JOIN::PLAN_READY)
+  const TABLE *pushed_root = table->file->root_of_pushed_join();
+  if (pushed_root && select_lex->join && select_lex->join->get_plan_state() == JOIN::PLAN_READY)
   {
     char buf[128];
     size_t len;
-    int pushed_id= 0;
-    for (QEP_TAB* prev= select_lex->join->qep_tab; prev <= tab; prev++)
+    int pushed_id = 0;
+    for (QEP_TAB *prev = select_lex->join->qep_tab; prev <= tab; prev++)
     {
-      const TABLE* prev_root= prev->table()->file->root_of_pushed_join();
+      const TABLE *prev_root = prev->table()->file->root_of_pushed_join();
       if (prev_root == prev->table())
       {
         pushed_id++;
@@ -947,33 +847,30 @@ bool Explain_table_base::explain_extra_common(int quick_type,
     }
     if (pushed_root == table)
     {
-      uint pushed_count= tab->table()->file->number_of_pushed_joins();
-      len= my_snprintf(buf, sizeof(buf)-1,
-                       "Parent of %d pushed join@%d",
-                       pushed_count, pushed_id);
+      uint pushed_count = tab->table()->file->number_of_pushed_joins();
+      len = my_snprintf(buf, sizeof(buf) - 1, "Parent of %d pushed join@%d", pushed_count, pushed_id);
     }
     else
     {
-      len= my_snprintf(buf, sizeof(buf)-1,
-                       "Child of '%s' in pushed join@%d",
-                       tab->table()->file->parent_of_pushed_join()->alias,
-                       pushed_id);
+      len = my_snprintf(buf, sizeof(buf) - 1, "Child of '%s' in pushed join@%d",
+                        tab->table()->file->parent_of_pushed_join()->alias, pushed_id);
     }
 
     {
-      StringBuffer<128> buff(cs);
-      buff.append(buf,len);
+      StringBuffer< 128 > buff(cs);
+      buff.append(buf, len);
       if (push_extra(ET_PUSHED_JOIN, buff))
         return true;
     }
   }
 
-  switch (quick_type) {
-  case QUICK_SELECT_I::QS_TYPE_ROR_UNION:
-  case QUICK_SELECT_I::QS_TYPE_ROR_INTERSECT:
-  case QUICK_SELECT_I::QS_TYPE_INDEX_MERGE:
+  switch (quick_type)
+  {
+    case QUICK_SELECT_I::QS_TYPE_ROR_UNION:
+    case QUICK_SELECT_I::QS_TYPE_ROR_INTERSECT:
+    case QUICK_SELECT_I::QS_TYPE_INDEX_MERGE:
     {
-      StringBuffer<32> buff(cs);
+      StringBuffer< 32 > buff(cs);
       tab->quick_optim()->add_info_string(&buff);
       if (fmt->is_hierarchical())
       {
@@ -982,7 +879,7 @@ bool Explain_table_base::explain_extra_common(int quick_type,
           but not the reverse:
         */
         assert(fmt->entry()->col_key.length);
-        if (fmt->entry()->col_key.set(buff)) // keep col_key_len intact
+        if (fmt->entry()->col_key.set(buff))  // keep col_key_len intact
           return true;
       }
       else
@@ -992,14 +889,14 @@ bool Explain_table_base::explain_extra_common(int quick_type,
       }
     }
     break;
-  default: ;
+    default:;
   }
 
   if (tab)
   {
     if (tab->dynamic_range())
     {
-      StringBuffer<64> str(STRING_WITH_LEN("index map: 0x"), cs);
+      StringBuffer< 64 > str(STRING_WITH_LEN("index map: 0x"), cs);
       /* 4 bits per 1 hex digit + terminating '\0' */
       char buf[MAX_KEY / 4 + 1];
       str.append(tab->keys().print(buf));
@@ -1008,12 +905,11 @@ bool Explain_table_base::explain_extra_common(int quick_type,
     }
     else if (tab->condition_optim())
     {
-      const Item *pushed_cond= table->file->pushed_cond;
+      const Item *pushed_cond = table->file->pushed_cond;
 
-      if (thd->optimizer_switch_flag(OPTIMIZER_SWITCH_ENGINE_CONDITION_PUSHDOWN) &&
-          pushed_cond)
+      if (thd->optimizer_switch_flag(OPTIMIZER_SWITCH_ENGINE_CONDITION_PUSHDOWN) && pushed_cond)
       {
-        StringBuffer<64> buff(cs);
+        StringBuffer< 64 > buff(cs);
         if (can_print_clauses())
           ((Item *)pushed_cond)->print(&buff, cond_print_flags);
         if (push_extra(ET_USING_WHERE_WITH_PUSHED_CONDITION, buff))
@@ -1023,7 +919,7 @@ bool Explain_table_base::explain_extra_common(int quick_type,
       {
         if (fmt->is_hierarchical() && can_print_clauses())
         {
-          Lazy_condition *c= new Lazy_condition(tab->condition_optim());
+          Lazy_condition *c = new Lazy_condition(tab->condition_optim());
           if (c == NULL)
             return true;
           fmt->entry()->col_attached_condition.set(c);
@@ -1038,8 +934,7 @@ bool Explain_table_base::explain_extra_common(int quick_type,
 
   if (quick_type == QUICK_SELECT_I::QS_TYPE_RANGE)
   {
-    uint mrr_flags=
-      ((QUICK_RANGE_SELECT*)(tab->quick_optim()))->mrr_flags;
+    uint mrr_flags = ((QUICK_RANGE_SELECT *)(tab->quick_optim()))->mrr_flags;
 
     /*
       During normal execution of a query, multi_range_read_init() is
@@ -1051,87 +946,80 @@ bool Explain_table_base::explain_extra_common(int quick_type,
       its effect here:
     */
     if (mrr_flags & HA_MRR_SORTED && !(mrr_flags & HA_MRR_SUPPORT_SORTED))
-      mrr_flags|= HA_MRR_USE_DEFAULT_IMPL;
+      mrr_flags |= HA_MRR_USE_DEFAULT_IMPL;
 
     if (!(mrr_flags & HA_MRR_USE_DEFAULT_IMPL) && push_extra(ET_USING_MRR))
       return true;
   }
 
-  if (tab && tab->type() == JT_FT &&
-      (table->file->ha_table_flags() & HA_CAN_FULLTEXT_HINTS))
+  if (tab && tab->type() == JT_FT && (table->file->ha_table_flags() & HA_CAN_FULLTEXT_HINTS))
   {
     /*
       Print info about FT hints.
     */
-    StringBuffer<64> buff(cs);
-    Ft_hints *ft_hints= tab->ft_func()->get_hints();
-    bool not_first= false;
+    StringBuffer< 64 > buff(cs);
+    Ft_hints *ft_hints = tab->ft_func()->get_hints();
+    bool not_first = false;
     if (ft_hints->get_flags() & FT_SORTED)
     {
       buff.append("sorted");
-      not_first= true;
+      not_first = true;
     }
     else if (ft_hints->get_flags() & FT_NO_RANKING)
     {
       buff.append("no_ranking");
-      not_first= true;
+      not_first = true;
     }
-    if (ft_hints->get_op_type() != FT_OP_UNDEFINED &&
-        ft_hints->get_op_type() != FT_OP_NO)
+    if (ft_hints->get_op_type() != FT_OP_UNDEFINED && ft_hints->get_op_type() != FT_OP_NO)
     {
       char buf[64];
-      size_t len= 0;
+      size_t len = 0;
 
       if (not_first)
         buff.append(", ");
       switch (ft_hints->get_op_type())
       {
         case FT_OP_GT:
-          len= my_snprintf(buf, sizeof(buf) - 1,
-                           "rank > %g", ft_hints->get_op_value());
+          len = my_snprintf(buf, sizeof(buf) - 1, "rank > %g", ft_hints->get_op_value());
           break;
         case FT_OP_GE:
-          len= my_snprintf(buf, sizeof(buf) - 1,
-                           "rank >= %g", ft_hints->get_op_value());
+          len = my_snprintf(buf, sizeof(buf) - 1, "rank >= %g", ft_hints->get_op_value());
           break;
         default:
           assert(0);
       }
 
       buff.append(buf, len, cs);
-      not_first= true;
+      not_first = true;
     }
-    
+
     if (ft_hints->get_limit() != HA_POS_ERROR)
     {
       char buf[64];
-      size_t len= 0;
+      size_t len = 0;
 
       if (not_first)
         buff.append(", ");
 
-      len= my_snprintf(buf, sizeof(buf) - 1,
-                       "limit = %d", ft_hints->get_limit());
+      len = my_snprintf(buf, sizeof(buf) - 1, "limit = %d", ft_hints->get_limit());
       buff.append(buf, len, cs);
-      not_first= true;
+      not_first = true;
     }
     if (not_first)
       push_extra(ET_FT_HINTS, buff);
-
   }
 
   return false;
 }
 
-bool Explain_table_base::explain_tmptable_and_filesort(bool need_tmp_table_arg,
-                                                       bool need_sort_arg)
+bool Explain_table_base::explain_tmptable_and_filesort(bool need_tmp_table_arg, bool need_sort_arg)
 {
   /*
     For hierarchical EXPLAIN we output "Using temporary" and
     "Using filesort" with related ORDER BY, GROUP BY or DISTINCT
   */
   if (fmt->is_hierarchical())
-    return false; 
+    return false;
 
   if (need_tmp_table_arg && push_extra(ET_USING_TEMPORARY))
     return true;
@@ -1140,109 +1028,86 @@ bool Explain_table_base::explain_tmptable_and_filesort(bool need_tmp_table_arg,
   return false;
 }
 
-
 bool Explain_join::explain_modify_flags()
 {
-  THD::Query_plan const *query_plan= &table->in_use->query_plan;
+  THD::Query_plan const *query_plan = &table->in_use->query_plan;
   /*
     Because we are PLAN_READY, the following data structures are not changing
     and thus are safe to read.
   */
-  switch (query_plan->get_command()) {
-  case SQLCOM_UPDATE_MULTI:
-    if (!bitmap_is_clear_all(&table->def_write_set) &&
-        table->s->table_category != TABLE_CATEGORY_TEMPORARY)
-      fmt->entry()->mod_type= MT_UPDATE;
-    break;
-  case SQLCOM_DELETE_MULTI:
-    for (TABLE_LIST *at= query_plan->get_lex()->auxiliary_table_list.first;
-         at;
-         at= at->next_local)
-    {
-      if (at->correspondent_table->is_updatable() &&
-          at->correspondent_table->updatable_base_table()->table == table)
+  switch (query_plan->get_command())
+  {
+    case SQLCOM_UPDATE_MULTI:
+      if (!bitmap_is_clear_all(&table->def_write_set) && table->s->table_category != TABLE_CATEGORY_TEMPORARY)
+        fmt->entry()->mod_type = MT_UPDATE;
+      break;
+    case SQLCOM_DELETE_MULTI:
+      for (TABLE_LIST *at = query_plan->get_lex()->auxiliary_table_list.first; at; at = at->next_local)
       {
-        fmt->entry()->mod_type= MT_DELETE;
-        break;
+        if (at->correspondent_table->is_updatable() && at->correspondent_table->updatable_base_table()->table == table)
+        {
+          fmt->entry()->mod_type = MT_DELETE;
+          break;
+        }
       }
-    }
-    break;
-  case SQLCOM_INSERT_SELECT:
-    if (table == query_plan->get_lex()->insert_table_leaf->table)
-      fmt->entry()->mod_type= MT_INSERT;
-    break;
-  case SQLCOM_REPLACE_SELECT:
-    if (table == query_plan->get_lex()->insert_table_leaf->table)
-      fmt->entry()->mod_type= MT_REPLACE;
-    break;
-  default: ;
+      break;
+    case SQLCOM_INSERT_SELECT:
+      if (table == query_plan->get_lex()->insert_table_leaf->table)
+        fmt->entry()->mod_type = MT_INSERT;
+      break;
+    case SQLCOM_REPLACE_SELECT:
+      if (table == query_plan->get_lex()->insert_table_leaf->table)
+        fmt->entry()->mod_type = MT_REPLACE;
+      break;
+    default:;
   };
   return false;
 }
 
-
 /* Explain_join class functions ***********************************************/
 
-bool Explain_join::begin_sort_context(Explain_sort_clause clause,
-                                      enum_parsing_context ctx)
+bool Explain_join::begin_sort_context(Explain_sort_clause clause, enum_parsing_context ctx)
 {
-  const Explain_format_flags *flags= &join->explain_flags;
-  return (flags->get(clause, ESP_EXISTS) &&
-          !flags->get(clause, ESP_IS_SIMPLE) &&
-          fmt->begin_context(ctx, NULL, flags));
+  const Explain_format_flags *flags = &join->explain_flags;
+  return (flags->get(clause, ESP_EXISTS) && !flags->get(clause, ESP_IS_SIMPLE) && fmt->begin_context(ctx, NULL, flags));
 }
 
-
-bool Explain_join::end_sort_context(Explain_sort_clause clause,
-                                    enum_parsing_context ctx)
+bool Explain_join::end_sort_context(Explain_sort_clause clause, enum_parsing_context ctx)
 {
-  const Explain_format_flags *flags= &join->explain_flags;
-  return (flags->get(clause, ESP_EXISTS) &&
-          !flags->get(clause, ESP_IS_SIMPLE) &&
-          fmt->end_context(ctx));
+  const Explain_format_flags *flags = &join->explain_flags;
+  return (flags->get(clause, ESP_EXISTS) && !flags->get(clause, ESP_IS_SIMPLE) && fmt->end_context(ctx));
 }
 
-
-bool Explain_join::begin_simple_sort_context(Explain_sort_clause clause,
-                                             enum_parsing_context ctx)
+bool Explain_join::begin_simple_sort_context(Explain_sort_clause clause, enum_parsing_context ctx)
 {
-  const Explain_format_flags *flags= &join->explain_flags;
-  return (flags->get(clause, ESP_IS_SIMPLE) &&
-          fmt->begin_context(ctx, NULL, flags));
+  const Explain_format_flags *flags = &join->explain_flags;
+  return (flags->get(clause, ESP_IS_SIMPLE) && fmt->begin_context(ctx, NULL, flags));
 }
 
-
-bool Explain_join::end_simple_sort_context(Explain_sort_clause clause,
-                                           enum_parsing_context ctx)
+bool Explain_join::end_simple_sort_context(Explain_sort_clause clause, enum_parsing_context ctx)
 {
-  const Explain_format_flags *flags= &join->explain_flags;
-  return (flags->get(clause, ESP_IS_SIMPLE) &&
-          fmt->end_context(ctx));
+  const Explain_format_flags *flags = &join->explain_flags;
+  return (flags->get(clause, ESP_IS_SIMPLE) && fmt->end_context(ctx));
 }
-
 
 bool Explain_join::shallow_explain()
 {
-  qep_row *join_entry= fmt->entry();
+  qep_row *join_entry = fmt->entry();
 
   join_entry->col_read_cost.set(join->best_read);
 
-  LEX const*query_lex= join->thd->query_plan.get_lex();
-  if (query_lex->insert_table_leaf &&
-      query_lex->insert_table_leaf->select_lex == join->select_lex)
+  LEX const *query_lex = join->thd->query_plan.get_lex();
+  if (query_lex->insert_table_leaf && query_lex->insert_table_leaf->select_lex == join->select_lex)
   {
-    table= query_lex->insert_table_leaf->table;
+    table = query_lex->insert_table_leaf->table;
     /*
       The target table for INSERT/REPLACE doesn't actually belong to join,
       thus tab is set to NULL. But in order to print it we add it to the
       list of plan rows. Explain printing code (traditional/json) will deal with
       it.
     */
-    tab= NULL;
-    if (fmt->begin_context(CTX_QEP_TAB) ||
-        prepare_columns() ||
-        fmt->flush_entry() ||
-        fmt->end_context(CTX_QEP_TAB))
+    tab = NULL;
+    if (fmt->begin_context(CTX_QEP_TAB) || prepare_columns() || fmt->flush_entry() || fmt->end_context(CTX_QEP_TAB))
       return true; /* purecov: inspected */
   }
 
@@ -1266,9 +1131,7 @@ bool Explain_join::shallow_explain()
   if (begin_sort_context(ESC_BUFFER_RESULT, CTX_BUFFER_RESULT))
     return true; /* purecov: inspected */
 
-  for (size_t t= 0,
-       cnt= fmt->is_hierarchical() ? join->primary_tables : join->tables;
-       t < cnt; t++)
+  for (size_t t = 0, cnt = fmt->is_hierarchical() ? join->primary_tables : join->tables; t < cnt; t++)
   {
     if (explain_qep_tab(t))
       return true;
@@ -1286,27 +1149,26 @@ bool Explain_join::shallow_explain()
   return false;
 }
 
-
 bool Explain_join::explain_qep_tab(size_t tabnum)
 {
-  tab= join->qep_tab + tabnum;
+  tab = join->qep_tab + tabnum;
   if (!tab->position())
     return false;
-  table= tab->table();
-  usable_keys= tab->keys();
-  quick_type= -1;
+  table = tab->table();
+  usable_keys = tab->keys();
+  quick_type = -1;
 
   if (tab->type() == JT_RANGE || tab->type() == JT_INDEX_MERGE)
   {
     assert(tab->quick_optim());
-    quick_type= tab->quick_optim()->get_type();
+    quick_type = tab->quick_optim()->get_type();
   }
 
   if (tab->starts_weedout())
     fmt->begin_context(CTX_DUPLICATES_WEEDOUT);
 
-  const bool first_non_const= tabnum == join->const_tables;
-  
+  const bool first_non_const = tabnum == join->const_tables;
+
   if (first_non_const)
   {
     if (begin_simple_sort_context(ESC_ORDER_BY, CTX_SIMPLE_ORDER_BY))
@@ -1317,19 +1179,19 @@ bool Explain_join::explain_qep_tab(size_t tabnum)
       return true;
   }
 
-  Semijoin_mat_exec *const sjm= tab->sj_mat_exec();
-  const enum_parsing_context c= sjm ? CTX_MATERIALIZATION : CTX_QEP_TAB;
+  Semijoin_mat_exec *const sjm = tab->sj_mat_exec();
+  const enum_parsing_context c = sjm ? CTX_MATERIALIZATION : CTX_QEP_TAB;
 
   if (fmt->begin_context(c) || prepare_columns())
     return true;
 
-  fmt->entry()->query_block_id= table->pos_in_table_list->query_block_id();
+  fmt->entry()->query_block_id = table->pos_in_table_list->query_block_id();
 
   if (sjm)
   {
     if (sjm->is_scan)
     {
-      fmt->entry()->col_rows.cleanup(); // TODO: set(something reasonable)
+      fmt->entry()->col_rows.cleanup();  // TODO: set(something reasonable)
     }
     else
     {
@@ -1337,15 +1199,12 @@ bool Explain_join::explain_qep_tab(size_t tabnum)
     }
   }
 
-  if (fmt->flush_entry() ||
-      (can_walk_clauses() &&
-       mark_subqueries(tab->condition_optim(), fmt->entry())))
+  if (fmt->flush_entry() || (can_walk_clauses() && mark_subqueries(tab->condition_optim(), fmt->entry())))
     return true;
 
   if (sjm && fmt->is_hierarchical())
   {
-    for (size_t sjt= sjm->inner_table_index, end= sjt + sjm->table_count;
-         sjt < end; sjt++)
+    for (size_t sjt = sjm->inner_table_index, end = sjt + sjm->table_count; sjt < end; sjt++)
     {
       if (explain_qep_tab(sjt))
         return true;
@@ -1365,15 +1224,13 @@ bool Explain_join::explain_qep_tab(size_t tabnum)
       return true;
   }
 
-  if (tab->finishes_weedout() &&
-      fmt->end_context(CTX_DUPLICATES_WEEDOUT))
+  if (tab->finishes_weedout() && fmt->end_context(CTX_DUPLICATES_WEEDOUT))
     return true;
 
-  used_tables|= tab->table_ref->map();
+  used_tables |= tab->table_ref->map();
 
   return false;
 }
-
 
 bool Explain_join::explain_table_name()
 {
@@ -1381,16 +1238,13 @@ bool Explain_join::explain_table_name()
   {
     /* Derived table name generation */
     char table_name_buffer[NAME_LEN];
-    const size_t len= my_snprintf(table_name_buffer,
-                                  sizeof(table_name_buffer) - 1,
-                                  "<derived%u>",
-                                  table->pos_in_table_list->query_block_id());
+    const size_t len = my_snprintf(table_name_buffer, sizeof(table_name_buffer) - 1, "<derived%u>",
+                                   table->pos_in_table_list->query_block_id());
     return fmt->entry()->col_table_name.set(table_name_buffer, len);
   }
   else
     return fmt->entry()->col_table_name.set(table->pos_in_table_list->alias);
 }
-
 
 bool Explain_join::explain_select_type()
 {
@@ -1401,7 +1255,6 @@ bool Explain_join::explain_select_type()
   return false;
 }
 
-
 bool Explain_join::explain_id()
 {
   if (tab && sj_is_materialize_strategy(tab->get_sj_strategy()))
@@ -1411,48 +1264,43 @@ bool Explain_join::explain_id()
   return false;
 }
 
-
 bool Explain_join::explain_join_type()
 {
   fmt->entry()->col_join_type.set_const(join_type_str[tab ? tab->type() : JT_ALL]);
   return false;
 }
 
-
 bool Explain_join::explain_key_and_len()
 {
   if (!tab)
     return false;
   if (tab->ref().key_parts)
-    return explain_key_and_len_index(tab->ref().key, tab->ref().key_length,
-                                     tab->ref().key_parts);
+    return explain_key_and_len_index(tab->ref().key, tab->ref().key_length, tab->ref().key_parts);
   else if (tab->type() == JT_INDEX_SCAN || tab->type() == JT_FT)
     return explain_key_and_len_index(tab->index());
   else if (tab->type() == JT_RANGE || tab->type() == JT_INDEX_MERGE ||
-      ((tab->type() == JT_REF || tab->type() == JT_REF_OR_NULL) &&
-       tab->quick_optim()))
+           ((tab->type() == JT_REF || tab->type() == JT_REF_OR_NULL) && tab->quick_optim()))
     return explain_key_and_len_quick(tab->quick_optim());
   else
   {
-    const TABLE_LIST *table_list= table->pos_in_table_list;
-    if (table_list->schema_table &&
-        table_list->schema_table->i_s_requested_object & OPTIMIZE_I_S_TABLE)
+    const TABLE_LIST *table_list = table->pos_in_table_list;
+    if (table_list->schema_table && table_list->schema_table->i_s_requested_object & OPTIMIZE_I_S_TABLE)
     {
-      StringBuffer<512> str_key(cs);
+      StringBuffer< 512 > str_key(cs);
       const char *f_name;
       int f_idx;
       if (table_list->has_db_lookup_value)
       {
-        f_idx= table_list->schema_table->idx_field1;
-        f_name= table_list->schema_table->fields_info[f_idx].field_name;
+        f_idx = table_list->schema_table->idx_field1;
+        f_name = table_list->schema_table->fields_info[f_idx].field_name;
         str_key.append(f_name, strlen(f_name), cs);
       }
       if (table_list->has_table_lookup_value)
       {
         if (table_list->has_db_lookup_value)
           str_key.append(',');
-        f_idx= table_list->schema_table->idx_field2;
-        f_name= table_list->schema_table->fields_info[f_idx].field_name;
+        f_idx = table_list->schema_table->idx_field2;
+        f_name = table_list->schema_table->fields_info[f_idx].field_name;
         str_key.append(f_name, strlen(f_name), cs);
       }
       if (str_key.length())
@@ -1461,7 +1309,6 @@ bool Explain_join::explain_key_and_len()
   }
   return false;
 }
-
 
 bool Explain_join::explain_ref()
 {
@@ -1472,47 +1319,41 @@ bool Explain_join::explain_ref()
 
 static void human_readable_size(char *buf, int buf_len, double data_size)
 {
-  char size[]= " KMGTP";
+  char size[] = " KMGTP";
   int i;
-  for (i= 0; data_size > 1024 && i < 5; i++)
-    data_size/= 1024;
-  const char mult= i == 0 ? 0 : size[i];
+  for (i = 0; data_size > 1024 && i < 5; i++) data_size /= 1024;
+  const char mult = i == 0 ? 0 : size[i];
   my_snprintf(buf, buf_len, "%llu%c", (ulonglong)data_size, mult);
-  buf[buf_len - 1]= 0;
+  buf[buf_len - 1] = 0;
 }
-
 
 bool Explain_join::explain_rows_and_filtered()
 {
   if (!tab || tab->table_ref->schema_table)
     return false;
 
-  POSITION *const pos= tab->position();
+  POSITION *const pos = tab->position();
 
-  fmt->entry()->col_rows.set(static_cast<ulonglong>(pos->rows_fetched));
-  fmt->entry()->col_filtered.
-    set(pos->rows_fetched ?
-        static_cast<float>(100.0 * tab->position()->filter_effect) :
-        0.0f);
+  fmt->entry()->col_rows.set(static_cast< ulonglong >(pos->rows_fetched));
+  fmt->entry()->col_filtered.set(pos->rows_fetched ? static_cast< float >(100.0 * tab->position()->filter_effect)
+                                                   : 0.0f);
   // Print cost-related info
-  double prefix_rows= pos->prefix_rowcount;
-  fmt->entry()->col_prefix_rows.set(static_cast<ulonglong>(prefix_rows));
-  double const cond_cost= join->cost_model()->row_evaluate_cost(prefix_rows);
+  double prefix_rows = pos->prefix_rowcount;
+  fmt->entry()->col_prefix_rows.set(static_cast< ulonglong >(prefix_rows));
+  double const cond_cost = join->cost_model()->row_evaluate_cost(prefix_rows);
   fmt->entry()->col_cond_cost.set(cond_cost < 0 ? 0 : cond_cost);
 
-  fmt->entry()->col_read_cost.set(pos->read_cost < 0.0 ?
-                                  0.0 : pos->read_cost);
+  fmt->entry()->col_read_cost.set(pos->read_cost < 0.0 ? 0.0 : pos->read_cost);
   fmt->entry()->col_prefix_cost.set(pos->prefix_cost);
 
   // Calculate amount of data from this table per query
   char data_size_str[32];
-  double data_size= prefix_rows * tab->table()->s->rec_buff_length;
+  double data_size = prefix_rows * tab->table()->s->rec_buff_length;
   human_readable_size(data_size_str, sizeof(data_size_str), data_size);
   fmt->entry()->col_data_size_query.set(data_size_str);
 
   return false;
 }
-
 
 bool Explain_join::explain_extra()
 {
@@ -1521,33 +1362,31 @@ bool Explain_join::explain_extra()
   if (tab->type() == JT_SYSTEM && tab->position()->rows_fetched == 0.0)
   {
     if (push_extra(ET_CONST_ROW_NOT_FOUND))
-      return true;                              /* purecov: inspected */
+      return true; /* purecov: inspected */
   }
   else if (tab->type() == JT_CONST && tab->position()->rows_fetched == 0.0)
   {
     if (push_extra(ET_UNIQUE_ROW_NOT_FOUND))
-      return true;                              /* purecov: inspected */
+      return true; /* purecov: inspected */
   }
-  else if (tab->type() == JT_CONST && tab->position()->rows_fetched == 1.0 &&
-           tab->table()->has_null_row())
+  else if (tab->type() == JT_CONST && tab->position()->rows_fetched == 1.0 && tab->table()->has_null_row())
   {
     if (push_extra(ET_IMPOSSIBLE_ON_CONDITION))
-      return true;                              /* purecov: inspected */
+      return true; /* purecov: inspected */
   }
   else
   {
-    uint keyno= MAX_KEY;
+    uint keyno = MAX_KEY;
     if (tab->ref().key_parts)
-      keyno= tab->ref().key;
+      keyno = tab->ref().key;
     else if (tab->type() == JT_RANGE || tab->type() == JT_INDEX_MERGE)
       keyno = tab->quick_optim()->index;
 
     if (explain_extra_common(quick_type, keyno))
       return true;
 
-    const TABLE_LIST *table_list= table->pos_in_table_list;
-    if (table_list->schema_table &&
-        table_list->schema_table->i_s_requested_object & OPTIMIZE_I_S_TABLE)
+    const TABLE_LIST *table_list = table->pos_in_table_list;
+    if (table_list->schema_table && table_list->schema_table->i_s_requested_object & OPTIMIZE_I_S_TABLE)
     {
       if (!table_list->table_open_method)
       {
@@ -1564,16 +1403,14 @@ bool Explain_join::explain_extra()
         if (push_extra(ET_OPEN_FULL_TABLE))
           return true;
       }
-      
-      StringBuffer<32> buff(cs);
-      if (table_list->has_db_lookup_value &&
-          table_list->has_table_lookup_value)
+
+      StringBuffer< 32 > buff(cs);
+      if (table_list->has_db_lookup_value && table_list->has_table_lookup_value)
       {
         if (push_extra(ET_SCANNED_DATABASES, "0"))
           return true;
       }
-      else if (table_list->has_db_lookup_value ||
-               table_list->has_table_lookup_value)
+      else if (table_list->has_db_lookup_value || table_list->has_table_lookup_value)
       {
         if (push_extra(ET_SCANNED_DATABASES, "1"))
           return true;
@@ -1584,10 +1421,9 @@ bool Explain_join::explain_extra()
           return true;
       }
     }
-    if (((tab->type() == JT_INDEX_SCAN || tab->type() == JT_CONST) &&
-         table->covering_keys.is_set(tab->index())) ||
+    if (((tab->type() == JT_INDEX_SCAN || tab->type() == JT_CONST) && table->covering_keys.is_set(tab->index())) ||
         (quick_type == QUICK_SELECT_I::QS_TYPE_ROR_INTERSECT &&
-         !((QUICK_ROR_INTERSECT_SELECT*) tab->quick_optim())->need_to_fetch_row) ||
+         !((QUICK_ROR_INTERSECT_SELECT *)tab->quick_optim())->need_to_fetch_row) ||
         /*
           Notice that table->key_read can change on the fly (grep
           for set_keyread); so EXPLAIN CONNECTION reads a changing variable,
@@ -1598,9 +1434,8 @@ bool Explain_join::explain_extra()
     {
       if (quick_type == QUICK_SELECT_I::QS_TYPE_GROUP_MIN_MAX)
       {
-        QUICK_GROUP_MIN_MAX_SELECT *qgs=
-          (QUICK_GROUP_MIN_MAX_SELECT *) tab->quick_optim();
-        StringBuffer<64> buff(cs);
+        QUICK_GROUP_MIN_MAX_SELECT *qgs = (QUICK_GROUP_MIN_MAX_SELECT *)tab->quick_optim();
+        StringBuffer< 64 > buff(cs);
         qgs->append_loose_scan_type(&buff);
         if (push_extra(ET_USING_INDEX_FOR_GROUP_BY, buff))
           return true;
@@ -1614,11 +1449,9 @@ bool Explain_join::explain_extra()
 
     if (explain_tmptable_and_filesort(need_tmp_table, need_order))
       return true;
-    need_tmp_table= need_order= false;
+    need_tmp_table = need_order = false;
 
-    if (distinct && test_all_bits(used_tables,
-                                  join->thd->query_plan.get_lex()->used_tables) &&
-        push_extra(ET_DISTINCT))
+    if (distinct && test_all_bits(used_tables, join->thd->query_plan.get_lex()->used_tables) && push_extra(ET_DISTINCT))
       return true;
 
     if (tab->do_loosescan() && push_extra(ET_LOOSESCAN))
@@ -1643,17 +1476,15 @@ bool Explain_join::explain_extra()
       }
       else
       {
-        StringBuffer<64> buff(cs);
-        TABLE *prev_table= join->qep_tab[tab->firstmatch_return].table();
-        if (prev_table->pos_in_table_list->query_block_id() &&
-            !fmt->is_hierarchical() &&
+        StringBuffer< 64 > buff(cs);
+        TABLE *prev_table = join->qep_tab[tab->firstmatch_return].table();
+        if (prev_table->pos_in_table_list->query_block_id() && !fmt->is_hierarchical() &&
             prev_table->pos_in_table_list->is_derived())
         {
           char namebuf[NAME_LEN];
           /* Derived table name generation */
-          size_t len= my_snprintf(namebuf, sizeof(namebuf)-1,
-              "<derived%u>",
-              prev_table->pos_in_table_list->query_block_id());
+          size_t len =
+              my_snprintf(namebuf, sizeof(namebuf) - 1, "<derived%u>", prev_table->pos_in_table_list->query_block_id());
           buff.append(namebuf, len);
         }
         else
@@ -1668,12 +1499,11 @@ bool Explain_join::explain_extra()
 
     if (tab->op && tab->op->type() == QEP_operation::OT_CACHE)
     {
-      const JOIN_CACHE::enum_join_cache_type t=
-        static_cast<JOIN_CACHE*>(tab->op)->cache_type();
-      StringBuffer<64> buff(cs);
+      const JOIN_CACHE::enum_join_cache_type t = static_cast< JOIN_CACHE * >(tab->op)->cache_type();
+      StringBuffer< 64 > buff(cs);
       if (t == JOIN_CACHE::ALG_BNL)
         buff.append("Block Nested Loop");
-        else if (t == JOIN_CACHE::ALG_BKA)
+      else if (t == JOIN_CACHE::ALG_BKA)
         buff.append("Batched Key Access");
       else if (t == JOIN_CACHE::ALG_BKA_UNIQUE)
         buff.append("Batched Key Access (unique)");
@@ -1683,15 +1513,12 @@ bool Explain_join::explain_extra()
         return true;
     }
   }
-  if (fmt->is_hierarchical() &&
-      (!bitmap_is_clear_all(table->read_set) ||
-       !bitmap_is_clear_all(table->write_set)))
+  if (fmt->is_hierarchical() && (!bitmap_is_clear_all(table->read_set) || !bitmap_is_clear_all(table->write_set)))
   {
     Field **fld;
-    for (fld= table->field; *fld; fld++)
+    for (fld = table->field; *fld; fld++)
     {
-      if (!bitmap_is_set(table->read_set, (*fld)->field_index) &&
-          !bitmap_is_set(table->write_set, (*fld)->field_index))
+      if (!bitmap_is_set(table->read_set, (*fld)->field_index) && !bitmap_is_set(table->write_set, (*fld)->field_index))
         continue;
       fmt->entry()->col_used_columns.push_back((*fld)->field_name);
     }
@@ -1699,18 +1526,15 @@ bool Explain_join::explain_extra()
   return false;
 }
 
-
 /* Explain_table class functions **********************************************/
 
 bool Explain_table::explain_modify_flags()
 {
-  fmt->entry()->mod_type= mod_type;
+  fmt->entry()->mod_type = mod_type;
   return false;
 }
 
-
-bool Explain_table::explain_tmptable_and_filesort(bool need_tmp_table_arg,
-                                                  bool need_sort_arg)
+bool Explain_table::explain_tmptable_and_filesort(bool need_tmp_table_arg, bool need_sort_arg)
 {
   if (fmt->is_hierarchical())
   {
@@ -1740,7 +1564,6 @@ bool Explain_table::explain_tmptable_and_filesort(bool need_tmp_table_arg,
   return false;
 }
 
-
 bool Explain_table::shallow_explain()
 {
   Explain_format_flags flags;
@@ -1759,9 +1582,7 @@ bool Explain_table::shallow_explain()
   if (fmt->begin_context(CTX_QEP_TAB))
     return true;
 
-  if (Explain::shallow_explain() ||
-      (can_walk_clauses() &&
-       mark_subqueries(select_lex->where_cond(), fmt->entry())))
+  if (Explain::shallow_explain() || (can_walk_clauses() && mark_subqueries(select_lex->where_cond(), fmt->entry())))
     return true;
 
   if (fmt->end_context(CTX_QEP_TAB))
@@ -1773,41 +1594,34 @@ bool Explain_table::shallow_explain()
   return false;
 }
 
-
-bool Explain_table::explain_table_name()
-{
-  return fmt->entry()->col_table_name.set(table->alias);
-}
-
+bool Explain_table::explain_table_name() { return fmt->entry()->col_table_name.set(table->alias); }
 
 bool Explain_table::explain_join_type()
 {
   join_type jt;
   if (tab && tab->quick_optim())
-    jt= calc_join_type(tab->quick_optim()->get_type());
+    jt = calc_join_type(tab->quick_optim()->get_type());
   else if (key != MAX_KEY)
-    jt= JT_INDEX_SCAN;
+    jt = JT_INDEX_SCAN;
   else
-    jt= JT_ALL;
+    jt = JT_ALL;
 
   fmt->entry()->col_join_type.set_const(join_type_str[jt]);
   return false;
 }
 
-
 bool Explain_table::explain_ref()
 {
   if (tab && tab->quick_optim())
   {
-    int key_parts= tab->quick_optim()->used_key_parts;
-    while(key_parts--)
+    int key_parts = tab->quick_optim()->used_key_parts;
+    while (key_parts--)
     {
       fmt->entry()->col_ref.push_back("const");
     }
   }
   return false;
 }
-
 
 bool Explain_table::explain_key_and_len()
 {
@@ -1818,23 +1632,19 @@ bool Explain_table::explain_key_and_len()
   return false;
 }
 
-
 bool Explain_table::explain_rows_and_filtered()
 {
   /* Don't print estimated # of rows in table for INSERT/REPLACE. */
-  if (fmt->entry()->mod_type == MT_INSERT ||
-      fmt->entry()->mod_type == MT_REPLACE)
+  if (fmt->entry()->mod_type == MT_INSERT || fmt->entry()->mod_type == MT_REPLACE)
     return false;
 
-  ha_rows examined_rows=
-    table->in_use->query_plan.get_modification_plan()->examined_rows;
-  fmt->entry()->col_rows.set(static_cast<long long>(examined_rows));
+  ha_rows examined_rows = table->in_use->query_plan.get_modification_plan()->examined_rows;
+  fmt->entry()->col_rows.set(static_cast< long long >(examined_rows));
 
   fmt->entry()->col_filtered.set(100.0);
-  
+
   return false;
 }
-
 
 bool Explain_table::explain_extra()
 {
@@ -1845,24 +1655,21 @@ bool Explain_table::explain_extra()
   int quick_type;
   if (tab && tab->quick_optim())
   {
-    keyno= tab->quick_optim()->index;
-    quick_type= tab->quick_optim()->get_type();
+    keyno = tab->quick_optim()->index;
+    quick_type = tab->quick_optim()->get_type();
   }
   else
   {
-    keyno= key;
-    quick_type= -1;
+    keyno = key;
+    quick_type = -1;
   }
 
-  return (explain_extra_common(quick_type, keyno) ||
-          explain_tmptable_and_filesort(need_tmp_table, need_sort));
+  return (explain_extra_common(quick_type, keyno) || explain_tmptable_and_filesort(need_tmp_table, need_sort));
 }
-
 
 /******************************************************************************
   External function implementations
 ******************************************************************************/
-
 
 /**
   Send a message as an "extra" column value
@@ -1881,15 +1688,12 @@ bool Explain_table::explain_extra()
   @return false if success, true if error
 */
 
-bool explain_no_table(THD *thd, SELECT_LEX *select_lex, const char *message,
-                      enum_parsing_context ctx)
+bool explain_no_table(THD *thd, SELECT_LEX *select_lex, const char *message, enum_parsing_context ctx)
 {
   DBUG_ENTER("explain_no_table");
-  const bool ret= Explain_no_table(thd, select_lex, message, ctx,
-                                   HA_POS_ERROR).send();
+  const bool ret = Explain_no_table(thd, select_lex, message, ctx, HA_POS_ERROR).send();
   DBUG_RETURN(ret);
 }
-
 
 /**
   Check that we are allowed to explain all views in list.
@@ -1911,7 +1715,7 @@ bool explain_no_table(THD *thd, SELECT_LEX *select_lex, const char *message,
 
 static bool check_acl_for_explain(const TABLE_LIST *table_list)
 {
-  for (const TABLE_LIST *tbl= table_list; tbl; tbl= tbl->next_global)
+  for (const TABLE_LIST *tbl = table_list; tbl; tbl = tbl->next_global)
   {
     if (tbl->is_view() && tbl->view_no_explain)
     {
@@ -1921,7 +1725,6 @@ static bool check_acl_for_explain(const TABLE_LIST *table_list)
   }
   return false;
 }
-
 
 /**
   EXPLAIN handling for single-table UPDATE and DELETE queries
@@ -1939,14 +1742,12 @@ static bool check_acl_for_explain(const TABLE_LIST *table_list)
   @return false if success, true if error
 */
 
-bool explain_single_table_modification(THD *ethd,
-                                       const Modification_plan *plan,
-                                       SELECT_LEX *select)
+bool explain_single_table_modification(THD *ethd, const Modification_plan *plan, SELECT_LEX *select)
 {
   DBUG_ENTER("explain_single_table_modification");
   Query_result_send result;
-  const THD *const query_thd= select->master_unit()->thd;
-  const bool other= (query_thd != ethd);
+  const THD *const query_thd = select->master_unit()->thd;
+  const bool other = (query_thd != ethd);
   bool ret;
 
   /**
@@ -1960,50 +1761,36 @@ bool explain_single_table_modification(THD *ethd,
     However without the presence of the top-level JOIN we have to
     prepare/initialize Query_result_send object manually.
   */
-  List<Item> dummy;
-  if (result.prepare(dummy, ethd->lex->unit) ||
-      result.prepare2())
+  List< Item > dummy;
+  if (result.prepare(dummy, ethd->lex->unit) || result.prepare2())
     DBUG_RETURN(true); /* purecov: inspected */
 
   ethd->lex->explain_format->send_headers(&result);
 
   if (!other)
   {
-    for (SELECT_LEX_UNIT *unit= select->first_inner_unit();
-         unit;
-         unit= unit->next_unit())
+    for (SELECT_LEX_UNIT *unit = select->first_inner_unit(); unit; unit = unit->next_unit())
     {
       // Derived tables and const subqueries are already optimized
       if (!unit->is_optimized() && unit->optimize(ethd))
-        DBUG_RETURN(true);  /* purecov: inspected */
+        DBUG_RETURN(true); /* purecov: inspected */
     }
   }
 
-
   if (!plan || plan->zero_result)
   {
-    ret= Explain_no_table(ethd, select,
-                          plan ? plan->message : plan_not_ready,
-                          CTX_JOIN,
-                          HA_POS_ERROR).send();
+    ret = Explain_no_table(ethd, select, plan ? plan->message : plan_not_ready, CTX_JOIN, HA_POS_ERROR).send();
   }
   else
   {
     // Check access rights for views
-    if (other &&
-        check_acl_for_explain(query_thd->query_plan.get_lex()->query_tables))
-      ret= true;
+    if (other && check_acl_for_explain(query_thd->query_plan.get_lex()->query_tables))
+      ret = true;
     else
-      ret= Explain_table(ethd, select, plan->table,
-                         plan->tab,
-                         plan->key,
-                         plan->limit,
-                         plan->need_tmp_table,
-                         plan->need_sort,
-                         plan->mod_type,
-                         plan->used_key_is_modified,
-                         plan->message).send() ||
-        ethd->is_error();
+      ret = Explain_table(ethd, select, plan->table, plan->tab, plan->key, plan->limit, plan->need_tmp_table,
+                          plan->need_sort, plan->mod_type, plan->used_key_is_modified, plan->message)
+                .send() ||
+            ethd->is_error();
   }
   if (ret)
     result.abort_result_set();
@@ -2011,7 +1798,6 @@ bool explain_single_table_modification(THD *ethd,
     result.send_eof();
   DBUG_RETURN(ret);
 }
-
 
 /**
   Explain select_lex's join.
@@ -2021,22 +1807,20 @@ bool explain_single_table_modification(THD *ethd,
   @param ctx         current explain context
 */
 
-bool
-explain_query_specification(THD *ethd, SELECT_LEX *select_lex,
-                            enum_parsing_context ctx)
+bool explain_query_specification(THD *ethd, SELECT_LEX *select_lex, enum_parsing_context ctx)
 {
-  Opt_trace_context * const trace= &ethd->opt_trace;
+  Opt_trace_context *const trace = &ethd->opt_trace;
   Opt_trace_object trace_wrapper(trace);
   Opt_trace_object trace_exec(trace, "join_explain");
   trace_exec.add_select_number(select_lex->select_number);
   Opt_trace_array trace_steps(trace, "steps");
-  JOIN *join= select_lex->join;
+  JOIN *join = select_lex->join;
 
   if (!join || join->get_plan_state() == JOIN::NO_PLAN)
     return explain_no_table(ethd, select_lex, plan_not_ready, ctx);
 
-  const bool other= (join->thd != ethd);
-  THD::Query_plan const *query_plan= &join->thd->query_plan;
+  const bool other = (join->thd != ethd);
+  THD::Query_plan const *query_plan = &join->thd->query_plan;
 
   // Check access rights for views
   if (other && check_acl_for_explain(query_plan->get_lex()->query_tables))
@@ -2050,8 +1834,7 @@ explain_query_specification(THD *ethd, SELECT_LEX *select_lex,
   {
     case JOIN::ZERO_RESULT:
     {
-      ret= explain_no_table(ethd, select_lex, join->zero_result_cause,
-                            ctx);
+      ret = explain_no_table(ethd, select_lex, join->zero_result_cause, ctx);
       break;
     }
     case JOIN::NO_TABLES:
@@ -2060,20 +1843,15 @@ explain_query_specification(THD *ethd, SELECT_LEX *select_lex,
           query_plan->get_lex()->insert_table_leaf->select_lex == select_lex)
       {
         // INSERT/REPLACE SELECT ... FROM dual
-        ret= Explain_table(ethd, select_lex,
-                           query_plan->get_lex()->insert_table_leaf->table,
-                           NULL,
-                           MAX_KEY,
-                           HA_POS_ERROR,
-                           false,
-                           false,
-                           (query_plan->get_lex()->sql_command == SQLCOM_INSERT_SELECT ?
-                            MT_INSERT : MT_REPLACE),
-                           false,
-                           NULL).send() || ethd->is_error();
+        ret = Explain_table(ethd, select_lex, query_plan->get_lex()->insert_table_leaf->table, NULL, MAX_KEY,
+                            HA_POS_ERROR, false, false,
+                            (query_plan->get_lex()->sql_command == SQLCOM_INSERT_SELECT ? MT_INSERT : MT_REPLACE),
+                            false, NULL)
+                  .send() ||
+              ethd->is_error();
       }
       else
-        ret= explain_no_table(ethd, select_lex, "No tables used", CTX_JOIN);
+        ret = explain_no_table(ethd, select_lex, "No tables used", CTX_JOIN);
 
       break;
     }
@@ -2087,27 +1865,25 @@ explain_query_specification(THD *ethd, SELECT_LEX *select_lex,
       if (!other && !join->is_executed() && join->prepare_result())
         return true; /* purecov: inspected */
 
-      const Explain_format_flags *flags= &join->explain_flags;
-      const bool need_tmp_table= flags->any(ESP_USING_TMPTABLE);
-      const bool need_order= flags->any(ESP_USING_FILESORT);
-      const bool distinct= flags->get(ESC_DISTINCT, ESP_EXISTS);
+      const Explain_format_flags *flags = &join->explain_flags;
+      const bool need_tmp_table = flags->any(ESP_USING_TMPTABLE);
+      const bool need_order = flags->any(ESP_USING_FILESORT);
+      const bool distinct = flags->get(ESC_DISTINCT, ESP_EXISTS);
 
       if (select_lex == select_lex->master_unit()->fake_select_lex)
-        ret= Explain_union_result(ethd, select_lex).send();
+        ret = Explain_union_result(ethd, select_lex).send();
       else
-        ret= Explain_join(ethd, select_lex, need_tmp_table, need_order,
-                          distinct).send();
+        ret = Explain_join(ethd, select_lex, need_tmp_table, need_order, distinct).send();
       break;
     }
     default:
       assert(0); /* purecov: inspected */
-      ret= true;
+      ret = true;
   }
   assert(ret || !ethd->is_error());
-  ret|= ethd->is_error();
+  ret |= ethd->is_error();
   return ret;
 }
-
 
 /**
   EXPLAIN handling for SELECT, INSERT/REPLACE SELECT, and multi-table
@@ -2145,40 +1921,38 @@ bool explain_query(THD *ethd, SELECT_LEX_UNIT *unit)
 {
   DBUG_ENTER("explain_query");
 
-  const THD *const query_thd= unit->thd; // THD of query to be explained
-  const bool other= (ethd != query_thd);
+  const THD *const query_thd = unit->thd;  // THD of query to be explained
+  const bool other = (ethd != query_thd);
 
-  Query_result *explain_result= NULL;
+  Query_result *explain_result = NULL;
 
   if (!other)
-    explain_result= unit->query_result() ?
-                    unit->query_result() : unit->first_select()->query_result();
+    explain_result = unit->query_result() ? unit->query_result() : unit->first_select()->query_result();
 
   Query_result_explain explain_wrapper(unit, explain_result);
 
-  if (other)  
+  if (other)
   {
-    if (!((explain_result= new Query_result_send)))
+    if (!((explain_result = new Query_result_send)))
       DBUG_RETURN(true); /* purecov: inspected */
-    List<Item> dummy;
-    if (explain_result->prepare(dummy, ethd->lex->unit) ||
-        explain_result->prepare2())
+    List< Item > dummy;
+    if (explain_result->prepare(dummy, ethd->lex->unit) || explain_result->prepare2())
       DBUG_RETURN(true); /* purecov: inspected */
   }
   else
   {
     assert(unit->is_optimized());
     if (explain_result->need_explain_interceptor())
-      explain_result= &explain_wrapper;
+      explain_result = &explain_wrapper;
   }
 
   ethd->lex->explain_format->send_headers(explain_result);
 
   // Reset OFFSET/LIMIT for EXPLAIN output
-  ethd->lex->unit->offset_limit_cnt= 0;
-  ethd->lex->unit->select_limit_cnt= 0;
+  ethd->lex->unit->offset_limit_cnt = 0;
+  ethd->lex->unit->select_limit_cnt = 0;
 
-  const bool res= mysql_explain_unit(ethd, unit);
+  const bool res = mysql_explain_unit(ethd, unit);
   /*
     1) The code which prints the extended description is not robust
        against malformed queries, so skip it if we have an error.
@@ -2186,16 +1960,15 @@ bool explain_query(THD *ethd, SELECT_LEX_UNIT *unit)
     (see Explain::can_print_clauses())
     3) Currently only SELECT queries can be printed (TODO: fix this)
   */
-  if (!res &&                                       // (1)
-      !other &&                                     // (2)
-      query_thd->query_plan.get_command() == SQLCOM_SELECT) // (3)
+  if (!res &&                                                // (1)
+      !other &&                                              // (2)
+      query_thd->query_plan.get_command() == SQLCOM_SELECT)  // (3)
   {
-    StringBuffer<1024> str;
+    StringBuffer< 1024 > str;
     /*
       The warnings system requires input in utf8, see mysqld_show_warnings().
     */
-    unit->print(&str, enum_query_type(QT_TO_SYSTEM_CHARSET |
-                                      QT_SHOW_SELECT_NUMBER));
+    unit->print(&str, enum_query_type(QT_TO_SYSTEM_CHARSET | QT_SHOW_SELECT_NUMBER));
     str.append('\0');
     push_warning(ethd, Sql_condition::SL_NOTE, ER_YES, str.ptr());
   }
@@ -2210,7 +1983,6 @@ bool explain_query(THD *ethd, SELECT_LEX_UNIT *unit)
 
   DBUG_RETURN(res);
 }
-
 
 /**
   Explain UNION or subqueries of the unit
@@ -2227,13 +1999,13 @@ bool explain_query(THD *ethd, SELECT_LEX_UNIT *unit)
 bool mysql_explain_unit(THD *ethd, SELECT_LEX_UNIT *unit)
 {
   DBUG_ENTER("mysql_explain_unit");
-  bool res= false;
+  bool res = false;
   if (unit->is_union())
-    res= unit->explain(ethd);
+    res = unit->explain(ethd);
   else
-    res= explain_query_specification(ethd, unit->first_select(), CTX_JOIN);
+    res = explain_query_specification(ethd, unit->first_select(), CTX_JOIN);
   assert(res || !ethd->is_error());
-  res|= ethd->is_error();
+  res |= ethd->is_error();
   DBUG_RETURN(res);
 }
 
@@ -2246,12 +2018,10 @@ bool mysql_explain_unit(THD *ethd, SELECT_LEX_UNIT *unit)
   It is the responsibility of the caller to release LOCK_thd_data.
   We release LOCK_query_plan in the DTOR.
 */
-class Find_thd_query_lock: public Find_THD_Impl
+class Find_thd_query_lock : public Find_THD_Impl
 {
-public:
-  explicit Find_thd_query_lock(my_thread_id value)
-    : m_id(value), m_thd(NULL)
-  {}
+ public:
+  explicit Find_thd_query_lock(my_thread_id value) : m_id(value), m_thd(NULL) {}
   ~Find_thd_query_lock()
   {
     if (m_thd)
@@ -2263,16 +2033,16 @@ public:
     {
       mysql_mutex_lock(&thd->LOCK_thd_data);
       thd->lock_query_plan();
-      m_thd= thd;
+      m_thd = thd;
       return true;
     }
     return false;
   }
-private:
-  const my_thread_id m_id; ///< The thread id we are looking for.
-  THD *m_thd;              ///< THD we found, having this ID.
-};
 
+ private:
+  const my_thread_id m_id;  ///< The thread id we are looking for.
+  THD *m_thd;               ///< THD we found, having this ID.
+};
 
 /**
    Entry point for EXPLAIN CONNECTION: locates the connection by its ID, takes
@@ -2281,11 +2051,11 @@ private:
 */
 void mysql_explain_other(THD *thd)
 {
-  bool res= false;
-  THD *query_thd= NULL;
-  bool send_ok= false;
+  bool res = false;
+  THD *query_thd = NULL;
+  bool send_ok = false;
   char *user;
-  bool unlock_thd_data= false;
+  bool unlock_thd_data = false;
   THD::Query_plan *qp;
   DEBUG_SYNC(thd, "before_explain_other");
   /*
@@ -2294,31 +2064,28 @@ void mysql_explain_other(THD *thd)
     2) has switched to another user
     then it's not super user.
   */
-  if (!(thd->m_main_security_ctx.check_access(
-          GLOBAL_ACLS & ~GRANT_ACL)) || // (1)
-      (0 != strcmp(thd->m_main_security_ctx.priv_user().str,        // (2)
+  if (!(thd->m_main_security_ctx.check_access(GLOBAL_ACLS & ~GRANT_ACL)) ||  // (1)
+      (0 != strcmp(thd->m_main_security_ctx.priv_user().str,                 // (2)
                    thd->security_context()->priv_user().str) ||
-       0 != my_strcasecmp(system_charset_info,
-                          thd->m_main_security_ctx.priv_host().str,
+       0 != my_strcasecmp(system_charset_info, thd->m_main_security_ctx.priv_host().str,
                           thd->security_context()->priv_host().str)))
   {
     // Can see only connections of this user
-    user= (char *) thd->security_context()->priv_user().str;
+    user = (char *)thd->security_context()->priv_user().str;
   }
   else
   {
     // Can see all connections
-    user= NULL;
+    user = NULL;
   }
 
   // Pick thread
   Find_thd_query_lock find_thd_query_lock(thd->lex->query_id);
   if (!thd->killed)
   {
-    query_thd= Global_THD_manager::
-               get_instance()->find_thd(&find_thd_query_lock);
+    query_thd = Global_THD_manager::get_instance()->find_thd(&find_thd_query_lock);
     if (query_thd)
-      unlock_thd_data= true;
+      unlock_thd_data = true;
   }
 
   if (!query_thd)
@@ -2327,10 +2094,9 @@ void mysql_explain_other(THD *thd)
     goto err;
   }
 
-  qp= &query_thd->query_plan;
+  qp = &query_thd->query_plan;
 
-  if (query_thd->get_protocol()->connection_alive() &&
-      !query_thd->system_thread && qp->get_command() != SQLCOM_END)
+  if (query_thd->get_protocol()->connection_alive() && !query_thd->system_thread && qp->get_command() != SQLCOM_END)
   {
     /*
       Don't explain:
@@ -2338,25 +2104,20 @@ void mysql_explain_other(THD *thd)
       2) EXPLAIN to avoid clash in EXPLAIN code
       3) statements of stored routine
     */
-    if (!qp->is_ps_query() &&                                        // (1)
-        is_explainable_query(qp->get_command()) &&
-        !qp->get_lex()->describe &&                                  // (2)
-        qp->get_lex()->sphead == NULL)                               // (3)
+    if (!qp->is_ps_query() &&                                                   // (1)
+        is_explainable_query(qp->get_command()) && !qp->get_lex()->describe &&  // (2)
+        qp->get_lex()->sphead == NULL)                                          // (3)
     {
-      Security_context *tmp_sctx= query_thd->security_context();
+      Security_context *tmp_sctx = query_thd->security_context();
       assert(tmp_sctx->user().str);
       if (user && strcmp(tmp_sctx->user().str, user))
       {
-        my_error(ER_ACCESS_DENIED_ERROR, MYF(0),
-                 thd->security_context()->priv_user().str,
-                 thd->security_context()->priv_host().str,
-                 (thd->password ?
-                  ER(ER_YES) :
-                  ER(ER_NO)));
+        my_error(ER_ACCESS_DENIED_ERROR, MYF(0), thd->security_context()->priv_user().str,
+                 thd->security_context()->priv_host().str, (thd->password ? ER(ER_YES) : ER(ER_NO)));
         goto err;
       }
       mysql_mutex_unlock(&query_thd->LOCK_thd_data);
-      unlock_thd_data= false;
+      unlock_thd_data = false;
     }
     else
     {
@@ -2366,30 +2127,29 @@ void mysql_explain_other(THD *thd)
   }
   else
   {
-    send_ok= true;
+    send_ok = true;
     goto err;
   }
   DEBUG_SYNC(thd, "explain_other_got_thd");
   // Get topmost query
-  switch(qp->get_command())
+  switch (qp->get_command())
   {
     case SQLCOM_UPDATE_MULTI:
     case SQLCOM_DELETE_MULTI:
     case SQLCOM_REPLACE_SELECT:
     case SQLCOM_INSERT_SELECT:
     case SQLCOM_SELECT:
-      res= explain_query(thd, qp->get_lex()->unit);
+      res = explain_query(thd, qp->get_lex()->unit);
       break;
     case SQLCOM_UPDATE:
     case SQLCOM_DELETE:
     case SQLCOM_INSERT:
     case SQLCOM_REPLACE:
-      res= explain_single_table_modification(thd, qp->get_modification_plan(),
-                                             qp->get_lex()->unit->first_select());
+      res = explain_single_table_modification(thd, qp->get_modification_plan(), qp->get_lex()->unit->first_select());
       break;
     default:
-      assert(0); /* purecov: inspected */
-      send_ok= true; /* purecov: inspected */
+      assert(0);      /* purecov: inspected */
+      send_ok = true; /* purecov: inspected */
       break;
   }
 
@@ -2402,7 +2162,6 @@ err:
     my_ok(thd, 0);
 }
 
-
 void Modification_plan::register_in_thd()
 {
   thd->lock_query_plan();
@@ -2410,7 +2169,6 @@ void Modification_plan::register_in_thd()
   thd->query_plan.set_modification_plan(this);
   thd->unlock_query_plan();
 }
-
 
 /**
   Modification_plan's constructor, to represent that we will use an access
@@ -2436,24 +2194,26 @@ void Modification_plan::register_in_thd()
   @param rows           How many rows we plan to modify in the table.
 */
 
-Modification_plan::Modification_plan(THD *thd_arg,
-                                     enum_mod_type mt, QEP_TAB *tab_arg,
-                                     uint key_arg,
-                                     ha_rows limit_arg, bool need_tmp_table_arg,
-                                     bool need_sort_arg,
-                                     bool used_key_is_modified_arg,
-                                     ha_rows rows) :
-  thd(thd_arg), mod_type(mt), table(tab_arg->table()), tab(tab_arg),
-  key(key_arg), limit(limit_arg),
-  need_tmp_table(need_tmp_table_arg), need_sort(need_sort_arg),
-  used_key_is_modified(used_key_is_modified_arg), message(NULL),
-  zero_result(false), examined_rows(rows)
+Modification_plan::Modification_plan(THD *thd_arg, enum_mod_type mt, QEP_TAB *tab_arg, uint key_arg, ha_rows limit_arg,
+                                     bool need_tmp_table_arg, bool need_sort_arg, bool used_key_is_modified_arg,
+                                     ha_rows rows)
+    : thd(thd_arg),
+      mod_type(mt),
+      table(tab_arg->table()),
+      tab(tab_arg),
+      key(key_arg),
+      limit(limit_arg),
+      need_tmp_table(need_tmp_table_arg),
+      need_sort(need_sort_arg),
+      used_key_is_modified(used_key_is_modified_arg),
+      message(NULL),
+      zero_result(false),
+      examined_rows(rows)
 {
   assert(current_thd == thd);
   if (!thd->in_sub_stmt)
     register_in_thd();
 }
-
 
 /**
   Modification_plan's constructor, to convey a message in the "extra" column
@@ -2473,29 +2233,32 @@ Modification_plan::Modification_plan(THD *thd_arg,
   @param rows       How many rows we plan to modify in the table.
 */
 
-Modification_plan::Modification_plan(THD *thd_arg,
-                                     enum_mod_type mt, TABLE *table_arg,
-                                     const char *message_arg,
-                                     bool zero_result_arg,
-                                     ha_rows rows) :
-  thd(thd_arg), mod_type(mt), table(table_arg),
-  tab(NULL), key(MAX_KEY), limit(HA_POS_ERROR), need_tmp_table(false),
-  need_sort(false), used_key_is_modified(false), message(message_arg),
-  zero_result(zero_result_arg), examined_rows(rows)
+Modification_plan::Modification_plan(THD *thd_arg, enum_mod_type mt, TABLE *table_arg, const char *message_arg,
+                                     bool zero_result_arg, ha_rows rows)
+    : thd(thd_arg),
+      mod_type(mt),
+      table(table_arg),
+      tab(NULL),
+      key(MAX_KEY),
+      limit(HA_POS_ERROR),
+      need_tmp_table(false),
+      need_sort(false),
+      used_key_is_modified(false),
+      message(message_arg),
+      zero_result(zero_result_arg),
+      examined_rows(rows)
 {
   assert(current_thd == thd);
   if (!thd->in_sub_stmt)
     register_in_thd();
 };
 
-
 Modification_plan::~Modification_plan()
 {
   if (!thd->in_sub_stmt)
   {
     thd->lock_query_plan();
-    assert(current_thd == thd &&
-           thd->query_plan.get_modification_plan() == this);
+    assert(current_thd == thd && thd->query_plan.get_modification_plan() == this);
     thd->query_plan.set_modification_plan(NULL);
     thd->unlock_query_plan();
   }

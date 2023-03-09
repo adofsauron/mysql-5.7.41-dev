@@ -20,11 +20,11 @@
    along with this program; if not, write to the Free Software
    Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301  USA */
 
-#include "my_thread.h"          /* my_thread_id */
-#include "my_timer.h"           /* my_timer_t */
-#include "sql_class.h"          /* THD */
-#include "sql_timer.h"          /* thd_timer_set, etc. */
-#include "sql_parse.h"          /* Global_THD_manager, Find_thd_with_id */
+#include "my_thread.h" /* my_thread_id */
+#include "my_timer.h"  /* my_timer_t */
+#include "sql_class.h" /* THD */
+#include "sql_timer.h" /* thd_timer_set, etc. */
+#include "sql_parse.h" /* Global_THD_manager, Find_thd_with_id */
 #include "mysqld.h"
 
 struct st_thd_timer_info
@@ -45,26 +45,22 @@ C_MODE_END
   @return NULL on failure.
 */
 
-static THD_timer_info *
-thd_timer_create(void)
+static THD_timer_info *thd_timer_create(void)
 {
   THD_timer_info *thd_timer;
   DBUG_ENTER("thd_timer_create");
 
-  thd_timer= (THD_timer_info *) my_malloc(key_memory_thd_timer,
-                                       sizeof(THD_timer_info),
-                                       MYF(MY_WME));
+  thd_timer = (THD_timer_info *)my_malloc(key_memory_thd_timer, sizeof(THD_timer_info), MYF(MY_WME));
 
   if (thd_timer == NULL)
     DBUG_RETURN(NULL);
 
-  thd_timer->thread_id= 0;
+  thd_timer->thread_id = 0;
   mysql_mutex_init(key_thd_timer_mutex, &thd_timer->mutex, MY_MUTEX_INIT_FAST);
-  thd_timer->destroy= 0;
-  thd_timer->timer.notify_function= timer_callback;
+  thd_timer->destroy = 0;
+  thd_timer->timer.notify_function = timer_callback;
 
-  if (DBUG_EVALUATE_IF("thd_timer_create_failure", 0, 1) &&
-      ! my_timer_create(&thd_timer->timer))
+  if (DBUG_EVALUATE_IF("thd_timer_create_failure", 0, 1) && !my_timer_create(&thd_timer->timer))
     DBUG_RETURN(thd_timer);
 
   mysql_mutex_destroy(&thd_timer->mutex);
@@ -72,7 +68,6 @@ thd_timer_create(void)
 
   DBUG_RETURN(NULL);
 }
-
 
 /**
   Notify a thread (session) that its timer has expired.
@@ -82,11 +77,10 @@ thd_timer_create(void)
   @return true if the object should be destroyed.
 */
 
-static bool
-timer_notify(THD_timer_info *thd_timer)
+static bool timer_notify(THD_timer_info *thd_timer)
 {
   Find_thd_with_id find_thd_with_id(thd_timer->thread_id);
-  THD *thd= Global_THD_manager::get_instance()->find_thd(&find_thd_with_id);
+  THD *thd = Global_THD_manager::get_instance()->find_thd(&find_thd_with_id);
 
   assert(!thd_timer->destroy || !thd_timer->thread_id);
   /*
@@ -105,11 +99,10 @@ timer_notify(THD_timer_info *thd_timer)
   }
 
   /* Mark the object as unreachable. */
-  thd_timer->thread_id= 0;
+  thd_timer->thread_id = 0;
 
   return thd_timer->destroy;
 }
-
 
 /**
   Timer expiration notification callback.
@@ -119,22 +112,20 @@ timer_notify(THD_timer_info *thd_timer)
   @note Invoked in a separate thread of control.
 */
 
-static void
-timer_callback(my_timer_t *timer)
+static void timer_callback(my_timer_t *timer)
 {
   bool destroy;
   THD_timer_info *thd_timer;
 
-  thd_timer= my_container_of(timer, THD_timer_info, timer);
+  thd_timer = my_container_of(timer, THD_timer_info, timer);
 
   mysql_mutex_lock(&thd_timer->mutex);
-  destroy= timer_notify(thd_timer);
+  destroy = timer_notify(thd_timer);
   mysql_mutex_unlock(&thd_timer->mutex);
 
   if (destroy)
     thd_timer_destroy(thd_timer);
 }
-
 
 /**
   Set the time until the currently running statement is aborted.
@@ -147,23 +138,21 @@ timer_callback(my_timer_t *timer)
   @return NULL on failure.
 */
 
-THD_timer_info *
-thd_timer_set(THD *thd, THD_timer_info *thd_timer, unsigned long time)
+THD_timer_info *thd_timer_set(THD *thd, THD_timer_info *thd_timer, unsigned long time)
 {
   DBUG_ENTER("thd_timer_set");
 
   /* Create a new thread timer object if one was not provided. */
-  if (thd_timer == NULL && (thd_timer= thd_timer_create()) == NULL)
+  if (thd_timer == NULL && (thd_timer = thd_timer_create()) == NULL)
     DBUG_RETURN(NULL);
 
   assert(!thd_timer->destroy && !thd_timer->thread_id);
 
   /* Mark the notification as pending. */
-  thd_timer->thread_id= thd->thread_id();
+  thd_timer->thread_id = thd->thread_id();
 
   /* Arm the timer. */
-  if (DBUG_EVALUATE_IF("thd_timer_set_failure", 0, 1) &&
-      !my_timer_set(&thd_timer->timer, time))
+  if (DBUG_EVALUATE_IF("thd_timer_set_failure", 0, 1) && !my_timer_set(&thd_timer->timer, time))
     DBUG_RETURN(thd_timer);
 
   /* Dispose of the (cached) timer object. */
@@ -171,7 +160,6 @@ thd_timer_set(THD *thd, THD_timer_info *thd_timer, unsigned long time)
 
   DBUG_RETURN(NULL);
 }
-
 
 /**
   Reap a (possibly) pending timer object.
@@ -181,8 +169,7 @@ thd_timer_set(THD *thd, THD_timer_info *thd_timer, unsigned long time)
   @return true if the timer object is unreachable.
 */
 
-static bool
-reap_timer(THD_timer_info *thd_timer, bool pending)
+static bool reap_timer(THD_timer_info *thd_timer, bool pending)
 {
   /* Cannot be tagged for destruction. */
   assert(!thd_timer->destroy);
@@ -195,9 +182,9 @@ reap_timer(THD_timer_info *thd_timer, bool pending)
     expiring. Otherwise, the timer notification function might be
     executing asynchronously in the context of a separate thread.
   */
-  bool unreachable= pending ? thd_timer->thread_id == 0 : true;
+  bool unreachable = pending ? thd_timer->thread_id == 0 : true;
 
-  thd_timer->thread_id= 0;
+  thd_timer->thread_id = 0;
 
   return unreachable;
 }
@@ -211,27 +198,25 @@ reap_timer(THD_timer_info *thd_timer, bool pending)
           Otherwise, the given timer object is returned.
 */
 
-THD_timer_info *
-thd_timer_reset(THD_timer_info *thd_timer)
+THD_timer_info *thd_timer_reset(THD_timer_info *thd_timer)
 {
   bool unreachable;
   int status, state;
   DBUG_ENTER("thd_timer_cancel");
 
-  status= my_timer_cancel(&thd_timer->timer, &state);
+  status = my_timer_cancel(&thd_timer->timer, &state);
 
   /*
     If the notification function cannot possibly run anymore, cache
     the timer object as there are no outstanding references to it.
   */
   mysql_mutex_lock(&thd_timer->mutex);
-  unreachable= reap_timer(thd_timer, status ? true : !state);
-  thd_timer->destroy= !unreachable;
+  unreachable = reap_timer(thd_timer, status ? true : !state);
+  thd_timer->destroy = !unreachable;
   mysql_mutex_unlock(&thd_timer->mutex);
 
   DBUG_RETURN(unreachable ? thd_timer : NULL);
 }
-
 
 /**
   Release resources allocated for a thread timer.
@@ -239,8 +224,7 @@ thd_timer_reset(THD_timer_info *thd_timer)
   @param  thd_timer   Thread timer object.
 */
 
-void
-thd_timer_destroy(THD_timer_info *thd_timer)
+void thd_timer_destroy(THD_timer_info *thd_timer)
 {
   DBUG_ENTER("thd_timer_destroy");
 

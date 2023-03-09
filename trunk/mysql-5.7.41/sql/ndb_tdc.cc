@@ -28,9 +28,8 @@
 #define MYSQL_SERVER
 #endif
 
-#include "table.h"          // TABLE_LIST
-#include "sql_base.h"       // close_cached_tables()
-
+#include "table.h"     // TABLE_LIST
+#include "sql_base.h"  // close_cached_tables()
 
 /*
   Close all tables in MySQL Server's table definition cache
@@ -41,14 +40,13 @@ bool ndb_tdc_close_cached_tables(void)
 {
   DBUG_ENTER("ndb_tdc_close_cached_tables");
 
-  const int res = close_cached_tables(NULL, // No need for thd pointer
-                                      NULL, // Close all tables
-                                      false, // Don't wait
-                                      0 // Timeout unused when not waiting
-                                      );
+  const int res = close_cached_tables(NULL,   // No need for thd pointer
+                                      NULL,   // Close all tables
+                                      false,  // Don't wait
+                                      0       // Timeout unused when not waiting
+  );
   DBUG_RETURN(res);
 }
-
 
 /*
   Close table in MySQL Server's table definition cache
@@ -59,10 +57,8 @@ bool ndb_tdc_close_cached_tables(void)
   @param[in] tabname Name of table
 */
 
-bool
-ndb_tdc_close_cached_table(THD* thd, const char* dbname, const char* tabname)
+bool ndb_tdc_close_cached_table(THD *thd, const char *dbname, const char *tabname)
 {
-
   DBUG_ENTER("ndb_tdc_close_cached_table");
   DBUG_PRINT("enter", ("dbname: %s, tabname: %s", dbname, tabname));
 
@@ -70,13 +66,12 @@ ndb_tdc_close_cached_table(THD* thd, const char* dbname, const char* tabname)
   // required for calling close_cached_tables()
   TABLE_LIST table_list;
   memset(&table_list, 0, sizeof(table_list));
-  table_list.db= (char *)dbname;
-  table_list.alias= table_list.table_name= (char *)tabname;
+  table_list.db = (char *)dbname;
+  table_list.alias = table_list.table_name = (char *)tabname;
 
-  const int res = close_cached_tables(thd,
-                                      &table_list,
-                                      false, // Don't wait
-                                      0 // Timeout unused when not waiting
-                                      );
+  const int res = close_cached_tables(thd, &table_list,
+                                      false,  // Don't wait
+                                      0       // Timeout unused when not waiting
+  );
   DBUG_RETURN(res);
 }

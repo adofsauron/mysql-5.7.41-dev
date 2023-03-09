@@ -24,54 +24,43 @@
 
 #include "ndb_component.h"
 
-Ndb_component::Ndb_component(const char *name)
-  : m_thread_state(TS_UNINIT),
-    m_name(name)
-{
-}
+Ndb_component::Ndb_component(const char *name) : m_thread_state(TS_UNINIT), m_name(name) {}
 
-Ndb_component::~Ndb_component()
-{
+Ndb_component::~Ndb_component() {}
 
-}
-
-int
-Ndb_component::init()
+int Ndb_component::init()
 {
   assert(m_thread_state == TS_UNINIT);
 
   native_mutex_init(&m_start_stop_mutex, MY_MUTEX_INIT_FAST);
   native_cond_init(&m_start_stop_cond);
 
-  int res= do_init();
+  int res = do_init();
   if (res == 0)
   {
-    m_thread_state= TS_INIT;
+    m_thread_state = TS_INIT;
   }
   return res;
 }
 
-extern "C" void *
-Ndb_component_run_C(void * arg)
+extern "C" void *Ndb_component_run_C(void *arg)
 {
   my_thread_init();
-  Ndb_component * self = reinterpret_cast<Ndb_component*>(arg);
+  Ndb_component *self = reinterpret_cast< Ndb_component * >(arg);
   self->run_impl();
   my_thread_end();
   my_thread_exit(0);
-  return NULL;                              // Avoid compiler warnings
+  return NULL;  // Avoid compiler warnings
 }
 
-extern my_thread_attr_t connection_attrib; // mysql global pthread attr
+extern my_thread_attr_t connection_attrib;  // mysql global pthread attr
 
-int
-Ndb_component::start()
+int Ndb_component::start()
 {
   assert(m_thread_state == TS_INIT);
   native_mutex_lock(&m_start_stop_mutex);
-  m_thread_state= TS_STARTING;
-  int res= my_thread_create(&m_thread, &connection_attrib, Ndb_component_run_C,
-                            this);
+  m_thread_state = TS_STARTING;
+  int res = my_thread_create(&m_thread, &connection_attrib, Ndb_component_run_C, this);
 
   if (res == 0)
   {
@@ -87,13 +76,12 @@ Ndb_component::start()
   return res;
 }
 
-void
-Ndb_component::run_impl()
+void Ndb_component::run_impl()
 {
   native_mutex_lock(&m_start_stop_mutex);
   if (m_thread_state == TS_STARTING)
   {
-    m_thread_state= TS_RUNNING;
+    m_thread_state = TS_RUNNING;
     native_cond_signal(&m_start_stop_cond);
     native_mutex_unlock(&m_start_stop_mutex);
     do_run();
@@ -104,8 +92,7 @@ Ndb_component::run_impl()
   native_mutex_unlock(&m_start_stop_mutex);
 }
 
-bool
-Ndb_component::is_stop_requested()
+bool Ndb_component::is_stop_requested()
 {
   bool res = false;
   native_mutex_lock(&m_start_stop_mutex);
@@ -114,18 +101,15 @@ Ndb_component::is_stop_requested()
   return res;
 }
 
-int
-Ndb_component::stop()
+int Ndb_component::stop()
 {
   log_info("Stop");
   native_mutex_lock(&m_start_stop_mutex);
-  assert(m_thread_state == TS_RUNNING ||
-         m_thread_state == TS_STOPPING ||
-         m_thread_state == TS_STOPPED);
+  assert(m_thread_state == TS_RUNNING || m_thread_state == TS_STOPPING || m_thread_state == TS_STOPPED);
 
   if (m_thread_state == TS_RUNNING)
   {
-    m_thread_state= TS_STOPPING;
+    m_thread_state = TS_STOPPING;
   }
 
   // Give subclass a call, should wake itself up to quickly detect the stop
@@ -145,8 +129,7 @@ Ndb_component::stop()
   return 0;
 }
 
-int
-Ndb_component::deinit()
+int Ndb_component::deinit()
 {
   assert(m_thread_state == TS_STOPPED);
   native_mutex_destroy(&m_start_stop_mutex);
@@ -155,7 +138,6 @@ Ndb_component::deinit()
 }
 
 #include "ndb_log.h"
-
 
 void Ndb_component::log_verbose(unsigned verbose_level, const char *fmt, ...)
 {
@@ -169,7 +151,6 @@ void Ndb_component::log_verbose(unsigned verbose_level, const char *fmt, ...)
   va_end(args);
 }
 
-
 void Ndb_component::log_error(const char *fmt, ...)
 {
   va_list args;
@@ -178,7 +159,6 @@ void Ndb_component::log_error(const char *fmt, ...)
   va_end(args);
 }
 
-
 void Ndb_component::log_warning(const char *fmt, ...)
 {
   va_list args;
@@ -186,7 +166,6 @@ void Ndb_component::log_warning(const char *fmt, ...)
   ndb_log_print(NDB_LOG_WARNING_LEVEL, m_name, fmt, args);
   va_end(args);
 }
-
 
 void Ndb_component::log_info(const char *fmt, ...)
 {

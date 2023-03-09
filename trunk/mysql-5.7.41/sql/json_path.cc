@@ -31,21 +31,25 @@
 #include "json_path.h"
 
 #include "json_dom.h"
-#include "mysqld.h"                             // key_memory_JSON
-#include "rapidjson/rapidjson.h"                // rapidjson::UTF8<char>::Decode
-#include "rapidjson/memorystream.h"             // rapidjson::MemoryStream
-#include "sql_const.h"                          // STRING_BUFFER_USUAL_SIZE
-#include "sql_string.h"                         // String
-#include "template_utils.h"                     // down_cast
+#include "mysqld.h"                  // key_memory_JSON
+#include "rapidjson/rapidjson.h"     // rapidjson::UTF8<char>::Decode
+#include "rapidjson/memorystream.h"  // rapidjson::MemoryStream
+#include "sql_const.h"               // STRING_BUFFER_USUAL_SIZE
+#include "sql_string.h"              // String
+#include "template_utils.h"          // down_cast
 
 #include <m_ctype.h>
 
 #include <cwctype>
-#include <memory>                               // auto_ptr
+#include <memory>  // auto_ptr
 #include <string>
 
 // For use in Json_path::parse_path
-#define PARSER_RETURN(retval) { *status= retval; return charptr; }
+#define PARSER_RETURN(retval) \
+  {                           \
+    *status = retval;         \
+    return charptr;           \
+  }
 #define SCOPE '$'
 #define BEGIN_MEMBER '.'
 #define BEGIN_ARRAY '['
@@ -59,69 +63,44 @@ bool is_digit(unsigned codepoint);
 
 // Json_path_leg
 
-enum_json_path_leg_type Json_path_leg::get_type() const
-{
-  return m_leg_type;
-}
+enum_json_path_leg_type Json_path_leg::get_type() const { return m_leg_type; }
 
-size_t Json_path_leg::get_member_name_length() const
-{
-  return m_member_name.size();
-}
+size_t Json_path_leg::get_member_name_length() const { return m_member_name.size(); }
 
-const char *Json_path_leg::get_member_name() const
-{
-  return m_member_name.data();
-}
+const char *Json_path_leg::get_member_name() const { return m_member_name.data(); }
 
-size_t Json_path_leg::get_array_cell_index() const
-{
-  return m_array_cell_index;
-}
+size_t Json_path_leg::get_array_cell_index() const { return m_array_cell_index; }
 
 bool Json_path_leg::to_string(String *buf) const
 {
-  switch(m_leg_type)
+  switch (m_leg_type)
   {
-  case jpl_member:
-    return buf->append(BEGIN_MEMBER) ||
-      (is_ecmascript_identifier(get_member_name(),
-                                get_member_name_length()) ?
-       buf->append(get_member_name(), get_member_name_length()) :
-       double_quote(get_member_name(), get_member_name_length(), buf));
-  case jpl_array_cell:
-    return buf->append(BEGIN_ARRAY) ||
-      buf->append_ulonglong(m_array_cell_index) ||
-      buf->append(END_ARRAY);
-  case jpl_member_wildcard:
-    return buf->append(BEGIN_MEMBER) || buf->append(WILDCARD);
-  case jpl_array_cell_wildcard:
-    return buf->append(BEGIN_ARRAY) || buf->append(WILDCARD) ||
-      buf->append(END_ARRAY);
-  case jpl_ellipsis:
-    return buf->append(WILDCARD) || buf->append(WILDCARD);
+    case jpl_member:
+      return buf->append(BEGIN_MEMBER) || (is_ecmascript_identifier(get_member_name(), get_member_name_length())
+                                               ? buf->append(get_member_name(), get_member_name_length())
+                                               : double_quote(get_member_name(), get_member_name_length(), buf));
+    case jpl_array_cell:
+      return buf->append(BEGIN_ARRAY) || buf->append_ulonglong(m_array_cell_index) || buf->append(END_ARRAY);
+    case jpl_member_wildcard:
+      return buf->append(BEGIN_MEMBER) || buf->append(WILDCARD);
+    case jpl_array_cell_wildcard:
+      return buf->append(BEGIN_ARRAY) || buf->append(WILDCARD) || buf->append(END_ARRAY);
+    case jpl_ellipsis:
+      return buf->append(WILDCARD) || buf->append(WILDCARD);
   }
 
   // Unknown leg type.
-  DBUG_ABORT();                                 /* purecov: inspected */
-  return true;                                  /* purecov: inspected */
+  DBUG_ABORT(); /* purecov: inspected */
+  return true;  /* purecov: inspected */
 }
 
 // Json_path_clone
 
-Json_path_clone::Json_path_clone()
-  : m_path_legs(key_memory_JSON)
-{}
+Json_path_clone::Json_path_clone() : m_path_legs(key_memory_JSON) {}
 
-
-Json_path_clone::~Json_path_clone()
-{
-  clear();
-}
-
+Json_path_clone::~Json_path_clone() { clear(); }
 
 size_t Json_path_clone::leg_count() const { return m_path_legs.size(); }
-
 
 const Json_path_leg *Json_path_clone::get_leg_at(const size_t index) const
 {
@@ -133,21 +112,16 @@ const Json_path_leg *Json_path_clone::get_leg_at(const size_t index) const
   return m_path_legs.at(index);
 }
 
-
-bool Json_path_clone::append(const Json_path_leg *leg)
-{
-  return m_path_legs.push_back(leg);
-}
-
+bool Json_path_clone::append(const Json_path_leg *leg) { return m_path_legs.push_back(leg); }
 
 bool Json_path_clone::set(Json_seekable_path *source)
 {
   clear();
 
-  size_t legcount= source->leg_count();
-  for (size_t idx= 0; idx < legcount; idx++)
+  size_t legcount = source->leg_count();
+  for (size_t idx = 0; idx < legcount; idx++)
   {
-    Json_path_leg *path_leg= (Json_path_leg *) source->get_leg_at(idx);
+    Json_path_leg *path_leg = (Json_path_leg *)source->get_leg_at(idx);
     if (append(path_leg))
     {
       return true;
@@ -157,28 +131,21 @@ bool Json_path_clone::set(Json_seekable_path *source)
   return false;
 }
 
-
 const Json_path_leg *Json_path_clone::pop()
 {
   assert(m_path_legs.size() > 0);
-  const Json_path_leg *p= m_path_legs.back();
+  const Json_path_leg *p = m_path_legs.back();
   m_path_legs.pop_back();
   return p;
 }
 
-
-void Json_path_clone::clear()
-{
-  m_path_legs.clear();
-}
-
+void Json_path_clone::clear() { m_path_legs.clear(); }
 
 bool Json_path_clone::contains_ellipsis() const
 {
-  for (Path_leg_pointers::const_iterator iter= m_path_legs.begin();
-       iter != m_path_legs.end(); ++iter)
+  for (Path_leg_pointers::const_iterator iter = m_path_legs.begin(); iter != m_path_legs.end(); ++iter)
   {
-    const Json_path_leg *path_leg= *iter;
+    const Json_path_leg *path_leg = *iter;
     if (path_leg->get_type() == jpl_ellipsis)
       return true;
   }
@@ -186,22 +153,13 @@ bool Json_path_clone::contains_ellipsis() const
   return false;
 }
 
-
 // Json_path
 
-Json_path::Json_path()
-  : m_path_legs(key_memory_JSON)
-{}
+Json_path::Json_path() : m_path_legs(key_memory_JSON) {}
 
-
-Json_path::~Json_path()
-{
-  m_path_legs.clear();
-}
-
+Json_path::~Json_path() { m_path_legs.clear(); }
 
 size_t Json_path::leg_count() const { return m_path_legs.size(); }
-
 
 const Json_path_leg *Json_path::get_leg_at(const size_t index) const
 {
@@ -213,24 +171,17 @@ const Json_path_leg *Json_path::get_leg_at(const size_t index) const
   return &m_path_legs.at(index);
 }
 
-
-bool Json_path::append(const Json_path_leg &leg)
-{
-  return m_path_legs.push_back(leg);
-}
+bool Json_path::append(const Json_path_leg &leg) { return m_path_legs.push_back(leg); }
 
 Json_path_leg Json_path::pop()
 {
   assert(m_path_legs.size() > 0);
-  Json_path_leg p= m_path_legs.back();
+  Json_path_leg p = m_path_legs.back();
   m_path_legs.pop_back();
   return p;
 }
 
-void Json_path::clear()
-{
-  m_path_legs.clear();
-}
+void Json_path::clear() { m_path_legs.clear(); }
 
 bool Json_path::to_string(String *buf) const
 {
@@ -248,8 +199,7 @@ bool Json_path::to_string(String *buf) const
   if (buf->append(SCOPE))
     return true;
 
-  for (Path_leg_vector::const_iterator iter= m_path_legs.begin();
-       iter != m_path_legs.end(); ++iter)
+  for (Path_leg_vector::const_iterator iter = m_path_legs.begin(); iter != m_path_legs.end(); ++iter)
   {
     if (iter->to_string(buf))
       return true;
@@ -258,68 +208,52 @@ bool Json_path::to_string(String *buf) const
   return false;
 }
 
-
 static inline bool is_wildcard_or_ellipsis(const Json_path_leg &leg)
 {
   switch (leg.get_type())
   {
-  case jpl_member_wildcard:
-  case jpl_array_cell_wildcard:
-  case jpl_ellipsis:
-    return true;
-  default:
-    return false;
+    case jpl_member_wildcard:
+    case jpl_array_cell_wildcard:
+    case jpl_ellipsis:
+      return true;
+    default:
+      return false;
   }
 }
-
 
 bool Json_path::contains_wildcard_or_ellipsis() const
 {
-  return std::find_if(m_path_legs.begin(), m_path_legs.end(),
-                      is_wildcard_or_ellipsis) != m_path_legs.end();
+  return std::find_if(m_path_legs.begin(), m_path_legs.end(), is_wildcard_or_ellipsis) != m_path_legs.end();
 }
 
-
-static inline bool is_ellipsis(const Json_path_leg &leg)
-{
-  return leg.get_type() == jpl_ellipsis;
-}
-
+static inline bool is_ellipsis(const Json_path_leg &leg) { return leg.get_type() == jpl_ellipsis; }
 
 bool Json_path::contains_ellipsis() const
 {
-  return std::find_if(m_path_legs.begin(), m_path_legs.end(),
-                      is_ellipsis) != m_path_legs.end();
+  return std::find_if(m_path_legs.begin(), m_path_legs.end(), is_ellipsis) != m_path_legs.end();
 }
-
 
 // Json_path parsing
 
-void Json_path::initialize()
-{
-  m_path_legs.clear();
-}
+void Json_path::initialize() { m_path_legs.clear(); }
 
 /** Top level parsing factory method */
-bool parse_path(const bool begins_with_column_id, const size_t path_length,
-                const char *path_expression, Json_path *path, size_t *bad_index)
+bool parse_path(const bool begins_with_column_id, const size_t path_length, const char *path_expression,
+                Json_path *path, size_t *bad_index)
 {
-  bool  status= false;
+  bool status = false;
 
-  const char *end_of_parsed_path=
-    path->parse_path(begins_with_column_id, path_length, path_expression,
-                     &status);
+  const char *end_of_parsed_path = path->parse_path(begins_with_column_id, path_length, path_expression, &status);
 
   if (status)
   {
-    *bad_index= 0;
+    *bad_index = 0;
     return false;
   }
 
-  *bad_index= end_of_parsed_path - path_expression;
+  *bad_index = end_of_parsed_path - path_expression;
   return true;
 }
-
 
 /**
   Purge leading whitespace in a string.
@@ -329,21 +263,17 @@ bool parse_path(const bool begins_with_column_id, const size_t path_length,
 */
 static inline const char *purge_whitespace(const char *str, const char *end)
 {
-  while (str < end && my_isspace(&my_charset_utf8mb4_bin, *str))
-    ++str;
+  while (str < end && my_isspace(&my_charset_utf8mb4_bin, *str)) ++str;
   return str;
 }
 
-
-const char *Json_path::parse_path(const bool begins_with_column_id,
-                                  const size_t path_length,
-                                  const char *path_expression,
-                                  bool *status)
+const char *Json_path::parse_path(const bool begins_with_column_id, const size_t path_length,
+                                  const char *path_expression, bool *status)
 {
   initialize();
 
-  const char *charptr= path_expression;
-  const char *endptr= path_expression + path_length;
+  const char *charptr = path_expression;
+  const char *endptr = path_expression + path_length;
 
   if (begins_with_column_id)
   {
@@ -364,56 +294,50 @@ const char *Json_path::parse_path(const bool begins_with_column_id,
   else
   {
     // the first non-whitespace character must be $
-    charptr= purge_whitespace(charptr, endptr);
+    charptr = purge_whitespace(charptr, endptr);
     if ((charptr >= endptr) || (*charptr++ != SCOPE))
       PARSER_RETURN(false);
   }
 
   // now add the legs
-  *status= true;
+  *status = true;
   while (*status)
   {
-    charptr= purge_whitespace(charptr, endptr);
+    charptr = purge_whitespace(charptr, endptr);
     if (charptr >= endptr)
-      break;                                    // input exhausted
+      break;  // input exhausted
 
-    charptr= parse_path_leg(charptr, endptr, status);
+    charptr = parse_path_leg(charptr, endptr, status);
   }
 
   // a path may not end with an ellipsis
   if (m_path_legs.size() > 0 && is_ellipsis(m_path_legs.back()))
   {
-    *status= false;
+    *status = false;
   }
 
   return charptr;
 }
 
-
-const char *Json_path::parse_path_leg(const char *charptr,
-                                      const char *endptr,
-                                      bool *status)
+const char *Json_path::parse_path_leg(const char *charptr, const char *endptr, bool *status)
 {
   switch (*charptr)
   {
-  case BEGIN_ARRAY:
-    return parse_array_leg(charptr, endptr, status);
-  case BEGIN_MEMBER:
-    return parse_member_leg(charptr, endptr, status);
-  case WILDCARD:
-    return parse_ellipsis_leg(charptr, endptr, status);
-  default:
-    PARSER_RETURN(false);
+    case BEGIN_ARRAY:
+      return parse_array_leg(charptr, endptr, status);
+    case BEGIN_MEMBER:
+      return parse_member_leg(charptr, endptr, status);
+    case WILDCARD:
+      return parse_ellipsis_leg(charptr, endptr, status);
+    default:
+      PARSER_RETURN(false);
   }
 }
 
-
-const char *Json_path::parse_ellipsis_leg(const char *charptr,
-                                          const char *endptr,
-                                          bool *status)
+const char *Json_path::parse_ellipsis_leg(const char *charptr, const char *endptr, bool *status)
 {
   // assume the worst
-  *status= false;
+  *status = false;
 
   // advance past the first *
   charptr++;
@@ -439,32 +363,29 @@ const char *Json_path::parse_ellipsis_leg(const char *charptr,
   PARSER_RETURN(!append(Json_path_leg(jpl_ellipsis)));
 }
 
-
-const char *Json_path::parse_array_leg(const char *charptr,
-                                       const char *endptr,
-                                       bool *status)
+const char *Json_path::parse_array_leg(const char *charptr, const char *endptr, bool *status)
 {
   // assume the worst
-  *status= false;
+  *status = false;
 
   // advance past the [
   charptr++;
 
-  charptr= purge_whitespace(charptr, endptr);
+  charptr = purge_whitespace(charptr, endptr);
   if (charptr >= endptr)
-    PARSER_RETURN(false);                       // input exhausted
+    PARSER_RETURN(false);  // input exhausted
 
   if (*charptr == WILDCARD)
   {
     charptr++;
 
     if (append(Json_path_leg(jpl_array_cell_wildcard)))
-      PARSER_RETURN(false);                   /* purecov: inspected */
+      PARSER_RETURN(false); /* purecov: inspected */
   }
   else
   {
     // Not a WILDCARD. Must be an array index.
-    const char *number_start= charptr;
+    const char *number_start = charptr;
 
     while ((charptr < endptr) && is_digit(*charptr))
     {
@@ -476,21 +397,20 @@ const char *Json_path::parse_array_leg(const char *charptr,
     }
 
     int dummy_err;
-    longlong cell_index= my_strntoll(&my_charset_utf8mb4_bin, number_start,
-                                     charptr - number_start, 10,
-                                     (char**) 0, &dummy_err);
+    longlong cell_index =
+        my_strntoll(&my_charset_utf8mb4_bin, number_start, charptr - number_start, 10, (char **)0, &dummy_err);
 
     if (dummy_err != 0)
     {
       PARSER_RETURN(false);
     }
 
-    if (append(Json_path_leg(static_cast<size_t>(cell_index))))
-      PARSER_RETURN(false);                   /* purecov: inspected */
+    if (append(Json_path_leg(static_cast< size_t >(cell_index))))
+      PARSER_RETURN(false); /* purecov: inspected */
   }
 
   // the next non-whitespace should be the closing ]
-  charptr= purge_whitespace(charptr, endptr);
+  charptr = purge_whitespace(charptr, endptr);
   if ((charptr < endptr) && (*charptr++ == END_ARRAY))
   {
     // all is well
@@ -500,7 +420,6 @@ const char *Json_path::parse_array_leg(const char *charptr,
   // An error has occurred.
   PARSER_RETURN(false);
 }
-
 
 /**
   Find the end of a member name in a JSON path. The name could be
@@ -514,7 +433,7 @@ const char *Json_path::parse_array_leg(const char *charptr,
 */
 static const char *find_end_of_member_name(const char *start, const char *end)
 {
-  const char *str= start;
+  const char *str = start;
 
   /*
     If we have a double-quoted name, the end of the name is the next
@@ -522,21 +441,21 @@ static const char *find_end_of_member_name(const char *start, const char *end)
   */
   if (*str == DOUBLE_QUOTE)
   {
-    str++;                   // Advance past the opening double quote.
+    str++;  // Advance past the opening double quote.
     while (str < end)
     {
       switch (*str++)
       {
-      case '\\':
-        /*
-          Skip the next character after a backslash. It cannot mark
-          the end of the quoted string.
-        */
-        str++;
-        break;
-      case DOUBLE_QUOTE:
-        // An unescaped double quote marks the end of the quoted string.
-        return str;
+        case '\\':
+          /*
+            Skip the next character after a backslash. It cannot mark
+            the end of the quoted string.
+          */
+          str++;
+          break;
+        case DOUBLE_QUOTE:
+          // An unescaped double quote marks the end of the quoted string.
+          return str;
       }
     }
 
@@ -553,10 +472,7 @@ static const char *find_end_of_member_name(const char *start, const char *end)
     If we have an unquoted name, the name is terminated by whitespace
     or [ or . or * or end-of-string.
   */
-  while (str < end &&
-         !my_isspace(&my_charset_utf8mb4_bin, *str) &&
-         *str != BEGIN_ARRAY &&
-         *str != BEGIN_MEMBER &&
+  while (str < end && !my_isspace(&my_charset_utf8mb4_bin, *str) && *str != BEGIN_ARRAY && *str != BEGIN_MEMBER &&
          *str != WILDCARD)
   {
     str++;
@@ -564,7 +480,6 @@ static const char *find_end_of_member_name(const char *start, const char *end)
 
   return str;
 }
-
 
 /**
   Parse a quoted member name using the rapidjson parser, so that we
@@ -581,43 +496,40 @@ static const char *find_end_of_member_name(const char *start, const char *end)
 */
 static const Json_string *parse_name_with_rapidjson(const char *str, size_t len)
 {
-  const Json_dom *dom= Json_dom::parse(str, len, NULL, NULL);
+  const Json_dom *dom = Json_dom::parse(str, len, NULL, NULL);
 
   if (dom != NULL && dom->json_type() == Json_dom::J_STRING)
-    return down_cast<const Json_string *>(dom);
+    return down_cast< const Json_string * >(dom);
 
   delete dom;
   return NULL;
 }
 
-
-const char *Json_path::parse_member_leg(const char *charptr,
-                                        const char *endptr,
-                                        bool *status)
+const char *Json_path::parse_member_leg(const char *charptr, const char *endptr, bool *status)
 {
   // advance past the .
   charptr++;
 
-  charptr= purge_whitespace(charptr, endptr);
+  charptr = purge_whitespace(charptr, endptr);
   if (charptr >= endptr)
-    PARSER_RETURN(false);                       // input exhausted
+    PARSER_RETURN(false);  // input exhausted
 
   if (*charptr == WILDCARD)
   {
     charptr++;
 
     if (append(Json_path_leg(jpl_member_wildcard)))
-      PARSER_RETURN(false);                   /* purecov: inspected */
+      PARSER_RETURN(false); /* purecov: inspected */
   }
   else
   {
-    const char *key_start= charptr;
-    const char *key_end= find_end_of_member_name(key_start, endptr);
-    const bool was_quoted= (*key_start == DOUBLE_QUOTE);
+    const char *key_start = charptr;
+    const char *key_end = find_end_of_member_name(key_start, endptr);
+    const bool was_quoted = (*key_start == DOUBLE_QUOTE);
 
-    charptr= key_end;
+    charptr = key_end;
 
-    std::auto_ptr<const Json_string> jstr;
+    std::auto_ptr< const Json_string > jstr;
 
     if (was_quoted)
     {
@@ -637,10 +549,9 @@ const char *Json_path::parse_member_leg(const char *charptr,
       char buff[STRING_BUFFER_USUAL_SIZE];
       String strbuff(buff, sizeof(buff), &my_charset_utf8mb4_bin);
       strbuff.length(0);
-      if (strbuff.append(DOUBLE_QUOTE) ||
-          strbuff.append(key_start, key_end - key_start) ||
+      if (strbuff.append(DOUBLE_QUOTE) || strbuff.append(key_start, key_end - key_start) ||
           strbuff.append(DOUBLE_QUOTE))
-        PARSER_RETURN(false);                 /* purecov: inspected */
+        PARSER_RETURN(false); /* purecov: inspected */
       jstr.reset(parse_name_with_rapidjson(strbuff.ptr(), strbuff.length()));
     }
 
@@ -652,18 +563,16 @@ const char *Json_path::parse_member_leg(const char *charptr,
       PARSER_RETURN(false);
 
     // unquoted names must be valid ECMAScript identifiers
-    if (!was_quoted &&
-        !is_ecmascript_identifier(jstr->value().data(), jstr->size()))
+    if (!was_quoted && !is_ecmascript_identifier(jstr->value().data(), jstr->size()))
       PARSER_RETURN(false);
 
     // Looking good.
     if (append(Json_path_leg(jstr->value())))
-      PARSER_RETURN(false);                   /* purecov: inspected */
+      PARSER_RETURN(false); /* purecov: inspected */
   }
 
   PARSER_RETURN(true);
 }
-
 
 /**
    Return true if the character is a unicode combining mark.
@@ -672,10 +581,7 @@ const char *Json_path::parse_member_leg(const char *charptr,
 
    @return True if the codepoint is a unicode combining mark.
 */
-inline bool unicode_combining_mark(unsigned codepoint)
-{
-  return ((0x300 <= codepoint) && (codepoint <= 0x36F));
-}
+inline bool unicode_combining_mark(unsigned codepoint) { return ((0x300 <= codepoint) && (codepoint <= 0x36F)); }
 
 /**
    Return true if the codepoint is a Unicode letter.
@@ -701,46 +607,40 @@ bool is_letter(unsigned codepoint)
   return my_isalpha(&my_charset_utf8mb4_bin, codepoint);
 }
 
-
 /**
    Return true if the codepoint is a Unicode digit.
 
    This was the best
    recommendation from the old-times about how to answer this question.
 */
-bool is_digit(unsigned codepoint)
-{
-  return my_isdigit(&my_charset_utf8mb4_bin, codepoint);
-}
-
+bool is_digit(unsigned codepoint) { return my_isdigit(&my_charset_utf8mb4_bin, codepoint); }
 
 /**
    Return true if the codepoint is Unicode connector punctuation.
 */
 bool is_connector_punctuation(unsigned codepoint)
 {
-  switch(codepoint)
+  switch (codepoint)
   {
-  case 0x5F:  // low line
-  case 0x203F:  // undertie
-  case 0x2040:  // character tie
-  case 0x2054:  // inverted undertie
-  case 0xFE33:  // presentation form for vertical low line
-  case 0xFE34:  // presentation form for vertical wavy low line
-  case 0xFE4D:  // dashed low line
-  case 0xFE4E:  // centerline low line
-  case 0xFE4F:  // wavy low line
-  case 0xFF3F:  // fullwidth low line
+    case 0x5F:    // low line
+    case 0x203F:  // undertie
+    case 0x2040:  // character tie
+    case 0x2054:  // inverted undertie
+    case 0xFE33:  // presentation form for vertical low line
+    case 0xFE34:  // presentation form for vertical wavy low line
+    case 0xFE4D:  // dashed low line
+    case 0xFE4E:  // centerline low line
+    case 0xFE4F:  // wavy low line
+    case 0xFF3F:  // fullwidth low line
     {
       return true;
     }
-  default:
+    default:
     {
       return false;
     }
   }
 }
-
 
 /**
    Returns true if the name is a valid ECMAScript identifier.
@@ -762,12 +662,12 @@ bool is_ecmascript_identifier(const char *name, size_t name_length)
     the rules here: https://es5.github.io/x7.html#x7.6
   */
   rapidjson::MemoryStream input_stream(name, name_length);
-  unsigned  codepoint;
+  unsigned codepoint;
 
   while (input_stream.Tell() < name_length)
   {
-    bool  first_codepoint= (input_stream.Tell() == 0);
-    if (!rapidjson::UTF8<char>::Decode(input_stream, &codepoint))
+    bool first_codepoint = (input_stream.Tell() == 0);
+    if (!rapidjson::UTF8< char >::Decode(input_stream, &codepoint))
       return false;
 
     // a unicode letter

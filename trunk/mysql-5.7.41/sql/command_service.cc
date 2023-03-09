@@ -69,18 +69,13 @@
     0 success
     1 failure
 */
-extern "C"
-int command_service_run_command(Srv_session *session,
-                                enum enum_server_command command,
-                                const union COM_DATA * data,
-                                const CHARSET_INFO * client_cs,
-                                const struct st_command_service_cbs *callbacks,
-                                enum cs_text_or_binary text_or_binary,
-                                void * service_callbacks_ctx)
+extern "C" int command_service_run_command(Srv_session *session, enum enum_server_command command,
+                                           const union COM_DATA *data, const CHARSET_INFO *client_cs,
+                                           const struct st_command_service_cbs *callbacks,
+                                           enum cs_text_or_binary text_or_binary, void *service_callbacks_ctx)
 {
   if (!session || !Srv_session::is_valid(session))
     return true;
 
-  return session->execute_command(command, data, client_cs, callbacks,
-                                  text_or_binary, service_callbacks_ctx);  
+  return session->execute_command(command, data, client_cs, callbacks, text_or_binary, service_callbacks_ctx);
 }

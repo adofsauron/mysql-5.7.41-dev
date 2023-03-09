@@ -26,15 +26,15 @@
 #include "my_dbug.h"
 #include "my_thread.h"
 #include "sql_class.h"
-#include "sql_base.h"            // close_mysql_tables
-#include "sql_connect.h"         // thd_init_client_charset
-#include "mysqld_thd_manager.h"  // Global_THD_manager
-#include "sql_audit.h"           // MYSQL_AUDIT_NOTIFY_CONNECTION_CONNECT
-#include "log.h"                 // Query log
-#include "my_thread_local.h"     // my_get_thread_local & my_set_thread_local
-#include "mysqld.h"              // current_thd
-#include "sql_parse.h"           // dispatch_command()
-#include "sql_thd_internal_api.h" // thd_set_thread_stack
+#include "sql_base.h"              // close_mysql_tables
+#include "sql_connect.h"           // thd_init_client_charset
+#include "mysqld_thd_manager.h"    // Global_THD_manager
+#include "sql_audit.h"             // MYSQL_AUDIT_NOTIFY_CONNECTION_CONNECT
+#include "log.h"                   // Query log
+#include "my_thread_local.h"       // my_get_thread_local & my_set_thread_local
+#include "mysqld.h"                // current_thd
+#include "sql_parse.h"             // dispatch_command()
+#include "sql_thd_internal_api.h"  // thd_set_thread_stack
 #include "mutex_lock.h"
 #include "mysql/psi/psi.h"
 #include "conn_handler/connection_handler_manager.h"
@@ -48,13 +48,11 @@
   check also srv_session.h for more information.
 */
 
-
 extern void thd_clear_errors(THD *thd);
 
 static thread_local_key_t THR_stack_start_address;
 static thread_local_key_t THR_srv_session_thread;
-static bool srv_session_THRs_initialized= false;
-
+static bool srv_session_THRs_initialized = false;
 
 /**
   A simple wrapper around a RW lock:
@@ -65,7 +63,7 @@ static bool srv_session_THRs_initialized= false;
 */
 class Auto_rw_lock_read
 {
-public:
+ public:
   explicit Auto_rw_lock_read(mysql_rwlock_t *lock) : rw_lock(NULL)
   {
     if (lock && 0 == mysql_rwlock_rdlock(lock))
@@ -77,17 +75,17 @@ public:
     if (rw_lock)
       mysql_rwlock_unlock(rw_lock);
   }
-private:
+
+ private:
   mysql_rwlock_t *rw_lock;
 
-  Auto_rw_lock_read(const Auto_rw_lock_read&);         /* Not copyable. */
-  void operator=(const Auto_rw_lock_read&);            /* Not assignable. */
+  Auto_rw_lock_read(const Auto_rw_lock_read &); /* Not copyable. */
+  void operator=(const Auto_rw_lock_read &);    /* Not assignable. */
 };
-
 
 class Auto_rw_lock_write
 {
-public:
+ public:
   explicit Auto_rw_lock_write(mysql_rwlock_t *lock) : rw_lock(NULL)
   {
     if (lock && 0 == mysql_rwlock_wrlock(lock))
@@ -99,17 +97,17 @@ public:
     if (rw_lock)
       mysql_rwlock_unlock(rw_lock);
   }
-private:
+
+ private:
   mysql_rwlock_t *rw_lock;
 
-  Auto_rw_lock_write(const Auto_rw_lock_write&);        /* Non-copyable */
-  void operator=(const Auto_rw_lock_write&);            /* Non-assignable */
+  Auto_rw_lock_write(const Auto_rw_lock_write &); /* Non-copyable */
+  void operator=(const Auto_rw_lock_write &);     /* Non-assignable */
 };
-
 
 class Thread_to_plugin_map
 {
-private:
+ private:
   bool initted;
   bool psi_initted;
   mysql_mutex_t LOCK_collection;
@@ -117,9 +115,9 @@ private:
 #ifdef HAVE_PSI_INTERFACE
   PSI_mutex_key key_LOCK_collection;
 #endif
-  std::map<my_thread_t, const void*> collection;
+  std::map< my_thread_t, const void * > collection;
 
-public:
+ public:
   /**
     Initializes the map
 
@@ -131,15 +129,12 @@ public:
   */
   bool init()
   {
-    const char* category= "session";
-    PSI_mutex_info all_mutexes[]=
-    {
-      { &key_LOCK_collection, "LOCK_srv_session_threads", PSI_FLAG_GLOBAL}
-    };
+    const char *category = "session";
+    PSI_mutex_info all_mutexes[] = {{&key_LOCK_collection, "LOCK_srv_session_threads", PSI_FLAG_GLOBAL}};
 
-    initted= true;
+    initted = true;
 #ifdef HAVE_PSI_INTERFACE
-    psi_initted= true;
+    psi_initted = true;
 
     mysql_mutex_register(category, all_mutexes, array_elements(all_mutexes));
 #endif
@@ -157,7 +152,7 @@ public:
   */
   bool deinit()
   {
-    initted= false;
+    initted = false;
     mysql_mutex_destroy(&LOCK_collection);
 
     return false;
@@ -177,9 +172,9 @@ public:
     Mutex_lock lock(&LOCK_collection);
     try
     {
-      std::map<my_thread_t, const void*>::iterator it= collection.find(thread);
+      std::map< my_thread_t, const void * >::iterator it = collection.find(thread);
       if (it == collection.end())
-        collection[thread]= plugin;
+        collection[thread] = plugin;
     }
     catch (const std::bad_alloc &e)
     {
@@ -200,7 +195,7 @@ public:
   unsigned int remove(my_thread_t thread)
   {
     Mutex_lock lock(&LOCK_collection);
-    std::map<my_thread_t, const void*>::iterator it= collection.find(thread);
+    std::map< my_thread_t, const void * >::iterator it = collection.find(thread);
     if (it != collection.end())
     {
       collection.erase(it);
@@ -229,7 +224,7 @@ public:
   unsigned int size()
   {
     Mutex_lock lock(&LOCK_collection);
-    return collection.size();    
+    return collection.size();
   }
 
   /**
@@ -242,9 +237,9 @@ public:
     if (!plugin)
       return size();
 
-    unsigned int ret= 0;
+    unsigned int ret = 0;
     Mutex_lock lock(&LOCK_collection);
-    std::map<my_thread_t, const void*>::iterator it= collection.begin();
+    std::map< my_thread_t, const void * >::iterator it = collection.begin();
     for (; it != collection.end(); ++it)
     {
       if (it->second == plugin)
@@ -260,13 +255,11 @@ public:
   */
   unsigned int kill(const void *plugin)
   {
-    std::list<my_thread_t> to_remove;
+    std::list< my_thread_t > to_remove;
 
     Mutex_lock lock(&LOCK_collection);
 
-    for (std::map<my_thread_t, const void*>::iterator it= collection.begin();
-         it != collection.end();
-         ++it)
+    for (std::map< my_thread_t, const void * >::iterator it = collection.begin(); it != collection.end(); ++it)
     {
       if (!plugin || (it->second == plugin))
       {
@@ -284,8 +277,8 @@ public:
            Therefore this killing functionality is now only for Posix Threads
            until there is a solution for Windows.
         */
-        thread.thread= it->first;
-        sql_print_error("Killing thread %lu", (unsigned long) it->first);
+        thread.thread = it->first;
+        sql_print_error("Killing thread %lu", (unsigned long)it->first);
         if (!my_thread_cancel(&thread))
         {
           void *dummy_retval;
@@ -296,9 +289,7 @@ public:
     }
     if (to_remove.size())
     {
-      for (std::list<my_thread_t>::iterator it= to_remove.begin();
-           it != to_remove.end();
-           ++it)
+      for (std::list< my_thread_t >::iterator it = to_remove.begin(); it != to_remove.end(); ++it)
         collection.erase(*it);
     }
     return to_remove.size();
@@ -312,10 +303,10 @@ public:
 */
 class Mutexed_map_thd_srv_session
 {
-public:
+ public:
   class Do_Impl
   {
-  public:
+   public:
     virtual ~Do_Impl() {}
     /**
       Work on the session
@@ -324,17 +315,17 @@ public:
         false  Leave the session in the map
         true   Remove the session from the map
     */
-    virtual bool operator()(Srv_session*) = 0;
+    virtual bool operator()(Srv_session *) = 0;
   };
 
-private:
+ private:
   /*
     The first type in the tuple should be the key type of
     Thread_to_plugin_map
   */
-  typedef std::pair<const void*, Srv_session*> map_value_t;
+  typedef std::pair< const void *, Srv_session * > map_value_t;
 
-  std::map<const THD*, map_value_t> collection;
+  std::map< const THD *, map_value_t > collection;
 
   bool initted;
   bool psi_initted;
@@ -345,7 +336,7 @@ private:
   PSI_rwlock_key key_LOCK_collection;
 #endif
 
-public:
+ public:
   /**
     Initializes the map
 
@@ -357,15 +348,12 @@ public:
   */
   bool init()
   {
-    const char* category= "session";
-    PSI_rwlock_info all_rwlocks[]=
-    {
-      { &key_LOCK_collection, "LOCK_srv_session_collection", PSI_FLAG_GLOBAL}
-    };
+    const char *category = "session";
+    PSI_rwlock_info all_rwlocks[] = {{&key_LOCK_collection, "LOCK_srv_session_collection", PSI_FLAG_GLOBAL}};
 
-    initted= true;
+    initted = true;
 #ifdef HAVE_PSI_INTERFACE
-    psi_initted= true;
+    psi_initted = true;
 
     mysql_rwlock_register(category, all_rwlocks, array_elements(all_rwlocks));
 #endif
@@ -383,7 +371,7 @@ public:
   */
   bool deinit()
   {
-    initted= false;
+    initted = false;
     mysql_rwlock_destroy(&LOCK_collection);
 
     return false;
@@ -398,12 +386,12 @@ public:
       value of the element
       NULL  if not found
   */
-  Srv_session* find(const THD* key)
+  Srv_session *find(const THD *key)
   {
     Auto_rw_lock_read lock(&LOCK_collection);
 
-    std::map<const THD*, map_value_t>::iterator it= collection.find(key);
-    return (it != collection.end())? it->second.second : NULL;
+    std::map< const THD *, map_value_t >::iterator it = collection.find(key);
+    return (it != collection.end()) ? it->second.second : NULL;
   }
 
   /**
@@ -417,12 +405,12 @@ public:
       false  success
       true   failure
   */
-  bool add(const THD* key, const void *plugin, Srv_session *session)
+  bool add(const THD *key, const void *plugin, Srv_session *session)
   {
     Auto_rw_lock_write lock(&LOCK_collection);
     try
     {
-      collection[key]= std::make_pair(plugin, session);
+      collection[key] = std::make_pair(plugin, session);
     }
     catch (const std::bad_alloc &e)
     {
@@ -440,7 +428,7 @@ public:
       false  success
       true   failure
   */
-  bool remove(const THD* key)
+  bool remove(const THD *key)
   {
     Auto_rw_lock_write lock(&LOCK_collection);
     /*
@@ -448,7 +436,7 @@ public:
       find method never throws. erase() with iterator as parameter also never
       throws.
     */
-    std::map<const THD*, map_value_t>::iterator it= collection.find(key);
+    std::map< const THD *, map_value_t >::iterator it = collection.find(key);
     if (it != collection.end())
       collection.erase(it);
     return false;
@@ -462,15 +450,13 @@ public:
   */
   void remove_all_of_plugin(const void *plugin, unsigned int &removed)
   {
-    std::list<Srv_session *> to_close;
-    removed= 0;
+    std::list< Srv_session * > to_close;
+    removed = 0;
 
     {
       Auto_rw_lock_write lock(&LOCK_collection);
 
-      for (std::map<const THD*, map_value_t>::iterator it= collection.begin();
-           it != collection.end();
-           ++it)
+      for (std::map< const THD *, map_value_t >::iterator it = collection.begin(); it != collection.end(); ++it)
       {
         if (it->second.first == plugin)
           to_close.push_back(it->second.second);
@@ -479,13 +465,11 @@ public:
 
     /* Outside of the lock as Srv_session::close() will try to
       remove itself from the list*/
-    if ((removed= to_close.size()))
+    if ((removed = to_close.size()))
     {
-      for (std::list<Srv_session *>::iterator it= to_close.begin();
-           it != to_close.end();
-           ++it)
+      for (std::list< Srv_session * >::iterator it = to_close.begin(); it != to_close.end(); ++it)
       {
-        Srv_session *session= *it;
+        Srv_session *session = *it;
         session->detach();
         session->close();
         delete session;
@@ -526,26 +510,21 @@ static Thread_to_plugin_map server_session_threads;
 
   @param sess Session to backup
 */
-Srv_session::
-Session_backup_and_attach::Session_backup_and_attach(Srv_session *sess,
-                                                     bool is_close_session)
-  :session(sess),
-   old_session(NULL),
-   in_close_session(is_close_session)
+Srv_session::Session_backup_and_attach::Session_backup_and_attach(Srv_session *sess, bool is_close_session)
+    : session(sess), old_session(NULL), in_close_session(is_close_session)
 {
-  THD *c_thd= current_thd;
-  const void *is_srv_session_thread= my_get_thread_local(THR_srv_session_thread);
-  backup_thd= is_srv_session_thread? NULL:c_thd;
+  THD *c_thd = current_thd;
+  const void *is_srv_session_thread = my_get_thread_local(THR_srv_session_thread);
+  backup_thd = is_srv_session_thread ? NULL : c_thd;
 
   if (is_srv_session_thread && c_thd && c_thd != &session->thd)
   {
-    if ((old_session= server_session_list.find(c_thd)))
+    if ((old_session = server_session_list.find(c_thd)))
       old_session->detach();
   }
 
-  attach_error= session->attach();
+  attach_error = session->attach();
 }
-
 
 /**
   Destructs the session state object. In other words it restores to
@@ -558,7 +537,7 @@ Srv_session::Session_backup_and_attach::~Session_backup_and_attach()
     session->detach();
     backup_thd->store_globals();
 #ifdef HAVE_PSI_THREAD_INTERFACE
-    enum_vio_type vio_type= backup_thd->get_vio_type();
+    enum_vio_type vio_type = backup_thd->get_vio_type();
     if (vio_type != NO_VIO_TYPE)
       PSI_THREAD_CALL(set_connection_type)(vio_type);
 #endif /* HAVE_PSI_THREAD_INTERFACE */
@@ -575,138 +554,79 @@ Srv_session::Session_backup_and_attach::~Session_backup_and_attach()
   }
 }
 
+static int err_start_result_metadata(void *, uint, uint, const CHARSET_INFO *) { return 1; }
 
-static int err_start_result_metadata(void*, uint, uint, const CHARSET_INFO *)
+static int err_field_metadata(void *, struct st_send_field *, const CHARSET_INFO *) { return 1; }
+
+static int err_end_result_metadata(void *, uint, uint) { return 1; }
+
+static int err_start_row(void *) { return 1; }
+
+static int err_end_row(void *) { return 1; }
+
+static void err_abort_row(void *) {}
+
+static ulong err_get_client_capabilities(void *) { return 0; }
+
+static int err_get_null(void *) { return 1; }
+
+static int err_get_integer(void *, longlong) { return 1; }
+
+static int err_get_longlong(void *, longlong, uint) { return 1; }
+
+static int err_get_decimal(void *, const decimal_t *) { return 1; }
+
+static int err_get_double(void *, double, uint32) { return 1; }
+
+static int err_get_date(void *, const MYSQL_TIME *) { return 1; }
+
+static int err_get_time(void *, const MYSQL_TIME *, uint) { return 1; }
+
+static int err_get_datetime(void *, const MYSQL_TIME *, uint) { return 1; }
+
+static int err_get_string(void *, const char *, size_t, const CHARSET_INFO *) { return 1; }
+
+static void err_handle_ok(void *ctx, uint server_status, uint warn_count, ulonglong affected_rows,
+                          ulonglong last_insert_id, const char *const message)
 {
-  return 1;
-}
-
-static int err_field_metadata(void*, struct st_send_field*, const CHARSET_INFO*)
-{
-  return 1;
-}
-
-static int err_end_result_metadata(void*, uint, uint)
-{
-  return 1;
-}
-
-static int err_start_row(void*)
-{
-  return 1;
-}
-
-static int err_end_row(void*)
-{
-  return 1;
-}
-
-static void err_abort_row(void*)
-{
-}
-
-static ulong err_get_client_capabilities(void*)
-{
-  return 0;
-}
-
-static int err_get_null(void*)
-{
-  return 1;
-}
-
-static int err_get_integer(void*, longlong)
-{
-  return 1;
-}
-
-static int err_get_longlong(void*, longlong, uint)
-{
-  return 1;
-}
-
-static int err_get_decimal(void*, const decimal_t*)
-{
-  return 1;
-}
-
-static int err_get_double(void*, double, uint32)
-{
-  return 1;
-}
-
-static int err_get_date(void*, const MYSQL_TIME*)
-{
-  return 1;
-}
-
-static int err_get_time(void*, const MYSQL_TIME*, uint)
-{
-  return 1;
-}
-
-static int err_get_datetime(void*, const MYSQL_TIME*, uint)
-{
-  return 1;
-}
-
-
-static int err_get_string(void*, const char*, size_t,const CHARSET_INFO*)
-{
-  return 1;
-}
-
-static void err_handle_ok(void * ctx, uint server_status, uint warn_count,
-                          ulonglong affected_rows, ulonglong last_insert_id,
-                          const char * const message)
-{
-  Srv_session::st_err_protocol_ctx *pctx=
-             static_cast<Srv_session::st_err_protocol_ctx*>(ctx);
+  Srv_session::st_err_protocol_ctx *pctx = static_cast< Srv_session::st_err_protocol_ctx * >(ctx);
   if (pctx && pctx->handler)
   {
     char buf[256];
-    my_snprintf(buf, sizeof(buf),
-                "OK status=%u warnings=%u affected=%llu last_id=%llu",
-                server_status, warn_count, affected_rows, last_insert_id);
+    my_snprintf(buf, sizeof(buf), "OK status=%u warnings=%u affected=%llu last_id=%llu", server_status, warn_count,
+                affected_rows, last_insert_id);
     pctx->handler(pctx->handler_context, 0, buf);
   }
 }
 
-static void err_handle_error(void * ctx, uint err_errno, const char * err_msg,
-                             const char * sqlstate)
+static void err_handle_error(void *ctx, uint err_errno, const char *err_msg, const char *sqlstate)
 {
-  Srv_session::st_err_protocol_ctx *pctx=
-             static_cast<Srv_session::st_err_protocol_ctx*>(ctx);
+  Srv_session::st_err_protocol_ctx *pctx = static_cast< Srv_session::st_err_protocol_ctx * >(ctx);
   if (pctx && pctx->handler)
     pctx->handler(pctx->handler_context, err_errno, err_msg);
 }
 
-static void err_shutdown(void*, int server_shutdown){}
+static void err_shutdown(void *, int server_shutdown) {}
 
-
-const struct st_command_service_cbs error_protocol_callbacks=
-{
-  err_start_result_metadata,
-  err_field_metadata,
-  err_end_result_metadata,
-  err_start_row,
-  err_end_row,
-  err_abort_row,
-  err_get_client_capabilities,
-  err_get_null,
-  err_get_integer,
-  err_get_longlong,
-  err_get_decimal,
-  err_get_double,
-  err_get_date,
-  err_get_time,
-  err_get_datetime,
-  err_get_string,
-  err_handle_ok,
-  err_handle_error,
-  err_shutdown
-};
-
+const struct st_command_service_cbs error_protocol_callbacks = {err_start_result_metadata,
+                                                                err_field_metadata,
+                                                                err_end_result_metadata,
+                                                                err_start_row,
+                                                                err_end_row,
+                                                                err_abort_row,
+                                                                err_get_client_capabilities,
+                                                                err_get_null,
+                                                                err_get_integer,
+                                                                err_get_longlong,
+                                                                err_get_decimal,
+                                                                err_get_double,
+                                                                err_get_date,
+                                                                err_get_time,
+                                                                err_get_datetime,
+                                                                err_get_string,
+                                                                err_handle_ok,
+                                                                err_handle_error,
+                                                                err_shutdown};
 
 /**
   Modifies the PSI structures to (de)install a THD
@@ -716,12 +636,11 @@ const struct st_command_service_cbs error_protocol_callbacks=
 static void set_psi(THD *thd)
 {
 #ifdef HAVE_PSI_THREAD_INTERFACE
-  struct PSI_thread *psi= PSI_THREAD_CALL(get_thread)();
-  PSI_THREAD_CALL(set_thread_id)(psi, thd? thd->thread_id() : 0);
+  struct PSI_thread *psi = PSI_THREAD_CALL(get_thread)();
+  PSI_THREAD_CALL(set_thread_id)(psi, thd ? thd->thread_id() : 0);
   PSI_THREAD_CALL(set_thread_THD)(psi, thd);
 #endif
 }
-
 
 /**
   Initializes physical thread to use with session service.
@@ -736,8 +655,7 @@ static void set_psi(THD *thd)
 bool Srv_session::init_thread(const void *plugin)
 {
   int stack_start;
-  if (my_thread_init() ||
-      my_set_thread_local(THR_srv_session_thread, const_cast<void*>(plugin)) ||
+  if (my_thread_init() || my_set_thread_local(THR_srv_session_thread, const_cast< void * >(plugin)) ||
       my_set_thread_local(THR_stack_start_address, &stack_start))
   {
     connection_errors_internal++;
@@ -749,7 +667,6 @@ bool Srv_session::init_thread(const void *plugin)
   return false;
 }
 
-
 /**
   Looks if there is currently attached session and detaches it.
 
@@ -757,23 +674,23 @@ bool Srv_session::init_thread(const void *plugin)
 */
 static void close_currently_attached_session_if_any(const st_plugin_int *plugin)
 {
-  THD *c_thd= current_thd;
+  THD *c_thd = current_thd;
   if (!c_thd)
     return;
 
-  Srv_session* current_session= server_session_list.find(c_thd);
+  Srv_session *current_session = server_session_list.find(c_thd);
 
   if (current_session)
   {
-    sql_print_error("Plugin %s is deinitializing a thread but "
-                     "left a session attached. Detaching it forcefully.",
-                     plugin->name.str);
+    sql_print_error(
+        "Plugin %s is deinitializing a thread but "
+        "left a session attached. Detaching it forcefully.",
+        plugin->name.str);
 
     if (current_session->detach())
       sql_print_error("Failed to detach the session.");
   }
 }
-
 
 /**
   Looks if the plugin has any non-closed sessions and closes them forcefully
@@ -787,19 +704,16 @@ static void close_all_sessions_of_plugin_if_any(const st_plugin_int *plugin)
   server_session_list.remove_all_of_plugin(plugin, removed_count);
 
   if (removed_count)
-     sql_print_error("Closed forcefully %u session%s left opened by plugin %s",
-                     removed_count, (removed_count > 1)? "s":"",
-                     plugin? plugin->name.str : "SERVER_INTERNAL");
+    sql_print_error("Closed forcefully %u session%s left opened by plugin %s", removed_count,
+                    (removed_count > 1) ? "s" : "", plugin ? plugin->name.str : "SERVER_INTERNAL");
 }
-
 
 /**
   Deinitializes physical thread to use with session service
 */
 void Srv_session::deinit_thread()
 {
-  const st_plugin_int *plugin= static_cast<const st_plugin_int *>(
-                                my_get_thread_local(THR_srv_session_thread));
+  const st_plugin_int *plugin = static_cast< const st_plugin_int * >(my_get_thread_local(THR_srv_session_thread));
   if (plugin)
     close_currently_attached_session_if_any(plugin);
 
@@ -816,7 +730,6 @@ void Srv_session::deinit_thread()
   my_thread_end();
 }
 
-
 /**
   Checks if a plugin has left threads and sessions
 
@@ -827,20 +740,17 @@ void Srv_session::check_for_stale_threads(const st_plugin_int *plugin)
   if (!plugin)
     return;
 
-  unsigned int thread_count= server_session_threads.count(plugin);
+  unsigned int thread_count = server_session_threads.count(plugin);
   if (thread_count)
   {
     close_all_sessions_of_plugin_if_any(plugin);
 
-    sql_print_error("Plugin %s did not deinitialize %u threads",
-                    plugin->name.str, thread_count);
+    sql_print_error("Plugin %s did not deinitialize %u threads", plugin->name.str, thread_count);
 
-    unsigned int killed_count= server_session_threads.kill(plugin);
-    sql_print_error("Killed %u threads of plugin %s",
-                    killed_count, plugin->name.str);
+    unsigned int killed_count = server_session_threads.kill(plugin);
+    sql_print_error("Killed %u threads of plugin %s", killed_count, plugin->name.str);
   }
 }
-
 
 /**
   Inits the module
@@ -860,14 +770,13 @@ bool Srv_session::module_init()
     sql_print_error("Can't create thread key for SQL session service");
     return true;
   }
-  srv_session_THRs_initialized= true;
+  srv_session_THRs_initialized = true;
 
   server_session_list.init();
   server_session_threads.init();
 
   return false;
 }
-
 
 /**
   Deinits the module.
@@ -881,9 +790,9 @@ bool Srv_session::module_deinit()
 {
   if (srv_session_THRs_initialized)
   {
-    srv_session_THRs_initialized= false;
-    (void) my_delete_thread_local_key(THR_stack_start_address);
-    (void) my_delete_thread_local_key(THR_srv_session_thread);
+    srv_session_THRs_initialized = false;
+    (void)my_delete_thread_local_key(THR_stack_start_address);
+    (void)my_delete_thread_local_key(THR_srv_session_thread);
 
     server_session_list.clear();
     server_session_list.deinit();
@@ -891,11 +800,10 @@ bool Srv_session::module_deinit()
     server_session_threads.clear();
     server_session_threads.deinit();
 
-    srv_session_THRs_initialized= false;
+    srv_session_THRs_initialized = false;
   }
   return false;
 }
-
 
 /**
   Checks if the session is valid.
@@ -909,12 +817,9 @@ bool Srv_session::module_deinit()
 */
 bool Srv_session::is_valid(const Srv_session *session)
 {
-  const THD *thd= session?
-    reinterpret_cast<const THD*>(session + my_offsetof(Srv_session, thd)):
-    NULL;
-  return thd? (bool) server_session_list.find(thd) : false;
+  const THD *thd = session ? reinterpret_cast< const THD * >(session + my_offsetof(Srv_session, thd)) : NULL;
+  return thd ? (bool)server_session_list.find(thd) : false;
 }
-
 
 /**
   Constructs a server session
@@ -923,15 +828,15 @@ bool Srv_session::is_valid(const Srv_session *session)
   @param err_cb_ctx     Plugin's context, opaque pointer that would
                         be provided to callbacks. Might be NULL.
 */
-Srv_session::Srv_session(srv_session_error_cb err_cb, void *err_cb_ctx) :
-  da(false), err_protocol_ctx(err_cb, err_cb_ctx),
-  protocol_error(&error_protocol_callbacks, CS_TEXT_REPRESENTATION,
-                 (void*)&err_protocol_ctx),
-  state(SRV_SESSION_CREATED), vio_type(NO_VIO_TYPE)
+Srv_session::Srv_session(srv_session_error_cb err_cb, void *err_cb_ctx)
+    : da(false),
+      err_protocol_ctx(err_cb, err_cb_ctx),
+      protocol_error(&error_protocol_callbacks, CS_TEXT_REPRESENTATION, (void *)&err_protocol_ctx),
+      state(SRV_SESSION_CREATED),
+      vio_type(NO_VIO_TYPE)
 {
   thd.mark_as_srv_session();
 }
-
 
 /**
   Opens a server session
@@ -944,7 +849,7 @@ bool Srv_session::open()
 {
   DBUG_ENTER("Srv_session::open");
 
-  DBUG_PRINT("info",("Session=%p  THD=%p  DA=%p", this, &thd, &da));
+  DBUG_PRINT("info", ("Session=%p  THD=%p  DA=%p", this, &thd, &da));
   assert(state == SRV_SESSION_CREATED || state == SRV_SESSION_CLOSED);
 
   thd.set_protocol(&protocol_error);
@@ -960,9 +865,7 @@ bool Srv_session::open()
   {
     connection_errors_internal++;
     if (err_protocol_ctx.handler)
-      err_protocol_ctx.handler(err_protocol_ctx.handler_context,
-                               ER_OUT_OF_RESOURCES,
-                               ER_DEFAULT(ER_OUT_OF_RESOURCES));
+      err_protocol_ctx.handler(err_protocol_ctx.handler_context, ER_OUT_OF_RESOURCES, ER_DEFAULT(ER_OUT_OF_RESOURCES));
     Connection_handler_manager::dec_connection_count();
     DBUG_RETURN(true);
   }
@@ -974,7 +877,7 @@ bool Srv_session::open()
   DBUG_PRINT("info", ("thread_id=%d", thd.thread_id()));
 
   thd.set_time();
-  thd.thr_create_utime= thd.start_utime= my_micro_time();
+  thd.thr_create_utime = thd.start_utime = my_micro_time();
 
   /*
     Disable QC - plugins will most probably install their own protocol
@@ -988,12 +891,11 @@ bool Srv_session::open()
 
   Global_THD_manager::get_instance()->add_thd(&thd);
 
-  const void *plugin= my_get_thread_local(THR_srv_session_thread);
+  const void *plugin = my_get_thread_local(THR_srv_session_thread);
 
   server_session_list.add(&thd, plugin, this);
 
-  if (mysql_audit_notify(&thd,
-                         AUDIT_EVENT(MYSQL_AUDIT_CONNECTION_PRE_AUTHENTICATE)))
+  if (mysql_audit_notify(&thd, AUDIT_EVENT(MYSQL_AUDIT_CONNECTION_PRE_AUTHENTICATE)))
   {
     Connection_handler_manager::dec_connection_count();
     DBUG_RETURN(true);
@@ -1001,7 +903,6 @@ bool Srv_session::open()
 
   DBUG_RETURN(false);
 }
-
 
 /**
   Attaches the session to the current physical thread
@@ -1014,9 +915,9 @@ bool Srv_session::open()
 */
 bool Srv_session::attach()
 {
-  const bool first_attach= (state == SRV_SESSION_CREATED);
+  const bool first_attach = (state == SRV_SESSION_CREATED);
   DBUG_ENTER("Srv_session::attach");
-  DBUG_PRINT("info",("current_thd=%p", current_thd));
+  DBUG_PRINT("info", ("current_thd=%p", current_thd));
 
   if (is_attached())
   {
@@ -1032,17 +933,17 @@ bool Srv_session::attach()
   if (&thd == current_thd)
     DBUG_RETURN(false);
 
-  THD *old_thd= current_thd;
-  DBUG_PRINT("info",("current_thd=%p", current_thd));
+  THD *old_thd = current_thd;
+  DBUG_PRINT("info", ("current_thd=%p", current_thd));
 
   if (old_thd)
     old_thd->restore_globals();
 
-  DBUG_PRINT("info",("current_thd=%p", current_thd));
+  DBUG_PRINT("info", ("current_thd=%p", current_thd));
 
-  const char *new_stack= my_get_thread_local(THR_srv_session_thread)?
-        (const char*)my_get_thread_local(THR_stack_start_address):
-        (old_thd? old_thd->thread_stack : NULL);
+  const char *new_stack = my_get_thread_local(THR_srv_session_thread)
+                              ? (const char *)my_get_thread_local(THR_stack_start_address)
+                              : (old_thd ? old_thd->thread_stack : NULL);
 
   /*
     Attach optimistically, as this will set thread_stack,
@@ -1063,7 +964,7 @@ bool Srv_session::attach()
     set_detached();
     DBUG_RETURN(true);
   }
-  Srv_session* old_session= server_session_list.find(old_thd);
+  Srv_session *old_session = server_session_list.find(old_thd);
 
   /* Really detach only if we are sure everything went fine */
   if (old_session)
@@ -1074,8 +975,7 @@ bool Srv_session::attach()
   set_psi(&thd);
 
 #ifdef HAVE_PSI_THREAD_INTERFACE
-   PSI_THREAD_CALL(set_connection_type)(vio_type != NO_VIO_TYPE?
-                                        vio_type : thd.get_vio_type());
+  PSI_THREAD_CALL(set_connection_type)(vio_type != NO_VIO_TYPE ? vio_type : thd.get_vio_type());
 #endif /* HAVE_PSI_THREAD_INTERFACE */
 
   if (first_attach)
@@ -1091,7 +991,6 @@ bool Srv_session::attach()
 
   DBUG_RETURN(false);
 }
-
 
 /**
   Detaches the session from the current physical thread.
@@ -1113,8 +1012,7 @@ bool Srv_session::detach()
     DBUG_RETURN(true);
   }
 
-  DBUG_PRINT("info",("Session=%p THD=%p current_thd=%p",
-                     this, &thd, current_thd));
+  DBUG_PRINT("info", ("Session=%p THD=%p current_thd=%p", this, &thd, current_thd));
 
   assert(&thd == current_thd);
   thd.restore_globals();
@@ -1139,7 +1037,6 @@ bool Srv_session::detach()
   DBUG_RETURN(false);
 }
 
-
 /**
   Closes the session
 
@@ -1151,8 +1048,7 @@ bool Srv_session::close()
 {
   DBUG_ENTER("Srv_session::close");
 
-  DBUG_PRINT("info",("Session=%p THD=%p current_thd=%p",
-                     this, &thd, current_thd));
+  DBUG_PRINT("info", ("Session=%p THD=%p current_thd=%p", this, &thd, current_thd));
 
   assert(state < SRV_SESSION_CLOSED);
 
@@ -1168,7 +1064,7 @@ bool Srv_session::close()
   if (backup.attach_error)
     DBUG_RETURN(true);
 
-  state= SRV_SESSION_CLOSED;
+  state = SRV_SESSION_CLOSED;
 
   server_session_list.remove(&thd);
 
@@ -1198,7 +1094,6 @@ bool Srv_session::close()
   DBUG_RETURN(false);
 }
 
-
 /**
   Sets session's state to attached
 
@@ -1206,36 +1101,31 @@ bool Srv_session::close()
 */
 void Srv_session::set_attached(const char *stack)
 {
-  state= SRV_SESSION_ATTACHED;
+  state = SRV_SESSION_ATTACHED;
   thd_set_thread_stack(&thd, stack);
 }
-
 
 /**
   Changes the state of a session to detached
 */
 void Srv_session::set_detached()
 {
-  state= SRV_SESSION_DETACHED;
+  state = SRV_SESSION_DETACHED;
   thd_set_thread_stack(&thd, NULL);
 }
 
 #include "auth_common.h"
 
-int Srv_session::execute_command(enum enum_server_command command,
-                                 const union COM_DATA * data,
-                                 const CHARSET_INFO * client_cs,
-                                 const struct st_command_service_cbs *callbacks,
-                                 enum cs_text_or_binary text_or_binary,
-                                 void * callbacks_context)
+int Srv_session::execute_command(enum enum_server_command command, const union COM_DATA *data,
+                                 const CHARSET_INFO *client_cs, const struct st_command_service_cbs *callbacks,
+                                 enum cs_text_or_binary text_or_binary, void *callbacks_context)
 {
   DBUG_ENTER("Srv_session::execute_command");
 
   if (!srv_session_server_is_available())
   {
     if (err_protocol_ctx.handler)
-      err_protocol_ctx.handler(err_protocol_ctx.handler_context,
-                               ER_SESSION_WAS_KILLED,
+      err_protocol_ctx.handler(err_protocol_ctx.handler_context, ER_SESSION_WAS_KILLED,
                                ER_DEFAULT(ER_SESSION_WAS_KILLED));
     DBUG_RETURN(1);
   }
@@ -1243,8 +1133,7 @@ int Srv_session::execute_command(enum enum_server_command command,
   if (thd.killed)
   {
     if (err_protocol_ctx.handler)
-      err_protocol_ctx.handler(err_protocol_ctx.handler_context,
-                               ER_SESSION_WAS_KILLED,
+      err_protocol_ctx.handler(err_protocol_ctx.handler_context, ER_SESSION_WAS_KILLED,
                                ER_DEFAULT(ER_SESSION_WAS_KILLED));
     DBUG_RETURN(1);
   }
@@ -1257,9 +1146,7 @@ int Srv_session::execute_command(enum enum_server_command command,
   if (backup.attach_error)
     DBUG_RETURN(1);
 
-  if (client_cs &&
-      thd.variables.character_set_results != client_cs &&
-      thd_init_client_charset(&thd, client_cs->number))
+  if (client_cs && thd.variables.character_set_results != client_cs && thd_init_client_charset(&thd, client_cs->number))
     DBUG_RETURN(1);
 
   /* Switch to different callbacks */
@@ -1277,17 +1164,13 @@ int Srv_session::execute_command(enum enum_server_command command,
     thd.reset_for_next_command();
 
   assert(thd.m_statement_psi == NULL);
-  thd.m_statement_psi= MYSQL_START_STATEMENT(&thd.m_statement_state,
-                                             stmt_info_new_packet.m_key,
-                                             thd.db().str,
-                                             thd.db().length,
-                                             thd.charset(), NULL);
-  int ret= dispatch_command(&thd, data, command);
+  thd.m_statement_psi = MYSQL_START_STATEMENT(&thd.m_statement_state, stmt_info_new_packet.m_key, thd.db().str,
+                                              thd.db().length, thd.charset(), NULL);
+  int ret = dispatch_command(&thd, data, command);
 
   thd.set_protocol(&protocol_error);
   DBUG_RETURN(ret);
 }
-
 
 /**
   Sets the connection type.
@@ -1303,14 +1186,13 @@ bool Srv_session::set_connection_type(enum_vio_type v_type)
   if (v_type < FIRST_VIO_TYPE || v_type > LAST_VIO_TYPE)
     return true;
 
-  vio_type= v_type;
+  vio_type = v_type;
 #ifdef HAVE_PSI_THREAD_INTERFACE
   if (is_attached())
     PSI_THREAD_CALL(set_connection_type)(vio_type);
 #endif /* HAVE_PSI_THREAD_INTERFACE */
   return false;
 }
-
 
 /**
   Template class for scanning the thd list in the Global_THD_manager and
@@ -1324,15 +1206,16 @@ bool Srv_session::set_connection_type(enum_vio_type v_type)
   After the search has been completed the result value can be obtained by
   calling get_result().
 */
-template <typename INPUT_TYPE>
-class Find_thd_by_id_with_callback_set: public Find_THD_Impl
+template < typename INPUT_TYPE >
+class Find_thd_by_id_with_callback_set : public Find_THD_Impl
 {
-public:
+ public:
   typedef void (*callback_t)(THD *thd, INPUT_TYPE *result);
 
-  Find_thd_by_id_with_callback_set(my_thread_id t_id, callback_t cb,
-                                   INPUT_TYPE in):
-    thread_id(t_id), callback(cb), input(in) {}
+  Find_thd_by_id_with_callback_set(my_thread_id t_id, callback_t cb, INPUT_TYPE in)
+      : thread_id(t_id), callback(cb), input(in)
+  {
+  }
 
   /**
     Callback called for every THD in the thd_list.
@@ -1350,7 +1233,8 @@ public:
     }
     return false;
   }
-private:
+
+ private:
   my_thread_id thread_id;
   callback_t callback;
   INPUT_TYPE input;
@@ -1359,11 +1243,7 @@ private:
 /**
   Callback for inspecting a THD object and modifying the peer_port member
 */
-static void set_client_port_in_thd(THD *thd, uint16_t *input)
-{
-  thd->peer_port= *input;
-}
-
+static void set_client_port_in_thd(THD *thd, uint16_t *input) { thd->peer_port = *input; }
 
 /**
   Sets the client port.
@@ -1375,25 +1255,16 @@ static void set_client_port_in_thd(THD *thd, uint16_t *input)
 */
 void Srv_session::set_client_port(uint16_t port)
 {
-  Find_thd_by_id_with_callback_set<uint16_t>
-     find_thd_with_id(thd.thread_id(), set_client_port_in_thd, port);
+  Find_thd_by_id_with_callback_set< uint16_t > find_thd_with_id(thd.thread_id(), set_client_port_in_thd, port);
   Global_THD_manager::get_instance()->find_thd(&find_thd_with_id);
 }
-
 
 /**
   Returns the number opened sessions in thread initialized by this class.
 */
-unsigned int Srv_session::session_count()
-{
-  return server_session_list.size();
-}
-
+unsigned int Srv_session::session_count() { return server_session_list.size(); }
 
 /**
   Returns the number currently running threads initialized by this class.
 */
-unsigned int Srv_session::thread_count(const void *plugin)
-{
-  return server_session_threads.count(plugin);
-}
+unsigned int Srv_session::thread_count(const void *plugin) { return server_session_threads.count(plugin); }

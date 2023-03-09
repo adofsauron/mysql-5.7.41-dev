@@ -22,12 +22,10 @@
 
 #include "parse_tree_hints.h"
 #include "sql_class.h"
-#include "mysqld.h"        // table_alias_charset
+#include "mysqld.h"  // table_alias_charset
 #include "sql_lex.h"
 
-
 extern struct st_opt_hint_info opt_hint_info[];
-
 
 /**
   Returns pointer to Opt_hints_global object,
@@ -41,15 +39,14 @@ extern struct st_opt_hint_info opt_hint_info[];
 
 static Opt_hints_global *get_global_hints(Parse_context *pc)
 {
-  LEX *lex= pc->thd->lex;
+  LEX *lex = pc->thd->lex;
 
   if (!lex->opt_hints_global)
-    lex->opt_hints_global= new Opt_hints_global(pc->thd->mem_root);
+    lex->opt_hints_global = new Opt_hints_global(pc->thd->mem_root);
   if (lex->opt_hints_global)
     lex->opt_hints_global->set_resolved();
   return lex->opt_hints_global;
 }
-
 
 /**
   Returns pointer to Opt_hints_qb object
@@ -64,20 +61,18 @@ static Opt_hints_global *get_global_hints(Parse_context *pc)
 
 static Opt_hints_qb *get_qb_hints(Parse_context *pc)
 {
-
   if (pc->select->opt_hints_qb)
     return pc->select->opt_hints_qb;
 
-  Opt_hints_global *global_hints= get_global_hints(pc);
+  Opt_hints_global *global_hints = get_global_hints(pc);
   if (global_hints == NULL)
     return NULL;
 
-  Opt_hints_qb *qb= new Opt_hints_qb(global_hints, pc->thd->mem_root,
-                                     pc->select->select_number);
+  Opt_hints_qb *qb = new Opt_hints_qb(global_hints, pc->thd->mem_root, pc->select->select_number);
   if (qb)
   {
     global_hints->register_child(qb);
-    pc->select->opt_hints_qb= qb;
+    pc->select->opt_hints_qb = qb;
     qb->set_resolved();
   }
   return qb;
@@ -95,25 +90,21 @@ static Opt_hints_qb *get_qb_hints(Parse_context *pc)
            NULL otherwise
 */
 
-static Opt_hints_qb *find_qb_hints(Parse_context *pc,
-                                   const LEX_CSTRING *qb_name,
-                                   PT_hint *hint)
+static Opt_hints_qb *find_qb_hints(Parse_context *pc, const LEX_CSTRING *qb_name, PT_hint *hint)
 {
-  if (qb_name->length == 0) // no QB NAME is used
+  if (qb_name->length == 0)  // no QB NAME is used
     return pc->select->opt_hints_qb;
 
-  Opt_hints_qb *qb= static_cast<Opt_hints_qb *>
-    (pc->thd->lex->opt_hints_global->find_by_name(qb_name, system_charset_info));
+  Opt_hints_qb *qb =
+      static_cast< Opt_hints_qb * >(pc->thd->lex->opt_hints_global->find_by_name(qb_name, system_charset_info));
 
   if (qb == NULL)
   {
-    hint->print_warn(pc->thd, ER_WARN_UNKNOWN_QB_NAME,
-                     qb_name, NULL, NULL, NULL);
+    hint->print_warn(pc->thd, ER_WARN_UNKNOWN_QB_NAME, qb_name, NULL, NULL, NULL);
   }
 
   return qb;
 }
-
 
 /**
   Returns pointer to Opt_hints_table object,
@@ -127,28 +118,20 @@ static Opt_hints_qb *find_qb_hints(Parse_context *pc,
             NULL if failed to create the object
 */
 
-static Opt_hints_table *get_table_hints(Parse_context *pc,
-                                        Hint_param_table *table_name,
-                                        Opt_hints_qb *qb)
+static Opt_hints_table *get_table_hints(Parse_context *pc, Hint_param_table *table_name, Opt_hints_qb *qb)
 {
-  Opt_hints_table *tab=
-    static_cast<Opt_hints_table *> (qb->find_by_name(&table_name->table,
-                                                     table_alias_charset));
+  Opt_hints_table *tab = static_cast< Opt_hints_table * >(qb->find_by_name(&table_name->table, table_alias_charset));
   if (!tab)
   {
-    tab= new Opt_hints_table(&table_name->table, qb, pc->thd->mem_root);
+    tab = new Opt_hints_table(&table_name->table, qb, pc->thd->mem_root);
     qb->register_child(tab);
   }
 
   return tab;
 }
 
-
-void PT_hint::print_warn(THD *thd, uint err_code,
-                         const LEX_CSTRING *qb_name_arg,
-                         LEX_CSTRING *table_name_arg,
-                         LEX_CSTRING *key_name_arg,
-                         PT_hint *hint) const
+void PT_hint::print_warn(THD *thd, uint err_code, const LEX_CSTRING *qb_name_arg, LEX_CSTRING *table_name_arg,
+                         LEX_CSTRING *key_name_arg, PT_hint *hint) const
 {
   String str;
 
@@ -162,9 +145,8 @@ void PT_hint::print_warn(THD *thd, uint err_code,
   {
     String qb_name_str;
     append_identifier(thd, &qb_name_str, qb_name_arg->str, qb_name_arg->length);
-    push_warning_printf(thd, Sql_condition::SL_WARNING,
-                        err_code, ER_THD(thd, err_code),
-                        qb_name_str.c_ptr_safe(), str.c_ptr_safe());
+    push_warning_printf(thd, Sql_condition::SL_WARNING, err_code, ER_THD(thd, err_code), qb_name_str.c_ptr_safe(),
+                        str.c_ptr_safe());
     return;
   }
 
@@ -200,36 +182,35 @@ void PT_hint::print_warn(THD *thd, uint err_code,
 
   str.append(')');
 
-  push_warning_printf(thd, Sql_condition::SL_WARNING,
-                      err_code, ER_THD(thd, err_code), str.c_ptr_safe());
+  push_warning_printf(thd, Sql_condition::SL_WARNING, err_code, ER_THD(thd, err_code), str.c_ptr_safe());
 }
-
 
 bool PT_qb_level_hint::contextualize(Parse_context *pc)
 {
   if (super::contextualize(pc))
     return true;
 
-  Opt_hints_qb *qb= find_qb_hints(pc, &qb_name, this);
+  Opt_hints_qb *qb = find_qb_hints(pc, &qb_name, this);
   if (qb == NULL)
     return false;  // TODO: Should this generate a warning?
 
-  bool conflict= false;  // true if this hint conflicts with a previous hint
-  switch (type()) {
-  case SEMIJOIN_HINT_ENUM:
-    if (qb->subquery_hint)
-      conflict= true;
-    else if(!qb->semijoin_hint)
-      qb->semijoin_hint= this;
-    break;
-  case SUBQUERY_HINT_ENUM:
-    if (qb->semijoin_hint)
-      conflict= true;
-    else if (!qb->subquery_hint)
-      qb->subquery_hint= this;
-    break;
-  default:
-    assert(0);
+  bool conflict = false;  // true if this hint conflicts with a previous hint
+  switch (type())
+  {
+    case SEMIJOIN_HINT_ENUM:
+      if (qb->subquery_hint)
+        conflict = true;
+      else if (!qb->semijoin_hint)
+        qb->semijoin_hint = this;
+      break;
+    case SUBQUERY_HINT_ENUM:
+      if (qb->semijoin_hint)
+        conflict = true;
+      else if (!qb->subquery_hint)
+        qb->subquery_hint = this;
+      break;
+    default:
+      assert(0);
   }
 
   if (conflict ||
@@ -242,52 +223,53 @@ bool PT_qb_level_hint::contextualize(Parse_context *pc)
 
 void PT_qb_level_hint::append_args(THD *thd, String *str) const
 {
-  switch (type()) {
-  case SEMIJOIN_HINT_ENUM:
+  switch (type())
   {
-    int count= 0;
-    if (args & OPTIMIZER_SWITCH_FIRSTMATCH)
+    case SEMIJOIN_HINT_ENUM:
     {
-      str->append(STRING_WITH_LEN(" FIRSTMATCH"));
-      ++count;
-    }
-    if (args & OPTIMIZER_SWITCH_LOOSE_SCAN)
-    {
-      if (count++ > 0)
-        str->append(STRING_WITH_LEN(","));
-      str->append(STRING_WITH_LEN(" LOOSESCAN"));
-    }
-    if (args & OPTIMIZER_SWITCH_MATERIALIZATION)
-    {
-      if (count++ > 0)
-        str->append(STRING_WITH_LEN(","));
-      str->append(STRING_WITH_LEN(" MATERIALIZATION"));
-    }
-    if (args & OPTIMIZER_SWITCH_DUPSWEEDOUT)
-    {
-      if (count++ > 0)
-        str->append(STRING_WITH_LEN(","));
-      str->append(STRING_WITH_LEN(" DUPSWEEDOUT"));
-    }
-    break;
-  }
-  case SUBQUERY_HINT_ENUM:
-    switch (args) {
-    case Item_exists_subselect::EXEC_MATERIALIZATION:
-      str->append(STRING_WITH_LEN(" MATERIALIZATION"));
+      int count = 0;
+      if (args & OPTIMIZER_SWITCH_FIRSTMATCH)
+      {
+        str->append(STRING_WITH_LEN(" FIRSTMATCH"));
+        ++count;
+      }
+      if (args & OPTIMIZER_SWITCH_LOOSE_SCAN)
+      {
+        if (count++ > 0)
+          str->append(STRING_WITH_LEN(","));
+        str->append(STRING_WITH_LEN(" LOOSESCAN"));
+      }
+      if (args & OPTIMIZER_SWITCH_MATERIALIZATION)
+      {
+        if (count++ > 0)
+          str->append(STRING_WITH_LEN(","));
+        str->append(STRING_WITH_LEN(" MATERIALIZATION"));
+      }
+      if (args & OPTIMIZER_SWITCH_DUPSWEEDOUT)
+      {
+        if (count++ > 0)
+          str->append(STRING_WITH_LEN(","));
+        str->append(STRING_WITH_LEN(" DUPSWEEDOUT"));
+      }
       break;
-    case Item_exists_subselect::EXEC_EXISTS:
-      str->append(STRING_WITH_LEN(" INTOEXISTS"));
+    }
+    case SUBQUERY_HINT_ENUM:
+      switch (args)
+      {
+        case Item_exists_subselect::EXEC_MATERIALIZATION:
+          str->append(STRING_WITH_LEN(" MATERIALIZATION"));
+          break;
+        case Item_exists_subselect::EXEC_EXISTS:
+          str->append(STRING_WITH_LEN(" INTOEXISTS"));
+          break;
+        default:  // Exactly one of above strategies should always be specified
+          assert(false);
+      }
       break;
-    default:      // Exactly one of above strategies should always be specified
+    default:
       assert(false);
-    }
-    break;
-  default:
-    assert(false);
   }
 }
-
 
 bool PT_hint_list::contextualize(Parse_context *pc)
 {
@@ -297,14 +279,13 @@ bool PT_hint_list::contextualize(Parse_context *pc)
   if (!get_qb_hints(pc))
     return true;
 
-  for (PT_hint **h= hints.begin(), **end= hints.end(); h < end; h++)
+  for (PT_hint **h = hints.begin(), **end = hints.end(); h < end; h++)
   {
     if (*h != NULL && (*h)->contextualize(pc))
       return true;
   }
   return false;
 }
-
 
 bool PT_table_level_hint::contextualize(Parse_context *pc)
 {
@@ -313,95 +294,84 @@ bool PT_table_level_hint::contextualize(Parse_context *pc)
 
   if (table_list.empty())  // Query block level hint
   {
-    Opt_hints_qb *qb= find_qb_hints(pc, &qb_name, this);
+    Opt_hints_qb *qb = find_qb_hints(pc, &qb_name, this);
     if (qb == NULL)
       return false;
 
     if (qb->set_switch(switch_on(), type(), false))
-      print_warn(pc->thd, ER_WARN_CONFLICTING_HINT,
-                 &qb_name, NULL, NULL, this);
+      print_warn(pc->thd, ER_WARN_CONFLICTING_HINT, &qb_name, NULL, NULL, this);
     return false;
   }
 
-  for (uint i= 0; i < table_list.size(); i++)
+  for (uint i = 0; i < table_list.size(); i++)
   {
-    Hint_param_table *table_name= &table_list.at(i);
+    Hint_param_table *table_name = &table_list.at(i);
     /*
       If qb name exists then syntax '@qb_name table_name..' is used and
       we should use qb_name for finding query block. Otherwise syntax
       'table_name@qb_name' is used, so use table_name->opt_query_block.
     */
-    const LEX_CSTRING *qb_name_str=
-      qb_name.length > 0 ? &qb_name : &table_name->opt_query_block;
+    const LEX_CSTRING *qb_name_str = qb_name.length > 0 ? &qb_name : &table_name->opt_query_block;
 
-    Opt_hints_qb *qb= find_qb_hints(pc, qb_name_str, this);
+    Opt_hints_qb *qb = find_qb_hints(pc, qb_name_str, this);
     if (qb == NULL)
       return false;
 
-    Opt_hints_table *tab= get_table_hints(pc, table_name, qb);
+    Opt_hints_table *tab = get_table_hints(pc, table_name, qb);
     if (!tab)
       return true;
 
     if (tab->set_switch(switch_on(), type(), true))
-      print_warn(pc->thd, ER_WARN_CONFLICTING_HINT,
-                 &table_name->opt_query_block,
-                 &table_name->table, NULL, this);
+      print_warn(pc->thd, ER_WARN_CONFLICTING_HINT, &table_name->opt_query_block, &table_name->table, NULL, this);
   }
 
   return false;
 }
-
 
 bool PT_key_level_hint::contextualize(Parse_context *pc)
 {
   if (super::contextualize(pc))
     return true;
 
-  Opt_hints_qb *qb= find_qb_hints(pc, &table_name.opt_query_block, this);
+  Opt_hints_qb *qb = find_qb_hints(pc, &table_name.opt_query_block, this);
   if (qb == NULL)
     return false;
 
-  Opt_hints_table *tab= get_table_hints(pc, &table_name, qb);
+  Opt_hints_table *tab = get_table_hints(pc, &table_name, qb);
   if (!tab)
     return true;
 
   if (key_list.empty())  // Table level hint
   {
     if (tab->set_switch(switch_on(), type(), false))
-      print_warn(pc->thd, ER_WARN_CONFLICTING_HINT,
-                 &table_name.opt_query_block,
-                 &table_name.table, NULL, this);
+      print_warn(pc->thd, ER_WARN_CONFLICTING_HINT, &table_name.opt_query_block, &table_name.table, NULL, this);
     return false;
   }
 
-  for (uint i= 0; i < key_list.size(); i++)
+  for (uint i = 0; i < key_list.size(); i++)
   {
-    LEX_CSTRING *key_name= &key_list.at(i);
-    Opt_hints_key *key= (Opt_hints_key *)tab->find_by_name(key_name,
-                                                           system_charset_info);
+    LEX_CSTRING *key_name = &key_list.at(i);
+    Opt_hints_key *key = (Opt_hints_key *)tab->find_by_name(key_name, system_charset_info);
 
     if (!key)
     {
-      key= new Opt_hints_key(key_name, tab, pc->thd->mem_root);
+      key = new Opt_hints_key(key_name, tab, pc->thd->mem_root);
       tab->register_child(key);
     }
 
     if (key->set_switch(switch_on(), type(), true))
-      print_warn(pc->thd, ER_WARN_CONFLICTING_HINT,
-                 &table_name.opt_query_block,
-                 &table_name.table, key_name, this);
+      print_warn(pc->thd, ER_WARN_CONFLICTING_HINT, &table_name.opt_query_block, &table_name.table, key_name, this);
   }
 
   return false;
 }
-
 
 bool PT_hint_qb_name::contextualize(Parse_context *pc)
 {
   if (super::contextualize(pc))
     return true;
 
-  Opt_hints_qb *qb= pc->select->opt_hints_qb;
+  Opt_hints_qb *qb = pc->select->opt_hints_qb;
 
   assert(qb);
 
@@ -409,8 +379,7 @@ bool PT_hint_qb_name::contextualize(Parse_context *pc)
       qb->get_parent()->find_by_name(&qb_name,  // Name is already used
                                      system_charset_info))
   {
-    print_warn(pc->thd, ER_WARN_CONFLICTING_HINT,
-               NULL, NULL, NULL, this);
+    print_warn(pc->thd, ER_WARN_CONFLICTING_HINT, NULL, NULL, NULL, this);
     return false;
   }
 
@@ -418,34 +387,30 @@ bool PT_hint_qb_name::contextualize(Parse_context *pc)
   return false;
 }
 
-
 bool PT_hint_max_execution_time::contextualize(Parse_context *pc)
 {
   if (super::contextualize(pc))
     return true;
 
-  if (pc->thd->lex->sql_command != SQLCOM_SELECT || // not a SELECT statement
-      pc->thd->lex->sphead ||                       // or in a SP/trigger/event
-      pc->select != pc->thd->lex->select_lex)       // or in a subquery
+  if (pc->thd->lex->sql_command != SQLCOM_SELECT ||  // not a SELECT statement
+      pc->thd->lex->sphead ||                        // or in a SP/trigger/event
+      pc->select != pc->thd->lex->select_lex)        // or in a subquery
   {
-    push_warning(pc->thd, Sql_condition::SL_WARNING,
-                 ER_WARN_UNSUPPORTED_MAX_EXECUTION_TIME,
+    push_warning(pc->thd, Sql_condition::SL_WARNING, ER_WARN_UNSUPPORTED_MAX_EXECUTION_TIME,
                  ER_THD(pc->thd, ER_WARN_UNSUPPORTED_MAX_EXECUTION_TIME));
     return false;
   }
 
-  Opt_hints_global *global_hint= get_global_hints(pc);
+  Opt_hints_global *global_hint = get_global_hints(pc);
   if (global_hint->is_specified(type()))
   {
     // Hint duplication: /*+ MAX_EXECUTION_TIME ... MAX_EXECUTION_TIME */
-    print_warn(pc->thd, ER_WARN_CONFLICTING_HINT,
-               NULL, NULL, NULL, this);
+    print_warn(pc->thd, ER_WARN_CONFLICTING_HINT, NULL, NULL, NULL, this);
     return false;
   }
 
-  pc->thd->lex->max_execution_time= milliseconds;
+  pc->thd->lex->max_execution_time = milliseconds;
   global_hint->set_switch(switch_on(), type(), false);
-  global_hint->max_exec_time= this;
+  global_hint->max_exec_time = this;
   return false;
 }
-

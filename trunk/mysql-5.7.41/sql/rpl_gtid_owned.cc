@@ -23,11 +23,10 @@
 
 #include "rpl_gtid.h"
 
-#include "mysqld_error.h"      // ER_*
-
+#include "mysqld_error.h"  // ER_*
 
 Owned_gtids::Owned_gtids(Checkable_rwlock *_sid_lock)
-  : sid_lock(_sid_lock), sidno_to_hash(key_memory_Owned_gtids_sidno_to_hash)
+    : sid_lock(_sid_lock), sidno_to_hash(key_memory_Owned_gtids_sidno_to_hash)
 {
   /*
   my_hash_init(&gtid_to_owner, &my_charset_bin, 20,
@@ -36,41 +35,36 @@ Owned_gtids::Owned_gtids(Checkable_rwlock *_sid_lock)
   */
 }
 
-
 Owned_gtids::~Owned_gtids()
 {
   // destructor should only be called when no other thread may access object
-  //sid_lock->assert_no_lock();
+  // sid_lock->assert_no_lock();
   // need to hold lock before calling get_max_sidno
   sid_lock->rdlock();
-  rpl_sidno max_sidno= get_max_sidno();
-  for (int sidno= 1; sidno <= max_sidno; sidno++)
+  rpl_sidno max_sidno = get_max_sidno();
+  for (int sidno = 1; sidno <= max_sidno; sidno++)
   {
-    HASH *hash= get_hash(sidno);
+    HASH *hash = get_hash(sidno);
     my_hash_free(hash);
     my_free(hash);
   }
   sid_lock->unlock();
-  //sid_lock->assert_no_lock();
+  // sid_lock->assert_no_lock();
 }
-
 
 enum_return_status Owned_gtids::ensure_sidno(rpl_sidno sidno)
 {
   DBUG_ENTER("Owned_gtids::ensure_sidno");
   sid_lock->assert_some_wrlock();
-  rpl_sidno max_sidno= get_max_sidno();
+  rpl_sidno max_sidno = get_max_sidno();
   if (sidno > max_sidno || get_hash(sidno) == NULL)
   {
-    for (int i= max_sidno; i < sidno; i++)
+    for (int i = max_sidno; i < sidno; i++)
     {
-      HASH *hash= (HASH *)my_malloc(key_memory_Owned_gtids_sidno_to_hash,
-                                    sizeof(HASH), MYF(MY_WME));
+      HASH *hash = (HASH *)my_malloc(key_memory_Owned_gtids_sidno_to_hash, sizeof(HASH), MYF(MY_WME));
       if (hash == NULL)
         goto error;
-      my_hash_init(hash, &my_charset_bin, 20,
-                   offsetof(Node, gno), sizeof(rpl_gno), NULL,
-                   my_free, 0,
+      my_hash_init(hash, &my_charset_bin, 20, offsetof(Node, gno), sizeof(rpl_gno), NULL, my_free, 0,
                    key_memory_Owned_gtids_sidno_to_hash);
       sidno_to_hash.push_back(hash);
     }
@@ -81,20 +75,17 @@ error:
   RETURN_REPORTED_ERROR;
 }
 
-
-enum_return_status Owned_gtids::add_gtid_owner(const Gtid &gtid,
-                                               my_thread_id owner)
+enum_return_status Owned_gtids::add_gtid_owner(const Gtid &gtid, my_thread_id owner)
 {
   DBUG_ENTER("Owned_gtids::add_gtid_owner(Gtid, my_thread_id)");
   assert(gtid.sidno <= get_max_sidno());
   assert(gtid.gno > 0);
   assert(gtid.gno < GNO_END);
-  Node *n= (Node *)my_malloc(key_memory_Sid_map_Node,
-                             sizeof(Node), MYF(MY_WME));
+  Node *n = (Node *)my_malloc(key_memory_Sid_map_Node, sizeof(Node), MYF(MY_WME));
   if (n == NULL)
     RETURN_REPORTED_ERROR;
-  n->gno= gtid.gno;
-  n->owner= owner;
+  n->gno = gtid.gno;
+  n->owner = owner;
   /*
   printf("Owned_gtids(%p)::add sidno=%d gno=%lld n=%p n->owner=%u\n",
          this, sidno, gno, n, n?n->owner:0);
@@ -108,19 +99,17 @@ enum_return_status Owned_gtids::add_gtid_owner(const Gtid &gtid,
   RETURN_OK;
 }
 
-
 void Owned_gtids::remove_gtid(const Gtid &gtid, const my_thread_id owner)
 {
   DBUG_ENTER("Owned_gtids::remove_gtid(Gtid)");
-  //printf("Owned_gtids::remove(sidno=%d gno=%lld)\n", sidno, gno);
-  //assert(contains_gtid(sidno, gno)); // allow group not owned
+  // printf("Owned_gtids::remove(sidno=%d gno=%lld)\n", sidno, gno);
+  // assert(contains_gtid(sidno, gno)); // allow group not owned
   HASH_SEARCH_STATE state;
-  HASH *hash= get_hash(gtid.sidno);
+  HASH *hash = get_hash(gtid.sidno);
   assert(hash != NULL);
 
-  for (Node *node= (Node *)my_hash_search(hash, (const uchar *)&gtid.gno, sizeof(rpl_gno));
-       node != NULL;
-       node= (Node*) my_hash_next(hash, (const uchar *)&gtid.gno, sizeof(rpl_gno), &state))
+  for (Node *node = (Node *)my_hash_search(hash, (const uchar *)&gtid.gno, sizeof(rpl_gno)); node != NULL;
+       node = (Node *)my_hash_next(hash, (const uchar *)&gtid.gno, sizeof(rpl_gno), &state))
   {
     if (node->owner == owner)
     {
@@ -136,20 +125,19 @@ void Owned_gtids::remove_gtid(const Gtid &gtid, const my_thread_id owner)
   DBUG_VOID_RETURN;
 }
 
-
 bool Owned_gtids::is_intersection_nonempty(const Gtid_set *other) const
 {
   DBUG_ENTER("Owned_gtids::is_intersection_nonempty(Gtid_set *)");
   if (sid_lock != NULL)
     sid_lock->assert_some_wrlock();
   Gtid_iterator git(this);
-  Gtid g= git.get();
+  Gtid g = git.get();
   while (g.sidno != 0)
   {
     if (other->contains_gtid(g.sidno, g.gno))
       DBUG_RETURN(true);
     git.next();
-    g= git.get();
+    g = git.get();
   }
   DBUG_RETURN(false);
 }
@@ -162,19 +150,19 @@ void Owned_gtids::get_gtids(Gtid_set &gtid_set) const
     sid_lock->assert_some_wrlock();
 
   Gtid_iterator git(this);
-  Gtid g= git.get();
+  Gtid g = git.get();
   while (g.sidno != 0)
   {
     gtid_set._add_gtid(g);
     git.next();
-    g= git.get();
+    g = git.get();
   }
   DBUG_VOID_RETURN;
 }
 
 bool Owned_gtids::contains_gtid(const Gtid &gtid) const
 {
-  HASH *hash= get_hash(gtid.sidno);
+  HASH *hash = get_hash(gtid.sidno);
   assert(hash != NULL);
   sid_lock->assert_some_lock();
 
@@ -184,18 +172,16 @@ bool Owned_gtids::contains_gtid(const Gtid &gtid) const
 bool Owned_gtids::is_owned_by(const Gtid &gtid, const my_thread_id thd_id) const
 {
   HASH_SEARCH_STATE state;
-  HASH *hash= get_hash(gtid.sidno);
+  HASH *hash = get_hash(gtid.sidno);
   assert(hash != NULL);
-  Node *node= (Node*) my_hash_first(hash, (const uchar *)&gtid.gno,
-                                    sizeof(rpl_gno), &state);
+  Node *node = (Node *)my_hash_first(hash, (const uchar *)&gtid.gno, sizeof(rpl_gno), &state);
   if (thd_id == 0)
     return node == NULL;
   while (node)
   {
     if (node->owner == thd_id)
       return true;
-    node= (Node*) my_hash_next(hash, (const uchar *)&gtid.gno,
-                               sizeof(rpl_gno), &state);
+    node = (Node *)my_hash_next(hash, (const uchar *)&gtid.gno, sizeof(rpl_gno), &state);
   }
   return false;
 }

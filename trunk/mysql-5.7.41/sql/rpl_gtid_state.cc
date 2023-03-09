@@ -23,9 +23,9 @@
 
 #include "rpl_gtid.h"
 
-#include "rpl_gtid_persist.h"      // gtid_table_persistor
-#include "sql_class.h"             // THD
-#include "debug_sync.h"            // DEBUG_SYNC
+#include "rpl_gtid_persist.h"  // gtid_table_persistor
+#include "sql_class.h"         // THD
+#include "debug_sync.h"        // DEBUG_SYNC
 #include "binlog.h"
 
 PSI_memory_key key_memory_Gtid_state_group_commit_sidno;
@@ -33,7 +33,7 @@ PSI_memory_key key_memory_Gtid_state_group_commit_sidno;
 int Gtid_state::clear(THD *thd)
 {
   DBUG_ENTER("Gtid_state::clear()");
-  int ret= 0;
+  int ret = 0;
   // the wrlock implies that no other thread can hold any of the mutexes
   sid_lock->assert_some_wrlock();
   lost_gtids.clear();
@@ -41,19 +41,18 @@ int Gtid_state::clear(THD *thd)
   gtids_only_in_table.clear();
   previous_gtids_logged.clear();
   /* Reset gtid_executed table. */
-  if ((ret= gtid_table_persistor->reset(thd)) == 1)
+  if ((ret = gtid_table_persistor->reset(thd)) == 1)
   {
     /*
       Gtid table is not ready to be used, so failed to
       open it. Ignore the error.
     */
     thd->clear_error();
-    ret= 0;
+    ret = 0;
   }
-  next_free_gno= 1;
+  next_free_gno = 1;
   DBUG_RETURN(ret);
 }
-
 
 enum_return_status Gtid_state::acquire_ownership(THD *thd, const Gtid &gtid)
 {
@@ -70,7 +69,7 @@ enum_return_status Gtid_state::acquire_ownership(THD *thd, const Gtid &gtid)
   {
 #ifdef HAVE_GTID_NEXT_LIST
     thd->owned_gtid_set._add_gtid(gtid);
-    thd->owned_gtid.sidno= THD::OWNED_SIDNO_GTID_SET;
+    thd->owned_gtid.sidno = THD::OWNED_SIDNO_GTID_SET;
     thd->owned_sid.clear();
 #else
     assert(0);
@@ -78,9 +77,9 @@ enum_return_status Gtid_state::acquire_ownership(THD *thd, const Gtid &gtid)
   }
   else
   {
-    thd->owned_gtid= gtid;
+    thd->owned_gtid = gtid;
     thd->owned_gtid.dbug_print(NULL, "set owned_gtid in acquire_ownership");
-    thd->owned_sid= sid_map->sidno_to_sid(gtid.sidno);
+    thd->owned_sid = sid_map->sidno_to_sid(gtid.sidno);
   }
   RETURN_OK;
 err:
@@ -88,19 +87,18 @@ err:
   {
 #ifdef HAVE_GTID_NEXT_LIST
     Gtid_set::Gtid_iterator git(&thd->owned_gtid_set);
-    Gtid g= git.get();
+    Gtid g = git.get();
     while (g.sidno != 0)
     {
       owned_gtids.remove_gtid(g);
-      g= git.get();
+      g = git.get();
     }
 #else
     assert(0);
 #endif
   }
   thd->clear_owned_gtids();
-  thd->owned_gtid.dbug_print(NULL,
-                             "set owned_gtid (clear) in acquire_ownership");
+  thd->owned_gtid.dbug_print(NULL, "set owned_gtid (clear) in acquire_ownership");
   RETURN_REPORTED_ERROR;
 }
 
@@ -113,7 +111,6 @@ void Gtid_state::lock_owned_sidnos(const THD *thd)
     lock_sidno(thd->owned_gtid.sidno);
 }
 #endif
-
 
 void Gtid_state::unlock_owned_sidnos(const THD *thd)
 {
@@ -131,7 +128,6 @@ void Gtid_state::unlock_owned_sidnos(const THD *thd)
   }
 }
 
-
 void Gtid_state::broadcast_owned_sidnos(const THD *thd)
 {
   if (thd->owned_gtid.sidno == THD::OWNED_SIDNO_GTID_SET)
@@ -148,7 +144,6 @@ void Gtid_state::broadcast_owned_sidnos(const THD *thd)
   }
 }
 
-
 void Gtid_state::update_commit_group(THD *first_thd)
 {
   DBUG_ENTER("Gtid_state::update_commit_group");
@@ -164,15 +159,14 @@ void Gtid_state::update_commit_group(THD *first_thd)
 
   update_gtids_impl_lock_sidnos(first_thd);
 
-  for (THD *thd= first_thd; thd != NULL; thd= thd->next_to_commit)
+  for (THD *thd = first_thd; thd != NULL; thd = thd->next_to_commit)
   {
-    bool is_commit= (thd->commit_error != THD::CE_COMMIT_ERROR);
+    bool is_commit = (thd->commit_error != THD::CE_COMMIT_ERROR);
 
-    if (update_gtids_impl_do_nothing(thd) ||
-        (!is_commit && update_gtids_impl_check_skip_gtid_rollback(thd)))
+    if (update_gtids_impl_do_nothing(thd) || (!is_commit && update_gtids_impl_check_skip_gtid_rollback(thd)))
       continue;
 
-    bool more_trx_with_same_gtid_next= update_gtids_impl_begin(thd);
+    bool more_trx_with_same_gtid_next = update_gtids_impl_begin(thd);
 
     if (thd->owned_gtid.sidno == THD::OWNED_SIDNO_GTID_SET)
     {
@@ -211,7 +205,6 @@ void Gtid_state::update_on_commit(THD *thd)
   DBUG_VOID_RETURN;
 }
 
-
 void Gtid_state::update_on_rollback(THD *thd)
 {
   DBUG_ENTER("Gtid_state::update_on_rollback");
@@ -222,7 +215,6 @@ void Gtid_state::update_on_rollback(THD *thd)
   DBUG_VOID_RETURN;
 }
 
-
 void Gtid_state::update_gtids_impl(THD *thd, bool is_commit)
 {
   DBUG_ENTER("Gtid_state::update_gtids_impl");
@@ -230,7 +222,7 @@ void Gtid_state::update_gtids_impl(THD *thd, bool is_commit)
   if (update_gtids_impl_do_nothing(thd))
     DBUG_VOID_RETURN;
 
-  bool more_trx_with_same_gtid_next= update_gtids_impl_begin(thd);
+  bool more_trx_with_same_gtid_next = update_gtids_impl_begin(thd);
 
   DEBUG_SYNC(thd, "update_gtid_state_before_global_sid_lock");
   global_sid_lock->rdlock();
@@ -242,7 +234,7 @@ void Gtid_state::update_gtids_impl(THD *thd, bool is_commit)
   }
   else if (thd->owned_gtid.sidno > 0)
   {
-    rpl_sidno sidno= thd->owned_gtid.sidno;
+    rpl_sidno sidno = thd->owned_gtid.sidno;
     update_gtids_impl_lock_sidno(sidno);
     update_gtids_impl_own_gtid(thd, is_commit);
     update_gtids_impl_broadcast_and_unlock_sidno(sidno);
@@ -260,12 +252,10 @@ void Gtid_state::update_gtids_impl(THD *thd, bool is_commit)
 
   update_gtids_impl_end(thd, more_trx_with_same_gtid_next);
 
-  thd->owned_gtid.dbug_print(NULL,
-                             "set owned_gtid (clear) in update_gtids_impl");
+  thd->owned_gtid.dbug_print(NULL, "set owned_gtid (clear) in update_gtids_impl");
 
   DBUG_VOID_RETURN;
 }
-
 
 void Gtid_state::end_gtid_violating_transaction(THD *thd)
 {
@@ -279,47 +269,37 @@ void Gtid_state::end_gtid_violating_transaction(THD *thd)
       assert(thd->variables.gtid_next.type == ANONYMOUS_GROUP);
       end_anonymous_gtid_violating_transaction();
     }
-    thd->has_gtid_consistency_violation= false;
+    thd->has_gtid_consistency_violation = false;
   }
   DBUG_VOID_RETURN;
 }
 
-
-bool Gtid_state::wait_for_sidno(THD *thd, rpl_sidno sidno,
-                                struct timespec *abstime)
+bool Gtid_state::wait_for_sidno(THD *thd, rpl_sidno sidno, struct timespec *abstime)
 {
   DBUG_ENTER("wait_for_sidno");
   PSI_stage_info old_stage;
   sid_lock->assert_some_lock();
   sid_locks.assert_owner(sidno);
-  sid_locks.enter_cond(thd, sidno,
-                       &stage_waiting_for_gtid_to_be_committed,
-                       &old_stage);
-  bool ret= sid_locks.wait(thd, sidno, abstime);
+  sid_locks.enter_cond(thd, sidno, &stage_waiting_for_gtid_to_be_committed, &old_stage);
+  bool ret = sid_locks.wait(thd, sidno, abstime);
   // Can't call sid_locks.unlock() as that requires global_sid_lock.
   mysql_mutex_unlock(thd->current_mutex);
   thd->EXIT_COND(&old_stage);
   DBUG_RETURN(ret);
 }
 
-
-bool Gtid_state::wait_for_gtid(THD *thd, const Gtid &gtid,
-                               struct timespec *abstime)
+bool Gtid_state::wait_for_gtid(THD *thd, const Gtid &gtid, struct timespec *abstime)
 {
   DBUG_ENTER("Gtid_state::wait_for_gtid");
-  DBUG_PRINT("info", ("SIDNO=%d GNO=%lld thread_id=%u",
-                      gtid.sidno, gtid.gno,
-                      thd->thread_id()));
+  DBUG_PRINT("info", ("SIDNO=%d GNO=%lld thread_id=%u", gtid.sidno, gtid.gno, thd->thread_id()));
   assert(!owned_gtids.is_owned_by(gtid, thd->thread_id()));
   assert(!owned_gtids.is_owned_by(gtid, 0));
 
-  bool ret= wait_for_sidno(thd, gtid.sidno, abstime);
+  bool ret = wait_for_sidno(thd, gtid.sidno, abstime);
   DBUG_RETURN(ret);
 }
 
-
-bool Gtid_state::wait_for_gtid_set(THD *thd, Gtid_set* wait_for,
-                                   double timeout)
+bool Gtid_state::wait_for_gtid_set(THD *thd, Gtid_set *wait_for, double timeout)
 {
   struct timespec abstime;
   DBUG_ENTER("Gtid_state::wait_for_gtid_set");
@@ -331,9 +311,9 @@ bool Gtid_state::wait_for_gtid_set(THD *thd, Gtid_set* wait_for,
 
   assert(wait_for->get_sid_map() == global_sid_map);
 
-  if (timeout > 0) {
-    set_timespec_nsec(&abstime,
-                      static_cast<ulonglong>(timeout * 1000000000ULL));
+  if (timeout > 0)
+  {
+    set_timespec_nsec(&abstime, static_cast< ulonglong >(timeout * 1000000000ULL));
   }
 
   /*
@@ -366,13 +346,13 @@ bool Gtid_state::wait_for_gtid_set(THD *thd, Gtid_set* wait_for,
   */
 
   // Will be true once the entire 'for' loop completes without waiting.
-  bool verified= false;
+  bool verified = false;
 
   // The set of GTIDs that we are still waiting for.
   Gtid_set todo(global_sid_map, NULL);
   // As an optimization, add 100 Intervals that do not need to be
   // allocated. This avoids allocation of these intervals.
-  static const int preallocated_interval_count= 100;
+  static const int preallocated_interval_count = 100;
   Gtid_set::Interval ivs[preallocated_interval_count];
   todo.add_interval_memory(preallocated_interval_count, ivs);
 
@@ -388,8 +368,8 @@ bool Gtid_state::wait_for_gtid_set(THD *thd, Gtid_set* wait_for,
 
     // Set 'verified' to true; it will be set to 'false' if any wait
     // is done.
-    verified= true;
-    for (int sidno= 1; sidno <= todo.get_max_sidno(); sidno++)
+    verified = true;
+    for (int sidno = 1; sidno <= todo.get_max_sidno(); sidno++)
     {
       // Iterate until 'todo' is empty for this SIDNO.
       while (todo.contains_sidno(sidno))
@@ -399,25 +379,25 @@ bool Gtid_state::wait_for_gtid_set(THD *thd, Gtid_set* wait_for,
 
         if (todo.contains_sidno(sidno))
         {
-          bool ret= wait_for_sidno(thd, sidno, timeout > 0 ? &abstime : NULL);
+          bool ret = wait_for_sidno(thd, sidno, timeout > 0 ? &abstime : NULL);
 
           // wait_for_gtid will release both the global lock and the
           // mutex.  Acquire the global lock again.
           global_sid_lock->rdlock();
-          verified= false;
+          verified = false;
 
           if (thd->killed)
           {
             switch (thd->killed)
             {
-            case ER_SERVER_SHUTDOWN:
-            case ER_QUERY_INTERRUPTED:
-            case ER_QUERY_TIMEOUT:
-              my_error(thd->killed, MYF(0));
-              break;
-            default:
-              my_error(ER_QUERY_INTERRUPTED, MYF(0));
-              break;
+              case ER_SERVER_SHUTDOWN:
+              case ER_QUERY_INTERRUPTED:
+              case ER_QUERY_TIMEOUT:
+                my_error(thd->killed, MYF(0));
+                break;
+              default:
+                my_error(ER_QUERY_INTERRUPTED, MYF(0));
+                break;
             }
             DBUG_RETURN(true);
           }
@@ -466,53 +446,46 @@ rpl_gno Gtid_state::get_automatic_gno(rpl_sidno sidno) const
     than the next_free_gno at Gtid_state::update_gtids_impl_own_gtid function
     to set next_free_gno with the "released" GNO in this case.
   */
-  Gtid next_candidate= { sidno,
-                         sidno == get_server_sidno() ? next_free_gno : 1 };
+  Gtid next_candidate = {sidno, sidno == get_server_sidno() ? next_free_gno : 1};
   while (true)
   {
-    const Gtid_set::Interval *iv= ivit.get();
-    rpl_gno next_interval_start= iv != NULL ? iv->start : GNO_END;
-    while (next_candidate.gno < next_interval_start &&
-           DBUG_EVALUATE_IF("simulate_gno_exhausted", false, true))
+    const Gtid_set::Interval *iv = ivit.get();
+    rpl_gno next_interval_start = iv != NULL ? iv->start : GNO_END;
+    while (next_candidate.gno < next_interval_start && DBUG_EVALUATE_IF("simulate_gno_exhausted", false, true))
     {
-      DBUG_PRINT("debug",("Checking availability of gno= %llu", next_candidate.gno));
+      DBUG_PRINT("debug", ("Checking availability of gno= %llu", next_candidate.gno));
       if (owned_gtids.is_owned_by(next_candidate, 0))
         DBUG_RETURN(next_candidate.gno);
       next_candidate.gno++;
     }
-    if (iv == NULL ||
-        DBUG_EVALUATE_IF("simulate_gno_exhausted", true, false))
+    if (iv == NULL || DBUG_EVALUATE_IF("simulate_gno_exhausted", true, false))
     {
       my_error(ER_GNO_EXHAUSTED, MYF(0));
       DBUG_RETURN(-1);
     }
     if (next_candidate.gno < iv->end)
-      next_candidate.gno= iv->end;
+      next_candidate.gno = iv->end;
     ivit.next();
   }
 }
 
-
 rpl_gno Gtid_state::get_last_executed_gno(rpl_sidno sidno) const
 {
   DBUG_ENTER("Gtid:state::get_last_executed_gno");
-  rpl_gno gno= 0;
+  rpl_gno gno = 0;
 
   gtid_state->lock_sidno(sidno);
-  gno= executed_gtids.get_last_gno(sidno);
+  gno = executed_gtids.get_last_gno(sidno);
   gtid_state->unlock_sidno(sidno);
 
   DBUG_RETURN(gno);
 }
 
-
-enum_return_status Gtid_state::generate_automatic_gtid(THD *thd,
-                                                       rpl_sidno specified_sidno,
-                                                       rpl_gno specified_gno,
+enum_return_status Gtid_state::generate_automatic_gtid(THD *thd, rpl_sidno specified_sidno, rpl_gno specified_gno,
                                                        rpl_sidno *locked_sidno)
 {
   DBUG_ENTER("Gtid_state::generate_automatic_gtid");
-  enum_return_status ret= RETURN_STATUS_OK;
+  enum_return_status ret = RETURN_STATUS_OK;
 
   assert(thd->variables.gtid_next.type == AUTOMATIC_GROUP);
   assert(specified_sidno >= 0);
@@ -530,18 +503,17 @@ enum_return_status Gtid_state::generate_automatic_gtid(THD *thd,
   // If GTID_MODE = ON_PERMISSIVE or ON, generate a new GTID
   if (get_gtid_mode(GTID_MODE_LOCK_SID) >= GTID_MODE_ON_PERMISSIVE)
   {
-    Gtid automatic_gtid= { specified_sidno, specified_gno };
+    Gtid automatic_gtid = {specified_sidno, specified_gno};
 
     if (automatic_gtid.sidno == 0)
-      automatic_gtid.sidno= get_server_sidno();
+      automatic_gtid.sidno = get_server_sidno();
 
     /*
       We need to lock the sidno if locked_sidno wasn't passed as paramenter
       or the already locked sidno doesn't match the one to generate the new
       automatic GTID.
     */
-    bool need_to_lock_sidno= (locked_sidno_was_passed_null ||
-                              *locked_sidno != automatic_gtid.sidno);
+    bool need_to_lock_sidno = (locked_sidno_was_passed_null || *locked_sidno != automatic_gtid.sidno);
     if (need_to_lock_sidno)
     {
       /*
@@ -554,36 +526,33 @@ enum_return_status Gtid_state::generate_automatic_gtid(THD *thd,
       lock_sidno(automatic_gtid.sidno);
       /* Update the locked_sidno, so the caller would know what to unlock */
       if (!locked_sidno_was_passed_null)
-        *locked_sidno= automatic_gtid.sidno;
+        *locked_sidno = automatic_gtid.sidno;
     }
 
     if (automatic_gtid.gno == 0)
     {
-      automatic_gtid.gno= get_automatic_gno(automatic_gtid.sidno);
-      if (automatic_gtid.sidno == get_server_sidno() &&
-          automatic_gtid.gno != -1)
-        next_free_gno= automatic_gtid.gno + 1;
+      automatic_gtid.gno = get_automatic_gno(automatic_gtid.sidno);
+      if (automatic_gtid.sidno == get_server_sidno() && automatic_gtid.gno != -1)
+        next_free_gno = automatic_gtid.gno + 1;
     }
 
     if (automatic_gtid.gno != -1)
       acquire_ownership(thd, automatic_gtid);
     else
-      ret= RETURN_STATUS_REPORTED_ERROR;
+      ret = RETURN_STATUS_REPORTED_ERROR;
 
     /* The caller will unlock the sidno_lock if locked_sidno was passed */
     if (locked_sidno_was_passed_null)
       unlock_sidno(automatic_gtid.sidno);
-
   }
   else
   {
     // If GTID_MODE = OFF or OFF_PERMISSIVE, just mark this thread as
     // using an anonymous transaction.
-    thd->owned_gtid.sidno= THD::OWNED_SIDNO_ANONYMOUS;
-    thd->owned_gtid.gno= 0;
+    thd->owned_gtid.sidno = THD::OWNED_SIDNO_ANONYMOUS;
+    thd->owned_gtid.gno = 0;
     acquire_anonymous_ownership();
-    thd->owned_gtid.dbug_print(NULL,
-                               "set owned_gtid (anonymous) in generate_automatic_gtid");
+    thd->owned_gtid.dbug_print(NULL, "set owned_gtid (anonymous) in generate_automatic_gtid");
   }
 
   /* The caller will unlock the sid_lock if locked_sidno was passed */
@@ -595,42 +564,38 @@ enum_return_status Gtid_state::generate_automatic_gtid(THD *thd,
   DBUG_RETURN(ret);
 }
 
-
 void Gtid_state::lock_sidnos(const Gtid_set *gs)
 {
   assert(gs);
-  rpl_sidno max_sidno= gs->get_max_sidno();
-  for (rpl_sidno sidno= 1; sidno <= max_sidno; sidno++)
+  rpl_sidno max_sidno = gs->get_max_sidno();
+  for (rpl_sidno sidno = 1; sidno <= max_sidno; sidno++)
     if (gs->contains_sidno(sidno))
       lock_sidno(sidno);
 }
 
-
 void Gtid_state::unlock_sidnos(const Gtid_set *gs)
 {
   assert(gs);
-  rpl_sidno max_sidno= gs->get_max_sidno();
-  for (rpl_sidno sidno= 1; sidno <= max_sidno; sidno++)
+  rpl_sidno max_sidno = gs->get_max_sidno();
+  for (rpl_sidno sidno = 1; sidno <= max_sidno; sidno++)
     if (gs->contains_sidno(sidno))
       unlock_sidno(sidno);
 }
 
-
 void Gtid_state::broadcast_sidnos(const Gtid_set *gs)
 {
   assert(gs);
-  rpl_sidno max_sidno= gs->get_max_sidno();
-  for (rpl_sidno sidno= 1; sidno <= max_sidno; sidno++)
+  rpl_sidno max_sidno = gs->get_max_sidno();
+  for (rpl_sidno sidno = 1; sidno <= max_sidno; sidno++)
     if (gs->contains_sidno(sidno))
       broadcast_sidno(sidno);
 }
-
 
 enum_return_status Gtid_state::ensure_sidno()
 {
   DBUG_ENTER("Gtid_state::ensure_sidno");
   sid_lock->assert_some_wrlock();
-  rpl_sidno sidno= sid_map->get_max_sidno();
+  rpl_sidno sidno = sid_map->get_max_sidno();
   if (sidno > 0)
   {
     // The lock may be temporarily released during one of the calls to
@@ -643,7 +608,7 @@ enum_return_status Gtid_state::ensure_sidno()
     PROPAGATE_REPORTED_ERROR(owned_gtids.ensure_sidno(sidno));
     PROPAGATE_REPORTED_ERROR(sid_locks.ensure_index(sidno));
     PROPAGATE_REPORTED_ERROR(ensure_commit_group_sidnos(sidno));
-    sidno= sid_map->get_max_sidno();
+    sidno = sid_map->get_max_sidno();
     assert(executed_gtids.get_max_sidno() >= sidno);
     assert(gtids_only_in_table.get_max_sidno() >= sidno);
     assert(previous_gtids_logged.get_max_sidno() >= sidno);
@@ -655,7 +620,6 @@ enum_return_status Gtid_state::ensure_sidno()
   RETURN_OK;
 }
 
-
 enum_return_status Gtid_state::add_lost_gtids(const Gtid_set *gtid_set)
 {
   DBUG_ENTER("Gtid_state::add_lost_gtids()");
@@ -666,15 +630,13 @@ enum_return_status Gtid_state::add_lost_gtids(const Gtid_set *gtid_set)
   if (!executed_gtids.is_empty())
   {
     BINLOG_ERROR((ER(ER_CANT_SET_GTID_PURGED_WHEN_GTID_EXECUTED_IS_NOT_EMPTY)),
-                 (ER_CANT_SET_GTID_PURGED_WHEN_GTID_EXECUTED_IS_NOT_EMPTY,
-                 MYF(0)));
+                 (ER_CANT_SET_GTID_PURGED_WHEN_GTID_EXECUTED_IS_NOT_EMPTY, MYF(0)));
     RETURN_REPORTED_ERROR;
   }
   if (!owned_gtids.is_empty())
   {
     BINLOG_ERROR((ER(ER_CANT_SET_GTID_PURGED_WHEN_OWNED_GTIDS_IS_NOT_EMPTY)),
-                 (ER_CANT_SET_GTID_PURGED_WHEN_OWNED_GTIDS_IS_NOT_EMPTY,
-                 MYF(0)));
+                 (ER_CANT_SET_GTID_PURGED_WHEN_OWNED_GTIDS_IS_NOT_EMPTY, MYF(0)));
     RETURN_REPORTED_ERROR;
   }
   assert(lost_gtids.is_empty());
@@ -691,7 +653,6 @@ enum_return_status Gtid_state::add_lost_gtids(const Gtid_set *gtid_set)
   DBUG_RETURN(RETURN_STATUS_OK);
 }
 
-
 int Gtid_state::init()
 {
   DBUG_ENTER("Gtid_state::init()");
@@ -701,23 +662,22 @@ int Gtid_state::init()
   rpl_sid server_sid;
   if (server_sid.parse(server_uuid) != 0)
     DBUG_RETURN(1);
-  rpl_sidno sidno= sid_map->add_sid(server_sid);
+  rpl_sidno sidno = sid_map->add_sid(server_sid);
   if (sidno <= 0)
     DBUG_RETURN(1);
-  server_sidno= sidno;
-  next_free_gno= 1;
+  server_sidno = sidno;
+  next_free_gno = 1;
   DBUG_RETURN(0);
 }
-
 
 int Gtid_state::save(THD *thd)
 {
   DBUG_ENTER("Gtid_state::save(THD *thd)");
   assert(gtid_table_persistor != NULL);
   assert(thd->owned_gtid.sidno > 0);
-  int error= 0;
+  int error = 0;
 
-  int ret= gtid_table_persistor->save(thd, &thd->owned_gtid);
+  int ret = gtid_table_persistor->save(thd, &thd->owned_gtid);
   if (1 == ret)
   {
     /*
@@ -726,27 +686,25 @@ int Gtid_state::save(THD *thd)
     */
     thd->clear_error();
     if (!thd->get_stmt_da()->is_set())
-        thd->get_stmt_da()->set_ok_status(0, 0, NULL);
+      thd->get_stmt_da()->set_ok_status(0, 0, NULL);
   }
   else if (-1 == ret)
-    error= -1;
+    error = -1;
 
   DBUG_RETURN(error);
 }
 
-
 int Gtid_state::save(const Gtid_set *gtid_set)
 {
   DBUG_ENTER("Gtid_state::save(Gtid_set *gtid_set)");
-  int ret= gtid_table_persistor->save(gtid_set);
+  int ret = gtid_table_persistor->save(gtid_set);
   DBUG_RETURN(ret);
 }
-
 
 int Gtid_state::save_gtids_of_last_binlog_into_table(bool on_rotation)
 {
   DBUG_ENTER("Gtid_state::save_gtids_of_last_binlog_into_table");
-  int ret= 0;
+  int ret = 0;
 
   /*
     Use local Sid_map, so that we don't need a lock while inserting
@@ -755,7 +713,7 @@ int Gtid_state::save_gtids_of_last_binlog_into_table(bool on_rotation)
   Sid_map sid_map(NULL);
   Gtid_set logged_gtids_last_binlog(&sid_map, NULL);
   // Allocate some intervals on stack to reduce allocation.
-  static const int PREALLOCATED_INTERVAL_COUNT= 64;
+  static const int PREALLOCATED_INTERVAL_COUNT = 64;
   Gtid_set::Interval iv[PREALLOCATED_INTERVAL_COUNT];
   logged_gtids_last_binlog.add_interval_memory(PREALLOCATED_INTERVAL_COUNT, iv);
   /*
@@ -763,22 +721,20 @@ int Gtid_state::save_gtids_of_last_binlog_into_table(bool on_rotation)
                               gtids_only_in_table
   */
   global_sid_lock->wrlock();
-  ret= (logged_gtids_last_binlog.add_gtid_set(&executed_gtids) !=
-        RETURN_STATUS_OK);
+  ret = (logged_gtids_last_binlog.add_gtid_set(&executed_gtids) != RETURN_STATUS_OK);
   if (!ret)
   {
     logged_gtids_last_binlog.remove_gtid_set(&previous_gtids_logged);
     logged_gtids_last_binlog.remove_gtid_set(&gtids_only_in_table);
-    if (!logged_gtids_last_binlog.is_empty() ||
-        mysql_bin_log.is_rotating_caused_by_incident)
+    if (!logged_gtids_last_binlog.is_empty() || mysql_bin_log.is_rotating_caused_by_incident)
     {
       /* Prepare previous_gtids_logged for next binlog on binlog rotation */
       if (on_rotation)
-        ret= previous_gtids_logged.add_gtid_set(&logged_gtids_last_binlog);
+        ret = previous_gtids_logged.add_gtid_set(&logged_gtids_last_binlog);
       global_sid_lock->unlock();
       /* Save set of GTIDs of the last binlog into gtid_executed table */
       if (!ret)
-        ret= save(&logged_gtids_last_binlog);
+        ret = save(&logged_gtids_last_binlog);
     }
     else
       global_sid_lock->unlock();
@@ -789,25 +745,15 @@ int Gtid_state::save_gtids_of_last_binlog_into_table(bool on_rotation)
   DBUG_RETURN(ret);
 }
 
+int Gtid_state::read_gtid_executed_from_table() { return gtid_table_persistor->fetch_gtids(&executed_gtids); }
 
-int Gtid_state::read_gtid_executed_from_table()
-{
-  return gtid_table_persistor->fetch_gtids(&executed_gtids);
-}
-
-
-int Gtid_state::compress(THD *thd)
-{
-  return gtid_table_persistor->compress(thd);
-}
-
+int Gtid_state::compress(THD *thd) { return gtid_table_persistor->compress(thd); }
 
 #ifdef MYSQL_SERVER
 int Gtid_state::warn_or_err_on_modify_gtid_table(THD *thd, TABLE_LIST *table)
 {
   DBUG_ENTER("Gtid_state::warn_or_err_on_modify_gtid_table");
-  int ret=
-    gtid_table_persistor->warn_or_err_on_explicit_modification(thd, table);
+  int ret = gtid_table_persistor->warn_or_err_on_explicit_modification(thd, table);
   DBUG_RETURN(ret);
 }
 #endif
@@ -843,8 +789,7 @@ bool Gtid_state::update_gtids_impl_begin(THD *thd)
 #ifndef NDEBUG
   if (current_thd != thd)
     mysql_mutex_lock(&thd->LOCK_thd_query);
-  DBUG_PRINT("info", ("query='%s' thd->is_commit_in_middle_of_statement=%d",
-                      thd->query().str,
+  DBUG_PRINT("info", ("query='%s' thd->is_commit_in_middle_of_statement=%d", thd->query().str,
                       thd->is_commit_in_middle_of_statement));
   if (current_thd != thd)
     mysql_mutex_unlock(&thd->LOCK_thd_query);
@@ -855,23 +800,22 @@ bool Gtid_state::update_gtids_impl_begin(THD *thd)
 void Gtid_state::update_gtids_impl_own_gtid_set(THD *thd, bool is_commit)
 {
 #ifdef HAVE_GTID_NEXT_LIST
-  rpl_sidno prev_sidno= 0;
+  rpl_sidno prev_sidno = 0;
   Gtid_set::Gtid_iterator git(&thd->owned_gtid_set);
-  Gtid g= git.get();
+  Gtid g = git.get();
   while (g.sidno != 0)
   {
     if (g.sidno != prev_sidno)
       sid_locks.lock(g.sidno);
     owned_gtids.remove_gtid(g);
     git.next();
-    g= git.get();
+    g = git.get();
     if (is_commit)
       executed_gtids._add_gtid(g);
   }
 
   if (is_commit && !thd->owned_gtid_set.is_empty())
-    thd->rpl_thd_ctx.session_gtids_ctx().
-      notify_after_gtid_executed_update(thd);
+    thd->rpl_thd_ctx.session_gtids_ctx().notify_after_gtid_executed_update(thd);
 
   thd->variables.gtid_next.set_undefined();
   thd->owned_gtid.dbug_print(NULL,
@@ -886,33 +830,32 @@ void Gtid_state::update_gtids_impl_own_gtid_set(THD *thd, bool is_commit)
 void Gtid_state::update_gtids_impl_lock_sidno(rpl_sidno sidno)
 {
   assert(sidno > 0);
-  DBUG_PRINT("info",("Locking sidno %d", sidno));
+  DBUG_PRINT("info", ("Locking sidno %d", sidno));
   lock_sidno(sidno);
 }
 
 void Gtid_state::update_gtids_impl_lock_sidnos(THD *first_thd)
 {
   /* Define which sidnos should be locked to be updated */
-  for (THD *thd= first_thd; thd != NULL; thd= thd->next_to_commit)
+  for (THD *thd = first_thd; thd != NULL; thd = thd->next_to_commit)
   {
     if (thd->owned_gtid.sidno > 0)
     {
-      DBUG_PRINT("info",("Setting sidno %d to be locked",
-                         thd->owned_gtid.sidno));
-      commit_group_sidnos[thd->owned_gtid.sidno]= true;
+      DBUG_PRINT("info", ("Setting sidno %d to be locked", thd->owned_gtid.sidno));
+      commit_group_sidnos[thd->owned_gtid.sidno] = true;
     }
     else if (thd->owned_gtid.sidno == THD::OWNED_SIDNO_GTID_SET)
 #ifdef HAVE_GTID_NEXT_LIST
-      for (rpl_sidno i= 1; i < thd->owned_gtid_set.max_sidno; i++)
+      for (rpl_sidno i = 1; i < thd->owned_gtid_set.max_sidno; i++)
         if (owned_gtid_set.contains_sidno(i))
-          commit_group_sidnos[i]= true;
+          commit_group_sidnos[i] = true;
 #else
-    assert(0);
+      assert(0);
 #endif
   }
 
   /* Take the sidno_locks in order */
-  for (rpl_sidno i= 1; i < (rpl_sidno)commit_group_sidnos.size(); i++)
+  for (rpl_sidno i = 1; i < (rpl_sidno)commit_group_sidnos.size(); i++)
     if (commit_group_sidnos[i])
       update_gtids_impl_lock_sidno(i);
 }
@@ -930,9 +873,8 @@ void Gtid_state::update_gtids_impl_own_gtid(THD *thd, bool is_commit)
   if (is_commit)
   {
     assert(!executed_gtids.contains_gtid(thd->owned_gtid));
-    DBUG_EXECUTE_IF(
-      "rpl_gtid_update_on_commit_simulate_out_of_memory",
-      DBUG_SET("+d,rpl_gtid_get_free_interval_simulate_out_of_memory"););
+    DBUG_EXECUTE_IF("rpl_gtid_update_on_commit_simulate_out_of_memory",
+                    DBUG_SET("+d,rpl_gtid_get_free_interval_simulate_out_of_memory"););
     /*
       Any session adds transaction owned GTID into global executed_gtids.
 
@@ -946,8 +888,7 @@ void Gtid_state::update_gtids_impl_own_gtid(THD *thd, bool is_commit)
       into global executed_gtids, lost_gtids and gtids_only_in_table.
     */
     executed_gtids._add_gtid(thd->owned_gtid);
-    thd->rpl_thd_ctx.session_gtids_ctx().
-      notify_after_gtid_executed_update(thd);
+    thd->rpl_thd_ctx.session_gtids_ctx().notify_after_gtid_executed_update(thd);
     if (thd->slave_thread && opt_bin_log && !opt_log_slave_updates)
     {
       lost_gtids._add_gtid(thd->owned_gtid);
@@ -956,9 +897,8 @@ void Gtid_state::update_gtids_impl_own_gtid(THD *thd, bool is_commit)
   }
   else
   {
-    if (thd->owned_gtid.sidno == server_sidno &&
-        next_free_gno > thd->owned_gtid.gno)
-      next_free_gno= thd->owned_gtid.gno;
+    if (thd->owned_gtid.sidno == server_sidno && next_free_gno > thd->owned_gtid.gno)
+      next_free_gno = thd->owned_gtid.gno;
   }
 
   thd->clear_owned_gtids();
@@ -974,33 +914,30 @@ void Gtid_state::update_gtids_impl_own_gtid(THD *thd, bool is_commit)
       gtid_pre_statement_checks skips the test for undefined,
       e.g. ROLLBACK.
     */
-    assert(thd->variables.gtid_next.type == AUTOMATIC_GROUP ||
-           thd->variables.gtid_next.type == UNDEFINED_GROUP);
+    assert(thd->variables.gtid_next.type == AUTOMATIC_GROUP || thd->variables.gtid_next.type == UNDEFINED_GROUP);
   }
 }
 
 void Gtid_state::update_gtids_impl_broadcast_and_unlock_sidno(rpl_sidno sidno)
 {
-  DBUG_PRINT("info",("Unlocking sidno %d", sidno));
+  DBUG_PRINT("info", ("Unlocking sidno %d", sidno));
   broadcast_sidno(sidno);
   unlock_sidno(sidno);
 }
 
 void Gtid_state::update_gtids_impl_broadcast_and_unlock_sidnos()
 {
-  for (rpl_sidno i= 1; i < (rpl_sidno)commit_group_sidnos.size(); i++)
+  for (rpl_sidno i = 1; i < (rpl_sidno)commit_group_sidnos.size(); i++)
     if (commit_group_sidnos[i])
     {
       update_gtids_impl_broadcast_and_unlock_sidno(i);
-      commit_group_sidnos[i]= false;
+      commit_group_sidnos[i] = false;
     }
 }
 
-void Gtid_state::update_gtids_impl_own_anonymous(THD* thd,
-                                                 bool *more_trx)
+void Gtid_state::update_gtids_impl_own_anonymous(THD *thd, bool *more_trx)
 {
-  assert(thd->variables.gtid_next.type == ANONYMOUS_GROUP ||
-         thd->variables.gtid_next.type == AUTOMATIC_GROUP);
+  assert(thd->variables.gtid_next.type == ANONYMOUS_GROUP || thd->variables.gtid_next.type == AUTOMATIC_GROUP);
   /*
     If there is more in the transaction cache, set more_trx to indicate this.
 
@@ -1012,14 +949,13 @@ void Gtid_state::update_gtids_impl_own_anonymous(THD* thd,
     thd->binlog_setup_trx_data();
     if (!thd->is_binlog_cache_empty(true))
     {
-      *more_trx= true;
+      *more_trx = true;
       DBUG_PRINT("info", ("Transaction cache is non-empty: setting "
                           "more_transaction_with_same_gtid_next="
                           "true."));
     }
   }
-  if (!(*more_trx &&
-        thd->variables.gtid_next.type == ANONYMOUS_GROUP))
+  if (!(*more_trx && thd->variables.gtid_next.type == ANONYMOUS_GROUP))
   {
     release_anonymous_ownership();
     thd->clear_owned_gtids();
@@ -1028,8 +964,7 @@ void Gtid_state::update_gtids_impl_own_anonymous(THD* thd,
 
 void Gtid_state::update_gtids_impl_own_nothing(THD *thd)
 {
-  assert(thd->commit_error != THD::CE_COMMIT_ERROR ||
-         thd->has_gtid_consistency_violation);
+  assert(thd->commit_error != THD::CE_COMMIT_ERROR || thd->has_gtid_consistency_violation);
   assert(thd->variables.gtid_next.type == AUTOMATIC_GROUP);
 }
 
@@ -1056,5 +991,4 @@ enum_return_status Gtid_state::ensure_commit_group_sidnos(rpl_sidno sidno)
 error:
   BINLOG_ERROR(("Out of memory."), (ER_OUT_OF_RESOURCES, MYF(0)));
   RETURN_REPORTED_ERROR;
-
 }

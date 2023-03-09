@@ -150,14 +150,15 @@ SpaceBeforeRangeBasedForLoopColon: true
 SpaceInEmptyBlock: false
 SpaceInEmptyParentheses: false
 SpacesBeforeTrailingComments: 2
-SpacesInAngles:  false
+SpacesInAngles:  true
 SpacesInConditionalStatement: false
 SpacesInContainerLiterals: true
 SpacesInCStyleCastParentheses: false
 SpacesInParentheses: false
 SpacesInSquareBrackets: false
 SpaceBeforeSquareBrackets: false
-Standard:        Auto
+# Standard:        Auto
+Standard:        Latest
 StatementMacros:
   - Q_UNUSED
   - QT_REQUIRE_VERSION
@@ -171,7 +172,7 @@ DerivePointerAlignment: false
 PointerAlignment: Right
  
 # MySQL source code is allowed to use C++11 (and C++14) features.
-Standard:        Cpp11
+# Standard:        Cpp11
  
 # MySQL includes frequently are not order-independent (e.g. my_config.h needs
 # to go on top). This is unfortunate, but not something we can change easily,

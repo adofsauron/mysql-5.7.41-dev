@@ -26,28 +26,23 @@
 
 #include <table.h>
 
-
-Ndb_event_data::Ndb_event_data(NDB_SHARE *the_share) :
-  shadow_table(NULL),
-  share(the_share),
-  pk_bitmap(NULL)
+Ndb_event_data::Ndb_event_data(NDB_SHARE *the_share) : shadow_table(NULL), share(the_share), pk_bitmap(NULL)
 {
-  ndb_value[0]= NULL;
-  ndb_value[1]= NULL;
+  ndb_value[0] = NULL;
+  ndb_value[1] = NULL;
 }
-
 
 Ndb_event_data::~Ndb_event_data()
 {
   if (shadow_table)
     closefrm(shadow_table, 1);
-  shadow_table= NULL;
+  shadow_table = NULL;
 
   delete pk_bitmap;
   pk_bitmap = NULL;
 
   free_root(&mem_root, MYF(0));
-  share= NULL;
+  share = NULL;
   /*
     ndbvalue[] allocated with my_multi_malloc -> only
     first pointer need to be freed
@@ -55,13 +50,9 @@ Ndb_event_data::~Ndb_event_data()
   my_free(ndb_value[0]);
 }
 
-
-void Ndb_event_data::print(const char* where, FILE* file) const
+void Ndb_event_data::print(const char *where, FILE *file) const
 {
-  fprintf(file,
-          "%s shadow_table: %p '%s.%s'\n",
-          where,
-          shadow_table, shadow_table->s->db.str,
+  fprintf(file, "%s shadow_table: %p '%s.%s'\n", where, shadow_table, shadow_table->s->db.str,
           shadow_table->s->table_name.str);
 
   // Print stats for the MEM_ROOT where Ndb_event_data
@@ -72,23 +63,21 @@ void Ndb_event_data::print(const char* where, FILE* file) const
     size_t mem_root_size = 0;
 
     /* iterate through (partially) free blocks */
-    for (mem_block= mem_root.free; mem_block; mem_block= mem_block->next)
+    for (mem_block = mem_root.free; mem_block; mem_block = mem_block->next)
     {
-      const size_t block_used =
-          mem_block->size - // Size of block
-          ALIGN_SIZE(sizeof(USED_MEM)) - // Size of header
-          mem_block->left; // What's unused in block
+      const size_t block_used = mem_block->size -               // Size of block
+                                ALIGN_SIZE(sizeof(USED_MEM)) -  // Size of header
+                                mem_block->left;                // What's unused in block
       mem_root_used += block_used;
       mem_root_size += mem_block->size;
     }
 
     /* iterate through the used blocks */
-    for (mem_block= mem_root.used; mem_block; mem_block= mem_block->next)
+    for (mem_block = mem_root.used; mem_block; mem_block = mem_block->next)
     {
-      const size_t block_used =
-          mem_block->size - // Size of block
-          ALIGN_SIZE(sizeof(USED_MEM)) - // Size of header
-          mem_block->left; // What's unused in block
+      const size_t block_used = mem_block->size -               // Size of block
+                                ALIGN_SIZE(sizeof(USED_MEM)) -  // Size of header
+                                mem_block->left;                // What's unused in block
       mem_root_used += block_used;
       mem_root_size += mem_block->size;
     }
@@ -121,8 +110,8 @@ void Ndb_event_data::init_pk_bitmap()
   }
   pk_bitmap = new MY_BITMAP();
   bitmap_init(pk_bitmap, pk_bitbuf, shadow_table->s->fields, FALSE);
-  KEY* key = shadow_table->key_info + shadow_table->s->primary_key;
-  KEY_PART_INFO* key_part_info = key->key_part;
+  KEY *key = shadow_table->key_info + shadow_table->s->primary_key;
+  KEY_PART_INFO *key_part_info = key->key_part;
   const uint key_parts = key->user_defined_key_parts;
   for (uint i = 0; i < key_parts; i++, key_part_info++)
   {

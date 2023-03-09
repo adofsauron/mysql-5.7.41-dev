@@ -24,30 +24,30 @@
   This files defines some MySQL C API functions that are server specific
 */
 
-#include "sql_class.h"                          // system_variables
+#include "sql_class.h"  // system_variables
 
 #include <algorithm>
 
-using std::min;
 using std::max;
+using std::min;
 
 /*
   Function called by my_net_init() to set some check variables
 */
 
-extern "C" {
-void my_net_local_init(NET *net)
+extern "C"
 {
+  void my_net_local_init(NET *net)
+  {
 #ifndef EMBEDDED_LIBRARY
-  net->max_packet=   (uint) global_system_variables.net_buffer_length;
+    net->max_packet = (uint)global_system_variables.net_buffer_length;
 
-  my_net_set_read_timeout(net, (uint)global_system_variables.net_read_timeout);
-  my_net_set_write_timeout(net,
-                           (uint)global_system_variables.net_write_timeout);
+    my_net_set_read_timeout(net, (uint)global_system_variables.net_read_timeout);
+    my_net_set_write_timeout(net, (uint)global_system_variables.net_write_timeout);
 
-  net->retry_count=  (uint) global_system_variables.net_retry_count;
-  net->max_packet_size= max<size_t>(global_system_variables.net_buffer_length,
-                                    global_system_variables.max_allowed_packet);
+    net->retry_count = (uint)global_system_variables.net_retry_count;
+    net->max_packet_size =
+        max< size_t >(global_system_variables.net_buffer_length, global_system_variables.max_allowed_packet);
 #endif
-}
+  }
 }

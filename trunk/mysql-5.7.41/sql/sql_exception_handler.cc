@@ -31,12 +31,12 @@
 
 #include "sql_exception_handler.h"
 
-#include <new> // std::bad_alloc
-#include <stdexcept> // Other std exceptions
+#include <new>        // std::bad_alloc
+#include <stdexcept>  // Other std exceptions
 
-#include "my_global.h"  // MYF
-#include "my_sys.h"       // my_error
-#include "mysqld_error.h" // Error codes
+#include "my_global.h"     // MYF
+#include "my_sys.h"        // my_error
+#include "mysqld_error.h"  // Error codes
 
 void handle_std_exception(const char *funcname)
 {
@@ -93,4 +93,3 @@ void handle_std_exception(const char *funcname)
     my_error(ER_UNKNOWN_ERROR, MYF(0));
   }
 }
-

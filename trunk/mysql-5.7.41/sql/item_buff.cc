@@ -20,7 +20,6 @@
    along with this program; if not, write to the Free Software Foundation,
    51 Franklin Street, Suite 500, Boston, MA 02110-1335 USA */
 
-
 /**
   @file
 
@@ -28,12 +27,12 @@
   Buffers to save and compare item values
 */
 
-#include "sql_class.h"          // THD
-#include "item.h"               // Cached_item, Cached_item_field, ...
-#include "json_dom.h"           // Json_wrapper
+#include "sql_class.h"  // THD
+#include "item.h"       // Cached_item, Cached_item_field, ...
+#include "json_dom.h"   // Json_wrapper
 
-using std::min;
 using std::max;
+using std::min;
 
 /**
   Create right type of Cached_item for an item.
@@ -41,31 +40,30 @@ using std::max;
 
 Cached_item *new_Cached_item(THD *thd, Item *item, bool use_result_field)
 {
-  if (item->real_item()->type() == Item::FIELD_ITEM &&
-      !(((Item_field *) (item->real_item()))->field->flags & BLOB_FLAG))
+  if (item->real_item()->type() == Item::FIELD_ITEM && !(((Item_field *)(item->real_item()))->field->flags & BLOB_FLAG))
   {
-    Item_field *real_item= (Item_field *) item->real_item();
-    Field *cached_field= use_result_field ? real_item->result_field :
-                                            real_item->field;
+    Item_field *real_item = (Item_field *)item->real_item();
+    Field *cached_field = use_result_field ? real_item->result_field : real_item->field;
     return new Cached_item_field(cached_field);
   }
-  switch (item->result_type()) {
-  case STRING_RESULT:
-    if (item->is_temporal())
-      return new Cached_item_temporal((Item_field *) item);
-    if (item->field_type() == MYSQL_TYPE_JSON)
-      return new Cached_item_json(item);
-    return new Cached_item_str(thd, (Item_field *) item);
-  case INT_RESULT:
-    return new Cached_item_int((Item_field *) item);
-  case REAL_RESULT:
-    return new Cached_item_real(item);
-  case DECIMAL_RESULT:
-    return new Cached_item_decimal(item);
-  case ROW_RESULT:
-  default:
-    assert(0);
-    return 0;
+  switch (item->result_type())
+  {
+    case STRING_RESULT:
+      if (item->is_temporal())
+        return new Cached_item_temporal((Item_field *)item);
+      if (item->field_type() == MYSQL_TYPE_JSON)
+        return new Cached_item_json(item);
+      return new Cached_item_str(thd, (Item_field *)item);
+    case INT_RESULT:
+      return new Cached_item_int((Item_field *)item);
+    case REAL_RESULT:
+      return new Cached_item_real(item);
+    case DECIMAL_RESULT:
+      return new Cached_item_decimal(item);
+    case ROW_RESULT:
+    default:
+      assert(0);
+      return 0;
   }
 }
 
@@ -79,10 +77,11 @@ Cached_item::~Cached_item() {}
 */
 
 Cached_item_str::Cached_item_str(THD *thd, Item *arg)
-  :item(arg),
-   value_max_length(min<uint32>(arg->max_length, thd->variables.max_sort_length)),
-   value(value_max_length)
-{}
+    : item(arg),
+      value_max_length(min< uint32 >(arg->max_length, thd->variables.max_sort_length)),
+      value(value_max_length)
+{
+}
 
 bool Cached_item_str::cmp(void)
 {
@@ -92,41 +91,32 @@ bool Cached_item_str::cmp(void)
   DBUG_ENTER("Cached_item_str::cmp");
   assert(!item->is_temporal());
   assert(item->field_type() != MYSQL_TYPE_JSON);
-  if ((res=item->val_str(&tmp_value)))
-    res->length(min(res->length(), static_cast<size_t>(value_max_length)));
-  DBUG_PRINT("info", ("old: %s, new: %s",
-                      value.c_ptr_safe(), res ? res->c_ptr_safe() : ""));
+  if ((res = item->val_str(&tmp_value)))
+    res->length(min(res->length(), static_cast< size_t >(value_max_length)));
+  DBUG_PRINT("info", ("old: %s, new: %s", value.c_ptr_safe(), res ? res->c_ptr_safe() : ""));
   if (null_value != item->null_value)
   {
-    if ((null_value= item->null_value))
-      DBUG_RETURN(TRUE);			// New value was null
-    tmp=TRUE;
+    if ((null_value = item->null_value))
+      DBUG_RETURN(TRUE);  // New value was null
+    tmp = TRUE;
   }
   else if (null_value)
-    DBUG_RETURN(0);				// new and old value was null
+    DBUG_RETURN(0);  // new and old value was null
   else
-    tmp= sortcmp(&value,res,item->collation.collation) != 0;
+    tmp = sortcmp(&value, res, item->collation.collation) != 0;
   if (tmp)
-    value.copy(*res);				// Remember for next cmp
+    value.copy(*res);  // Remember for next cmp
   DBUG_RETURN(tmp);
 }
 
 Cached_item_str::~Cached_item_str()
 {
-  item=0;					// Safety
+  item = 0;  // Safety
 }
 
+Cached_item_json::Cached_item_json(Item *item) : m_item(item), m_value(new Json_wrapper()) {}
 
-Cached_item_json::Cached_item_json(Item *item)
-  : m_item(item), m_value(new Json_wrapper())
-{}
-
-
-Cached_item_json::~Cached_item_json()
-{
-  delete m_value;
-}
-
+Cached_item_json::~Cached_item_json() { delete m_value; }
 
 /**
   Compare the new JSON value in m_item with the previous value.
@@ -139,22 +129,22 @@ bool Cached_item_json::cmp()
   Json_wrapper wr;
   if (m_item->val_json(&wr))
   {
-    null_value= true;                         /* purecov: inspected */
-    return true;                              /* purecov: inspected */
+    null_value = true; /* purecov: inspected */
+    return true;       /* purecov: inspected */
   }
   if (null_value != m_item->null_value)
   {
-    null_value= m_item->null_value;
+    null_value = m_item->null_value;
     if (null_value)
-      return true;                              // New value is null.
+      return true;  // New value is null.
   }
   else if (null_value)
   {
-    return false;                               // New and old are null.
+    return false;  // New and old are null.
   }
   else if (!m_value->empty() && m_value->compare(wr) == 0)
   {
-    return false;                               // New and old are equal.
+    return false;  // New and old are equal.
   }
 
   /*
@@ -173,16 +163,15 @@ bool Cached_item_json::cmp()
   return true;
 }
 
-
 bool Cached_item_real::cmp(void)
 {
   DBUG_ENTER("Cached_item_real::cmp");
-  double nr= item->val_real();
+  double nr = item->val_real();
   DBUG_PRINT("info", ("old: %f, new: %f", value, nr));
   if (null_value != item->null_value || nr != value)
   {
-    null_value= item->null_value;
-    value=nr;
+    null_value = item->null_value;
+    value = nr;
     DBUG_RETURN(TRUE);
   }
   DBUG_RETURN(FALSE);
@@ -191,59 +180,57 @@ bool Cached_item_real::cmp(void)
 bool Cached_item_int::cmp(void)
 {
   DBUG_ENTER("Cached_item_int::cmp");
-  longlong nr=item->val_int();
+  longlong nr = item->val_int();
   DBUG_PRINT("info", ("old: %lld, new: %lld", value, nr));
   if (null_value != item->null_value || nr != value)
   {
-    null_value= item->null_value;
-    value=nr;
+    null_value = item->null_value;
+    value = nr;
     DBUG_RETURN(TRUE);
   }
   DBUG_RETURN(FALSE);
 }
-
 
 bool Cached_item_temporal::cmp(void)
 {
   DBUG_ENTER("Cached_item_temporal::cmp");
-  longlong nr= item->val_temporal_by_field_type();
-  DBUG_PRINT("info", ("old: %lld, new: %lld", value, nr)); 
+  longlong nr = item->val_temporal_by_field_type();
+  DBUG_PRINT("info", ("old: %lld, new: %lld", value, nr));
   if (null_value != item->null_value || nr != value)
   {
-    null_value= item->null_value;
-    value= nr;
+    null_value = item->null_value;
+    value = nr;
     DBUG_RETURN(TRUE);
   }
   DBUG_RETURN(FALSE);
 }
-
 
 bool Cached_item_field::cmp(void)
 {
   DBUG_ENTER("Cached_item_field::cmp");
   DBUG_EXECUTE("info", dbug_print(););
 
-  bool different= false;
+  bool different = false;
 
   if (field->is_null())
   {
     if (!null_value)
     {
-      different= true;
-      null_value= true;
+      different = true;
+      null_value = true;
     }
   }
   else
   {
     if (null_value)
     {
-      different= true;
-      null_value= false;
+      different = true;
+      null_value = false;
       field->get_image(buff, length, field->charset());
     }
-    else if (field->cmp(buff))                  // Not a blob: cmp() is OK
+    else if (field->cmp(buff))  // Not a blob: cmp() is OK
     {
-      different= true;
+      different = true;
       field->get_image(buff, length, field->charset());
     }
   }
@@ -251,22 +238,15 @@ bool Cached_item_field::cmp(void)
   DBUG_RETURN(different);
 }
 
-
-Cached_item_decimal::Cached_item_decimal(Item *it)
-  :item(it)
-{
-  my_decimal_set_zero(&value);
-}
-
+Cached_item_decimal::Cached_item_decimal(Item *it) : item(it) { my_decimal_set_zero(&value); }
 
 bool Cached_item_decimal::cmp()
 {
   my_decimal tmp;
-  my_decimal *ptmp= item->val_decimal(&tmp);
-  if (null_value != item->null_value ||
-      (!item->null_value && my_decimal_cmp(&value, ptmp)))
+  my_decimal *ptmp = item->val_decimal(&tmp);
+  if (null_value != item->null_value || (!item->null_value && my_decimal_cmp(&value, ptmp)))
   {
-    null_value= item->null_value;
+    null_value = item->null_value;
     /* Save only not null values */
     if (!null_value)
     {

@@ -23,8 +23,7 @@
 
 #include "rpl_gtid.h"
 
-
-//const int Gtid_specification::MAX_TEXT_LENGTH;
+// const int Gtid_specification::MAX_TEXT_LENGTH;
 
 #ifndef MYSQL_CLIENT
 
@@ -34,24 +33,23 @@ enum_return_status Gtid_specification::parse(Sid_map *sid_map, const char *text)
   assert(text != NULL);
   if (my_strcasecmp(&my_charset_latin1, text, "AUTOMATIC") == 0)
   {
-    type= AUTOMATIC_GROUP;
-    gtid.sidno= 0;
-    gtid.gno= 0;
+    type = AUTOMATIC_GROUP;
+    gtid.sidno = 0;
+    gtid.gno = 0;
   }
   else if (my_strcasecmp(&my_charset_latin1, text, "ANONYMOUS") == 0)
   {
-    type= ANONYMOUS_GROUP;
-    gtid.sidno= 0;
-    gtid.gno= 0;
+    type = ANONYMOUS_GROUP;
+    gtid.sidno = 0;
+    gtid.gno = 0;
   }
   else
   {
     PROPAGATE_REPORTED_ERROR(gtid.parse(sid_map, text));
-    type= GTID_GROUP;
+    type = GTID_GROUP;
   }
   RETURN_OK;
 };
-
 
 bool Gtid_specification::is_valid(const char *text)
 {
@@ -65,44 +63,41 @@ bool Gtid_specification::is_valid(const char *text)
     DBUG_RETURN(Gtid::is_valid(text));
 }
 
-#endif // ifndef MYSQL_CLIENT
-
+#endif  // ifndef MYSQL_CLIENT
 
 int Gtid_specification::to_string(const rpl_sid *sid, char *buf) const
 {
   DBUG_ENTER("Gtid_specification::to_string(char*)");
   switch (type)
   {
-  case AUTOMATIC_GROUP:
-    strcpy(buf, "AUTOMATIC");
-    DBUG_RETURN(9);
-  case NOT_YET_DETERMINED_GROUP:
+    case AUTOMATIC_GROUP:
+      strcpy(buf, "AUTOMATIC");
+      DBUG_RETURN(9);
+    case NOT_YET_DETERMINED_GROUP:
+      /*
+        This can happen if user issues SELECT @@SESSION.GTID_NEXT
+        immediately after a BINLOG statement containing a
+        Format_description_log_event.
+      */
+      strcpy(buf, "NOT_YET_DETERMINED");
+      DBUG_RETURN(18);
+    case ANONYMOUS_GROUP:
+      strcpy(buf, "ANONYMOUS");
+      DBUG_RETURN(9);
     /*
-      This can happen if user issues SELECT @@SESSION.GTID_NEXT
-      immediately after a BINLOG statement containing a
-      Format_description_log_event.
+      UNDEFINED_GROUP must be printed like GTID_GROUP because of
+      SELECT @@SESSION.GTID_NEXT.
     */
-    strcpy(buf, "NOT_YET_DETERMINED");
-    DBUG_RETURN(18);
-  case ANONYMOUS_GROUP:
-    strcpy(buf, "ANONYMOUS");
-    DBUG_RETURN(9);
-  /*
-    UNDEFINED_GROUP must be printed like GTID_GROUP because of
-    SELECT @@SESSION.GTID_NEXT.
-  */
-  case UNDEFINED_GROUP:
-  case GTID_GROUP:
-    DBUG_RETURN(gtid.to_string(*sid, buf));
+    case UNDEFINED_GROUP:
+    case GTID_GROUP:
+      DBUG_RETURN(gtid.to_string(*sid, buf));
   }
   assert(0);
   DBUG_RETURN(0);
 }
 
-
 int Gtid_specification::to_string(const Sid_map *sid_map, char *buf, bool need_lock) const
 {
-  return to_string(type == GTID_GROUP || type == UNDEFINED_GROUP ?
-                   &sid_map->sidno_to_sid(gtid.sidno, need_lock) : NULL,
+  return to_string(type == GTID_GROUP || type == UNDEFINED_GROUP ? &sid_map->sidno_to_sid(gtid.sidno, need_lock) : NULL,
                    buf);
 }

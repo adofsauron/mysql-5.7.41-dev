@@ -33,10 +33,9 @@
 
 #include <my_sys.h>
 
-extern Ndb* g_ndb;
+extern Ndb *g_ndb;
 
-void
-NDB_SHARE::destroy(NDB_SHARE* share)
+void NDB_SHARE::destroy(NDB_SHARE *share)
 {
   thr_lock_delete(&share->lock);
   native_mutex_destroy(&share->mutex);
@@ -44,12 +43,12 @@ NDB_SHARE::destroy(NDB_SHARE* share)
 #ifdef HAVE_NDB_BINLOG
   teardown_conflict_fn(g_ndb, share->m_cfn_share);
 #endif
-  share->new_op= 0;
-  Ndb_event_data* event_data = share->event_data;
+  share->new_op = 0;
+  Ndb_event_data *event_data = share->event_data;
   if (event_data)
   {
     delete event_data;
-    event_data= 0;
+    event_data = 0;
   }
   // Release memory for the variable length strings held by
   // key but also referenced by db, table_name and shadow_table->db etc.
@@ -70,13 +69,13 @@ NDB_SHARE::destroy(NDB_SHARE* share)
   "db\0"
   "table_name\0"
 */
-struct NDB_SHARE_KEY {
+struct NDB_SHARE_KEY
+{
   size_t m_key_length;
   char m_buffer[1];
 };
 
-NDB_SHARE_KEY*
-NDB_SHARE::create_key(const char *new_key)
+NDB_SHARE_KEY *NDB_SHARE::create_key(const char *new_key)
 {
   const size_t new_key_length = strlen(new_key);
 
@@ -89,21 +88,14 @@ NDB_SHARE::create_key(const char *new_key)
   const size_t table_name_len = strlen(table_name_buf);
 
   // Calculate total size needed for the variable length strings
-  const size_t size=
-      sizeof(NDB_SHARE_KEY) +
-      new_key_length +
-      db_name_len + 1 +
-      table_name_len + 1;
+  const size_t size = sizeof(NDB_SHARE_KEY) + new_key_length + db_name_len + 1 + table_name_len + 1;
 
-  NDB_SHARE_KEY* allocated_key=
-      (NDB_SHARE_KEY*) my_malloc(PSI_INSTRUMENT_ME,
-                                 size,
-                                 MYF(MY_WME | ME_FATALERROR));
+  NDB_SHARE_KEY *allocated_key = (NDB_SHARE_KEY *)my_malloc(PSI_INSTRUMENT_ME, size, MYF(MY_WME | ME_FATALERROR));
 
   allocated_key->m_key_length = new_key_length;
 
   // Copy key into the buffer
-  char* buf_ptr = allocated_key->m_buffer;
+  char *buf_ptr = allocated_key->m_buffer;
   my_stpcpy(buf_ptr, new_key);
   buf_ptr += new_key_length + 1;
 
@@ -116,57 +108,47 @@ NDB_SHARE::create_key(const char *new_key)
   buf_ptr += table_name_len;
 
   // Check that writing has not occured beyond end of allocated memory
-  assert(buf_ptr < reinterpret_cast<char*>(allocated_key) + size);
+  assert(buf_ptr < reinterpret_cast< char * >(allocated_key) + size);
 
-  DBUG_PRINT("info", ("size: %lu, sizeof(NDB_SHARE_KEY): %lu",
-                      size, sizeof(NDB_SHARE_KEY)));
+  DBUG_PRINT("info", ("size: %lu, sizeof(NDB_SHARE_KEY): %lu", size, sizeof(NDB_SHARE_KEY)));
   DBUG_PRINT("info", ("new_key: '%s', %lu", new_key, new_key_length));
   DBUG_PRINT("info", ("db_name: '%s', %lu", db_name_buf, db_name_len));
   DBUG_PRINT("info", ("table_name: '%s', %lu", table_name_buf, table_name_len));
-  DBUG_DUMP("NDB_SHARE_KEY: ", (const uchar*)allocated_key->m_buffer, size);
+  DBUG_DUMP("NDB_SHARE_KEY: ", (const uchar *)allocated_key->m_buffer, size);
 
   return allocated_key;
 }
 
+void NDB_SHARE::free_key(NDB_SHARE_KEY *key) { my_free(key); }
 
-void NDB_SHARE::free_key(NDB_SHARE_KEY* key)
-{
-  my_free(key);
-}
-
-
-const uchar* NDB_SHARE::key_get_key(NDB_SHARE_KEY* key)
+const uchar *NDB_SHARE::key_get_key(NDB_SHARE_KEY *key)
 {
   assert(key->m_key_length == strlen(key->m_buffer));
-  return (const uchar*)key->m_buffer;
+  return (const uchar *)key->m_buffer;
 }
 
-
-size_t NDB_SHARE::key_get_length(NDB_SHARE_KEY* key)
+size_t NDB_SHARE::key_get_length(NDB_SHARE_KEY *key)
 {
   assert(key->m_key_length == strlen(key->m_buffer));
   return key->m_key_length;
 }
 
-
-char* NDB_SHARE::key_get_db_name(NDB_SHARE_KEY* key)
+char *NDB_SHARE::key_get_db_name(NDB_SHARE_KEY *key)
 {
-  char* buf_ptr = key->m_buffer;
+  char *buf_ptr = key->m_buffer;
   // Step past the key string and it's zero terminator
   buf_ptr += key->m_key_length + 1;
   return buf_ptr;
 }
 
-
-char* NDB_SHARE::key_get_table_name(NDB_SHARE_KEY* key)
+char *NDB_SHARE::key_get_table_name(NDB_SHARE_KEY *key)
 {
-  char* buf_ptr = key_get_db_name(key);
+  char *buf_ptr = key_get_db_name(key);
   const size_t db_name_len = strlen(buf_ptr);
   // Step past the db name string and it's zero terminator
   buf_ptr += db_name_len + 1;
   return buf_ptr;
 }
-
 
 size_t NDB_SHARE::key_length() const
 {
@@ -174,20 +156,16 @@ size_t NDB_SHARE::key_length() const
   return key->m_key_length;
 }
 
-
-const char* NDB_SHARE::key_string() const
+const char *NDB_SHARE::key_string() const
 {
   assert(strlen(key->m_buffer) == key->m_key_length);
   return key->m_buffer;
 }
 
-
-bool
-NDB_SHARE::need_events(bool default_on) const
+bool NDB_SHARE::need_events(bool default_on) const
 {
   DBUG_ENTER("NDB_SHARE::need_events");
-  DBUG_PRINT("enter", ("db: %s, table_name: %s",
-                        db, table_name));
+  DBUG_PRINT("enter", ("db: %s, table_name: %s", db, table_name));
 
   if (default_on)
   {
@@ -229,8 +207,7 @@ NDB_SHARE::need_events(bool default_on) const
   DBUG_RETURN(false);
 }
 
-
-Ndb_event_data* NDB_SHARE::get_event_data_ptr() const
+Ndb_event_data *NDB_SHARE::get_event_data_ptr() const
 {
   if (event_data)
   {
@@ -250,19 +227,16 @@ Ndb_event_data* NDB_SHARE::get_event_data_ptr() const
     // Check that op has custom data
     assert(op->getCustomData());
 
-    return (Ndb_event_data*)op->getCustomData();
+    return (Ndb_event_data *)op->getCustomData();
   }
 
   return NULL;
 }
 
-
-void NDB_SHARE::print(const char* where, FILE* file) const
+void NDB_SHARE::print(const char *where, FILE *file) const
 {
-  fprintf(file, "%s %s.%s: use_count: %u\n",
-          where, db, table_name, use_count);
-  fprintf(file, "  - key: '%s', key_length: %lu\n",
-          key_string(), key_length());
+  fprintf(file, "%s %s.%s: use_count: %u\n", where, db, table_name, use_count);
+  fprintf(file, "  - key: '%s', key_length: %lu\n", key_string(), key_length());
   fprintf(file, "  - commit_count: %llu\n", commit_count);
   if (event_data)
     fprintf(file, "  - event_data: %p\n", event_data);
@@ -271,7 +245,7 @@ void NDB_SHARE::print(const char* where, FILE* file) const
   if (new_op)
     fprintf(file, "  - new_op: %p\n", new_op);
 
-  Ndb_event_data *event_data_ptr= get_event_data_ptr();
+  Ndb_event_data *event_data_ptr = get_event_data_ptr();
   if (event_data_ptr)
     event_data_ptr->print("  -", file);
 }

@@ -20,12 +20,12 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301  USA */
 
-#include "sql_alter_instance.h"         /* Alter_instance class */
-#include "sql_class.h"                  /* THD */
-#include "my_sys.h"                     /* my_error */
-#include "auth_common.h"                /* check_global_access */
-#include "handler.h"                    /* ha_resolve_by_legacy_type */
-#include "sql_table.h"                  /* write_to_binlog */
+#include "sql_alter_instance.h" /* Alter_instance class */
+#include "sql_class.h"          /* THD */
+#include "my_sys.h"             /* my_error */
+#include "auth_common.h"        /* check_global_access */
+#include "handler.h"            /* ha_resolve_by_legacy_type */
+#include "sql_table.h"          /* write_to_binlog */
 
 /*
   @brief
@@ -39,16 +39,14 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301  USA */
   In case of failure, appropriate error is logged.
 */
 
-bool
-Alter_instance::log_to_binlog(bool is_transactional)
+bool Alter_instance::log_to_binlog(bool is_transactional)
 {
-  bool res= false;
+  bool res = false;
   if (!m_thd->lex->no_write_to_binlog)
-    res= write_bin_log(m_thd, false, m_thd->query().str, m_thd->query().length);
+    res = write_bin_log(m_thd, false, m_thd->query().str, m_thd->query().length);
 
   return res;
 }
-
 
 /*
   @brief
@@ -61,10 +59,9 @@ Alter_instance::log_to_binlog(bool is_transactional)
   is logged by function.
 */
 
-bool
-Rotate_innodb_master_key::execute()
+bool Rotate_innodb_master_key::execute()
 {
-  const LEX_STRING storage_engine= { C_STRING_WITH_LEN("innodb") };
+  const LEX_STRING storage_engine = {C_STRING_WITH_LEN("innodb")};
   plugin_ref se_plugin;
   handlerton *hton;
 
@@ -74,9 +71,9 @@ Rotate_innodb_master_key::execute()
     return true;
   }
 
-  if ((se_plugin= ha_resolve_by_name(m_thd, &storage_engine, false)))
+  if ((se_plugin = ha_resolve_by_name(m_thd, &storage_engine, false)))
   {
-    hton= plugin_data<handlerton *>(se_plugin);
+    hton = plugin_data< handlerton * >(se_plugin);
   }
   else
   {
@@ -109,8 +106,7 @@ Rotate_innodb_master_key::execute()
     m_thd->clear_error();
     m_thd->get_stmt_da()->reset_diagnostics_area();
 
-    push_warning(m_thd, Sql_condition::SL_WARNING,
-                 ER_MASTER_KEY_ROTATION_BINLOG_FAILED,
+    push_warning(m_thd, Sql_condition::SL_WARNING, ER_MASTER_KEY_ROTATION_BINLOG_FAILED,
                  ER(ER_MASTER_KEY_ROTATION_BINLOG_FAILED));
   }
 

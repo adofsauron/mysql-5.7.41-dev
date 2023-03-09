@@ -20,7 +20,6 @@
    along with this program; if not, write to the Free Software
    Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301  USA */
 
-
 /**
   @file
 
@@ -30,54 +29,49 @@
 
 #include <m_ctype.h>
 #include "sql_select.h"
-#include "sql_optimizer.h"             // JOIN_TAB
-#include "sql_parse.h"                          // check_stack_overrun
-#include "sql_time.h"                  // make_truncated_value_warning
+#include "sql_optimizer.h"  // JOIN_TAB
+#include "sql_parse.h"      // check_stack_overrun
+#include "sql_time.h"       // make_truncated_value_warning
 #include "opt_trace.h"
 #include "parse_tree_helpers.h"
 #include "template_utils.h"
-#include "item_json_func.h"            // json_value, get_json_atom_wrapper
+#include "item_json_func.h"  // json_value, get_json_atom_wrapper
 
 #include <algorithm>
-using std::min;
 using std::max;
+using std::min;
 #include "aggregate_check.h"
 
 static bool convert_constant_item(THD *, Item_field *, Item **);
-static longlong
-get_year_value(THD *thd, Item ***item_arg, Item **cache_arg,
-               const Item *warn_item, bool *is_null);
+static longlong get_year_value(THD *thd, Item ***item_arg, Item **cache_arg, const Item *warn_item, bool *is_null);
 
-static Item_result item_store_type(Item_result a, Item *item,
-                                   my_bool unsigned_flag)
+static Item_result item_store_type(Item_result a, Item *item, my_bool unsigned_flag)
 {
-  Item_result b= item->result_type();
+  Item_result b = item->result_type();
 
   if (a == STRING_RESULT || b == STRING_RESULT)
     return STRING_RESULT;
   else if (a == REAL_RESULT || b == REAL_RESULT)
     return REAL_RESULT;
-  else if (a == DECIMAL_RESULT || b == DECIMAL_RESULT ||
-           unsigned_flag != item->unsigned_flag)
+  else if (a == DECIMAL_RESULT || b == DECIMAL_RESULT || unsigned_flag != item->unsigned_flag)
     return DECIMAL_RESULT;
   else
     return INT_RESULT;
 }
 
-static void agg_result_type(Item_result *type, my_bool *unsigned_flag,
-                            Item **items, uint nitems)
+static void agg_result_type(Item_result *type, my_bool *unsigned_flag, Item **items, uint nitems)
 {
   Item **item, **item_end;
 
-  *type= STRING_RESULT;
-  *unsigned_flag= FALSE;
+  *type = STRING_RESULT;
+  *unsigned_flag = FALSE;
   /* Skip beginning NULL items */
-  for (item= items, item_end= item + nitems; item < item_end; item++)
+  for (item = items, item_end = item + nitems; item < item_end; item++)
   {
     if ((*item)->type() != Item::NULL_ITEM)
     {
-      *type= (*item)->result_type();
-      *unsigned_flag= (*item)->unsigned_flag;
+      *type = (*item)->result_type();
+      *unsigned_flag = (*item)->unsigned_flag;
       item++;
       break;
     }
@@ -87,12 +81,11 @@ static void agg_result_type(Item_result *type, my_bool *unsigned_flag,
   {
     if ((*item)->type() != Item::NULL_ITEM)
     {
-      *type= item_store_type(*type, *item, *unsigned_flag);
-      *unsigned_flag= *unsigned_flag && (*item)->unsigned_flag;
+      *type = item_store_type(*type, *item, *unsigned_flag);
+      *unsigned_flag = *unsigned_flag && (*item)->unsigned_flag;
     }
   }
 }
-
 
 /*
   Compare row signature of two expressions
@@ -105,7 +98,7 @@ static void agg_result_type(Item_result *type, my_bool *unsigned_flag,
   DESCRIPTION
     The function checks that two expressions have compatible row signatures
     i.e. that the number of columns they return are the same and that if they
-    are both row expressions then each component from the first expression has 
+    are both row expressions then each component from the first expression has
     a row signature compatible with the signature of the corresponding component
     of the second expression.
 
@@ -114,12 +107,12 @@ static void agg_result_type(Item_result *type, my_bool *unsigned_flag,
     0  otherwise
 */
 
-static int cmp_row_type(Item* item1, Item* item2)
+static int cmp_row_type(Item *item1, Item *item2)
 {
-  uint n= item1->cols();
+  uint n = item1->cols();
   if (item2->check_cols(n))
     return 1;
-  for (uint i=0; i<n; i++)
+  for (uint i = 0; i < n; i++)
   {
     if (item2->element_index(i)->check_cols(item1->element_index(i)->cols()) ||
         (item1->element_index(i)->result_type() == ROW_RESULT &&
@@ -128,7 +121,6 @@ static int cmp_row_type(Item* item1, Item* item2)
   }
   return 0;
 }
-
 
 /**
   Aggregates result types from the array of items.
@@ -156,23 +148,22 @@ static int cmp_row_type(Item* item1, Item* item2)
 static int agg_cmp_type(Item_result *type, Item **items, uint nitems)
 {
   uint i;
-  type[0]= items[0]->result_type();
-  for (i= 1 ; i < nitems ; i++)
+  type[0] = items[0]->result_type();
+  for (i = 1; i < nitems; i++)
   {
-    type[0]= item_cmp_type(type[0], items[i]->result_type());
+    type[0] = item_cmp_type(type[0], items[i]->result_type());
     /*
       When aggregating types of two row expressions we have to check
       that they have the same cardinality and that each component
       of the first row expression has a compatible row signature with
       the signature of the corresponding component of the second row
       expression.
-    */ 
+    */
     if (type[0] == ROW_RESULT && cmp_row_type(items[0], items[i]))
-      return 1;     // error found: invalid usage of rows
+      return 1;  // error found: invalid usage of rows
   }
   return 0;
 }
-
 
 /**
   @brief Aggregates field types from the array of items.
@@ -195,11 +186,10 @@ static int agg_cmp_type(Item_result *type, Item **items, uint nitems)
 enum_field_types agg_field_type(Item **items, uint nitems)
 {
   uint i;
-  if (!nitems || items[0]->result_type() == ROW_RESULT )
+  if (!nitems || items[0]->result_type() == ROW_RESULT)
     return (enum_field_types)-1;
-  enum_field_types res= items[0]->field_type();
-  for (i= 1 ; i < nitems ; i++)
-    res= Field::field_type_merge(res, items[i]->field_type());
+  enum_field_types res = items[0]->field_type();
+  for (i = 1; i < nitems; i++) res = Field::field_type_merge(res, items[i]->field_type());
   return real_type_to_type(res);
 }
 
@@ -221,42 +211,35 @@ enum_field_types agg_field_type(Item **items, uint nitems)
     Bitmap of collected types - otherwise
 */
 
-static uint collect_cmp_types(Item **items, uint nitems, bool skip_nulls= FALSE)
+static uint collect_cmp_types(Item **items, uint nitems, bool skip_nulls = FALSE)
 {
   uint i;
   uint found_types;
-  Item_result left_result= items[0]->result_type();
+  Item_result left_result = items[0]->result_type();
   assert(nitems > 1);
-  found_types= 0;
-  for (i= 1; i < nitems ; i++)
+  found_types = 0;
+  for (i = 1; i < nitems; i++)
   {
     if (skip_nulls && items[i]->type() == Item::NULL_ITEM)
-      continue; // Skip NULL constant items
-    if ((left_result == ROW_RESULT || 
-         items[i]->result_type() == ROW_RESULT) &&
-        cmp_row_type(items[0], items[i]))
+      continue;  // Skip NULL constant items
+    if ((left_result == ROW_RESULT || items[i]->result_type() == ROW_RESULT) && cmp_row_type(items[0], items[i]))
       return 0;
-    found_types|= 1U << (uint)item_cmp_type(left_result,
-                                            items[i]->result_type());
+    found_types |= 1U << (uint)item_cmp_type(left_result, items[i]->result_type());
   }
   /*
    Even if all right-hand items are NULLs and we are skipping them all, we need
    at least one type bit in the found_type bitmask.
   */
   if (skip_nulls && !found_types)
-    found_types= 1U << (uint)left_result;
+    found_types = 1U << (uint)left_result;
   return found_types;
 }
 
-static void my_coll_agg_error(DTCollation &c1, DTCollation &c2,
-                              const char *fname)
+static void my_coll_agg_error(DTCollation &c1, DTCollation &c2, const char *fname)
 {
-  my_error(ER_CANT_AGGREGATE_2COLLATIONS, MYF(0),
-           c1.collation->name,c1.derivation_name(),
-           c2.collation->name,c2.derivation_name(),
-           fname);
+  my_error(ER_CANT_AGGREGATE_2COLLATIONS, MYF(0), c1.collation->name, c1.derivation_name(), c2.collation->name,
+           c2.derivation_name(), fname);
 }
-
 
 /**
   This implementation of the factory method also implements flattening of
@@ -285,14 +268,12 @@ Item_bool_func *Linear_comp_creator::create(Item *a, Item *b) const
       return NULL;
     }
     assert(a->cols() > 1);
-    List<Item> list;
-    for (uint i= 0; i < a->cols(); ++i)
-      list.push_back(create(a->element_index(i), b->element_index(i)));
+    List< Item > list;
+    for (uint i = 0; i < a->cols(); ++i) list.push_back(create(a->element_index(i), b->element_index(i)));
     return combine(list);
   }
   return create_scalar_predicate(a, b);
 }
-
 
 Item_bool_func *Eq_creator::create_scalar_predicate(Item *a, Item *b) const
 {
@@ -300,72 +281,36 @@ Item_bool_func *Eq_creator::create_scalar_predicate(Item *a, Item *b) const
   return new Item_func_eq(a, b);
 }
 
+Item_bool_func *Eq_creator::combine(List< Item > list) const { return new Item_cond_and(list); }
 
-Item_bool_func *Eq_creator::combine(List<Item> list) const
-{
-  return new Item_cond_and(list);
-}
-
-
-Item_bool_func *Equal_creator::create_scalar_predicate(Item *a, Item *b)
-  const
+Item_bool_func *Equal_creator::create_scalar_predicate(Item *a, Item *b) const
 {
   assert(a->type() != Item::ROW_ITEM || b->type() != Item::ROW_ITEM);
   return new Item_func_equal(a, b);
 }
 
+Item_bool_func *Equal_creator::combine(List< Item > list) const { return new Item_cond_and(list); }
 
-Item_bool_func *Equal_creator::combine(List<Item> list) const
-{
-  return new Item_cond_and(list);
-}
-
-
-Item_bool_func* Ne_creator::create_scalar_predicate(Item *a, Item *b) const
+Item_bool_func *Ne_creator::create_scalar_predicate(Item *a, Item *b) const
 {
   assert(a->type() != Item::ROW_ITEM || b->type() != Item::ROW_ITEM);
   return new Item_func_ne(a, b);
 }
 
+Item_bool_func *Ne_creator::combine(List< Item > list) const { return new Item_cond_or(list); }
 
-Item_bool_func *Ne_creator::combine(List<Item> list) const
+Item_bool_func *Gt_creator::create(Item *a, Item *b) const { return new Item_func_gt(a, b); }
+
+Item_bool_func *Lt_creator::create(Item *a, Item *b) const { return new Item_func_lt(a, b); }
+
+Item_bool_func *Ge_creator::create(Item *a, Item *b) const { return new Item_func_ge(a, b); }
+
+Item_bool_func *Le_creator::create(Item *a, Item *b) const { return new Item_func_le(a, b); }
+
+float Item_func_not::get_filtering_effect(table_map filter_for_table, table_map read_tables,
+                                          const MY_BITMAP *fields_to_ignore, double rows_in_table)
 {
-  return new Item_cond_or(list);
-}
-
-
-Item_bool_func* Gt_creator::create(Item *a, Item *b) const
-{
-  return new Item_func_gt(a, b);
-}
-
-
-Item_bool_func* Lt_creator::create(Item *a, Item *b) const
-{
-  return new Item_func_lt(a, b);
-}
-
-
-Item_bool_func* Ge_creator::create(Item *a, Item *b) const
-{
-  return new Item_func_ge(a, b);
-}
-
-
-Item_bool_func* Le_creator::create(Item *a, Item *b) const
-{
-  return new Item_func_le(a, b);
-}
-
-float Item_func_not::get_filtering_effect(table_map filter_for_table,
-                                          table_map read_tables,
-                                          const MY_BITMAP *fields_to_ignore,
-                                          double rows_in_table)
-{
-  const float filter= args[0]->get_filtering_effect(filter_for_table,
-                                                    read_tables,
-                                                    fields_to_ignore,
-                                                    rows_in_table);
+  const float filter = args[0]->get_filtering_effect(filter_for_table, read_tables, fields_to_ignore, rows_in_table);
 
   /*
     If the predicate that will be negated has COND_FILTER_ALLPASS
@@ -390,8 +335,8 @@ float Item_func_not::get_filtering_effect(table_map filter_for_table,
 longlong Item_func_not::val_int()
 {
   assert(fixed == 1);
-  bool value= args[0]->val_bool();
-  null_value=args[0]->null_value;
+  bool value = args[0]->val_bool();
+  null_value = args[0]->null_value;
   return ((!null_value && value == 0) ? 1 : 0);
 }
 
@@ -415,11 +360,10 @@ void Item_func_not::print(String *str, enum_query_type query_type)
   special NOT for ALL subquery.
 */
 
-
 longlong Item_func_not_all::val_int()
 {
   assert(fixed == 1);
-  bool value= args[0]->val_bool();
+  bool value = args[0]->val_bool();
 
   /*
     return TRUE if there was records in underlying select in max/min
@@ -428,10 +372,9 @@ longlong Item_func_not_all::val_int()
   if (empty_underlying_subquery())
     return 1;
 
-  null_value= args[0]->null_value;
+  null_value = args[0]->null_value;
   return ((!null_value && value == 0) ? 1 : 0);
 }
-
 
 bool Item_func_not_all::empty_underlying_subquery()
 {
@@ -445,12 +388,9 @@ bool Item_func_not_all::empty_underlying_subquery()
    subselect->... to workaround subquery transformation which could make
    subselect->engine unusable.
   */
-  if (subselect && 
-      subselect->substype() != Item_subselect::ANY_SUBS &&
-      !subselect->unit->item->is_evaluated())
+  if (subselect && subselect->substype() != Item_subselect::ANY_SUBS && !subselect->unit->item->is_evaluated())
     subselect->unit->item->exec();
-  return ((test_sum_item && !test_sum_item->any_value()) ||
-          (test_sub_item && !test_sub_item->any_value()));
+  return ((test_sum_item && !test_sum_item->any_value()) || (test_sub_item && !test_sub_item->any_value()));
 }
 
 void Item_func_not_all::print(String *str, enum_query_type query_type)
@@ -460,7 +400,6 @@ void Item_func_not_all::print(String *str, enum_query_type query_type)
   else
     args[0]->print(str, query_type);
 }
-
 
 /**
   Special NOP (No OPeration) for ALL subquery. It is like
@@ -474,7 +413,7 @@ void Item_func_not_all::print(String *str, enum_query_type query_type)
 longlong Item_func_nop_all::val_int()
 {
   assert(fixed == 1);
-  longlong value= args[0]->val_int();
+  longlong value = args[0]->val_int();
 
   /*
     return FALSE if there was records in underlying select in max/min
@@ -483,10 +422,9 @@ longlong Item_func_nop_all::val_int()
   if (empty_underlying_subquery())
     return 0;
 
-  null_value= args[0]->null_value;
+  null_value = args[0]->null_value;
   return (null_value || value == 0) ? 0 : 1;
 }
-
 
 /**
   Convert a constant item to an int and replace the original item.
@@ -515,36 +453,32 @@ longlong Item_func_nop_all::val_int()
     1  Item was replaced with an integer version of the item
 */
 
-static bool convert_constant_item(THD *thd, Item_field *field_item,
-                                  Item **item)
+static bool convert_constant_item(THD *thd, Item_field *field_item, Item **item)
 {
-  Field *field= field_item->field;
-  int result= 0;
+  Field *field = field_item->field;
+  int result = 0;
 
   if ((*item)->const_item() &&
       /*
         In case of GC it's possible that this func will be called on an
         already converted constant. Don't convert it again.
       */
-      !((*item)->field_type() == field_item->field_type() &&
-        (*item)->basic_const_item()))
+      !((*item)->field_type() == field_item->field_type() && (*item)->basic_const_item()))
   {
-    TABLE *table= field->table;
-    sql_mode_t orig_sql_mode= thd->variables.sql_mode;
-    enum_check_fields orig_count_cuted_fields= thd->count_cuted_fields;
+    TABLE *table = field->table;
+    sql_mode_t orig_sql_mode = thd->variables.sql_mode;
+    enum_check_fields orig_count_cuted_fields = thd->count_cuted_fields;
     my_bitmap_map *old_maps[2];
-    ulonglong orig_field_val= 0; /* original field value if valid */
+    ulonglong orig_field_val = 0; /* original field value if valid */
 
-    old_maps[0]= NULL;
-    old_maps[1]= NULL;
+    old_maps[0] = NULL;
+    old_maps[1] = NULL;
 
     if (table)
-      dbug_tmp_use_all_columns(table, old_maps, 
-                               table->read_set, table->write_set);
+      dbug_tmp_use_all_columns(table, old_maps, table->read_set, table->write_set);
     /* For comparison purposes allow invalid dates like 2000-01-32 */
-    thd->variables.sql_mode= (orig_sql_mode & ~MODE_NO_ZERO_DATE) |
-                             MODE_INVALID_DATES;
-    thd->count_cuted_fields= CHECK_FIELD_IGNORE;
+    thd->variables.sql_mode = (orig_sql_mode & ~MODE_NO_ZERO_DATE) | MODE_INVALID_DATES;
+    thd->count_cuted_fields = CHECK_FIELD_IGNORE;
 
     /*
       Store the value of the field/constant if it references an outer field
@@ -552,18 +486,16 @@ static bool convert_constant_item(THD *thd, Item_field *field_item,
       Don't save field value if no data has been read yet.
       Outer constant values are always saved.
     */
-    bool save_field_value= (field_item->depended_from &&
-                            (field_item->const_item() ||
-                             !(field->table->status &
-                               (STATUS_GARBAGE | STATUS_NOT_FOUND))));
+    bool save_field_value =
+        (field_item->depended_from &&
+         (field_item->const_item() || !(field->table->status & (STATUS_GARBAGE | STATUS_NOT_FOUND))));
     if (save_field_value)
-      orig_field_val= field->val_int();
+      orig_field_val = field->val_int();
     int rc;
     if (!(*item)->is_null() &&
-        (((rc= (*item)->save_in_field(field, true)) == TYPE_OK) ||
-         rc == TYPE_NOTE_TIME_TRUNCATED)) // TS-TODO
+        (((rc = (*item)->save_in_field(field, true)) == TYPE_OK) || rc == TYPE_NOTE_TIME_TRUNCATED))  // TS-TODO
     {
-      int field_cmp= 0;
+      int field_cmp = 0;
       /*
         If item is a decimal value, we must reject it if it was truncated.
         TODO: consider doing the same for MYSQL_TYPE_YEAR,.
@@ -575,83 +507,79 @@ static bool convert_constant_item(THD *thd, Item_field *field_item,
       */
       if (field->type() == MYSQL_TYPE_LONGLONG)
       {
-        field_cmp= stored_field_cmp_to_item(thd, field, *item);
+        field_cmp = stored_field_cmp_to_item(thd, field, *item);
         DBUG_PRINT("info", ("convert_constant_item %d", field_cmp));
       }
 
       if (0 == field_cmp)
       {
-        Item *tmp= field->type() == MYSQL_TYPE_TIME ?
+        Item *tmp = field->type() == MYSQL_TYPE_TIME
+                        ?
 #define OLD_CMP
 #ifdef OLD_CMP
-          new Item_time_with_ref(field->decimals(),
-                                 field->val_time_temporal(), *item) :
+                        new Item_time_with_ref(field->decimals(), field->val_time_temporal(), *item)
+                        :
 #else
-          new Item_time_with_ref(max((*item)->time_precision(),
-                                     field->decimals()),
-                                 (*item)->val_time_temporal(),
-                                 *item) :
+                        new Item_time_with_ref(max((*item)->time_precision(), field->decimals()),
+                                               (*item)->val_time_temporal(), *item)
+                        :
 #endif
-          field->is_temporal_with_date() ?
+                        field->is_temporal_with_date() ?
 #ifdef OLD_CMP
-          new Item_datetime_with_ref(field->type(),
-                                     field->decimals(),
-                                     field->val_date_temporal(),
-                                     *item) :
+                                                       new Item_datetime_with_ref(field->type(), field->decimals(),
+                                                                                  field->val_date_temporal(), *item)
+                                                       :
 #else
-          new Item_datetime_with_ref(field->type(),
-                                     max((*item)->datetime_precision(),
-                                         field->decimals()),
-                                     (*item)->val_date_temporal(),
-                                     *item) :
+                                                       new Item_datetime_with_ref(
+                                                           field->type(),
+                                                           max((*item)->datetime_precision(), field->decimals()),
+                                                           (*item)->val_date_temporal(), *item)
+                                                       :
 #endif
-          new Item_int_with_ref(field->type(), field->val_int(), *item,
-                                MY_TEST(field->flags & UNSIGNED_FLAG));
+                                                       new Item_int_with_ref(field->type(), field->val_int(), *item,
+                                                                             MY_TEST(field->flags & UNSIGNED_FLAG));
         if (tmp)
           thd->change_item_tree(item, tmp);
-        result= 1;                              // Item was replaced
+        result = 1;  // Item was replaced
       }
     }
     /* Restore the original field value. */
     if (save_field_value)
     {
-      result= field->store(orig_field_val, TRUE);
+      result = field->store(orig_field_val, TRUE);
       /* orig_field_val must be a valid value that can be restored back. */
       assert(!result);
     }
-    thd->variables.sql_mode= orig_sql_mode;
-    thd->count_cuted_fields= orig_count_cuted_fields;
+    thd->variables.sql_mode = orig_sql_mode;
+    thd->count_cuted_fields = orig_count_cuted_fields;
     if (table)
       dbug_tmp_restore_column_maps(table->read_set, table->write_set, old_maps);
   }
   return result;
 }
 
-
 bool Item_bool_func2::convert_constant_arg(THD *thd, Item *field, Item **item)
 {
   if (field->real_item()->type() != FIELD_ITEM)
     return false;
 
-  Item_field *field_item= (Item_field*) (field->real_item());
+  Item_field *field_item = (Item_field *)(field->real_item());
   if (field_item->field->can_be_compared_as_longlong() &&
-      !(field_item->is_temporal_with_date() &&
-      (*item)->result_type() == STRING_RESULT))
+      !(field_item->is_temporal_with_date() && (*item)->result_type() == STRING_RESULT))
   {
     if (convert_constant_item(thd, field_item, item))
     {
       cmp.set_cmp_func(this, tmp_arg, tmp_arg + 1, INT_RESULT);
-      field->cmp_context= (*item)->cmp_context= INT_RESULT;
+      field->cmp_context = (*item)->cmp_context = INT_RESULT;
       return true;
     }
   }
   return false;
 }
 
-
 void Item_bool_func2::fix_length_and_dec()
 {
-  max_length= 1;				     // Function returns 0 or 1
+  max_length = 1;  // Function returns 0 or 1
   THD *thd;
 
   /*
@@ -667,13 +595,11 @@ void Item_bool_func2::fix_length_and_dec()
     See agg_item_charsets() in item.cc for comments
     on character set and collation aggregation.
   */
-  if (args[0]->result_type() == STRING_RESULT &&
-      args[1]->result_type() == STRING_RESULT &&
+  if (args[0]->result_type() == STRING_RESULT && args[1]->result_type() == STRING_RESULT &&
       agg_arg_charsets_for_comparison(cmp.cmp_collation, args, 2))
     DBUG_VOID_RETURN;
-    
-  args[0]->cmp_context= args[1]->cmp_context=
-    item_cmp_type(args[0]->result_type(), args[1]->result_type());
+
+  args[0]->cmp_context = args[1]->cmp_context = item_cmp_type(args[0]->result_type(), args[1]->result_type());
   // Make a special case of compare with fields to get nicer DATE comparisons
 
   if (functype() == LIKE_FUNC)  // Disable conversion in case of LIKE function.
@@ -689,22 +615,20 @@ void Item_bool_func2::fix_length_and_dec()
     comparisons are used now and are meaningful, although it simply compares
     the GEOMETRY byte string rather than doing a geometric equality comparison.
   */
-  const Functype func_type= functype();
-  if (func_type == LT_FUNC || func_type == LE_FUNC || func_type == GE_FUNC ||
-      func_type == GT_FUNC || func_type == FT_FUNC)
+  const Functype func_type = functype();
+  if (func_type == LT_FUNC || func_type == LE_FUNC || func_type == GE_FUNC || func_type == GT_FUNC ||
+      func_type == FT_FUNC)
     reject_geometry_args(arg_count, args, this);
 
-  thd= current_thd;
+  thd = current_thd;
   if (!thd->lex->is_ps_or_view_context_analysis())
   {
-    if (convert_constant_arg(thd, args[0], &args[1]) ||
-        convert_constant_arg(thd, args[1], &args[0]))
+    if (convert_constant_arg(thd, args[0], &args[1]) || convert_constant_arg(thd, args[1], &args[0]))
       DBUG_VOID_RETURN;
   }
   set_cmp_func();
   DBUG_VOID_RETURN;
 }
-
 
 void Arg_comparator::cleanup()
 {
@@ -714,128 +638,122 @@ void Arg_comparator::cleanup()
       We cannot rely on (*a)->cols(), since *a may be deallocated
       at this point, so use comparator_count to loop.
     */
-    for (size_t i= 0; i < comparator_count; i++)
+    for (size_t i = 0; i < comparator_count; i++)
     {
       comparators[i].cleanup();
     }
   }
   delete[] comparators;
-  comparators= 0;
+  comparators = 0;
   delete_json_scalar_holder(json_scalar);
-  json_scalar= 0;
+  json_scalar = 0;
 }
-
 
 int Arg_comparator::set_compare_func(Item_result_field *item, Item_result type)
 {
-  owner= item;
-  func= comparator_matrix[type]
-                         [is_owner_equal_func()];
+  owner = item;
+  func = comparator_matrix[type][is_owner_equal_func()];
 
-  switch (type) {
-  case ROW_RESULT:
+  switch (type)
   {
-    uint n= (*a)->cols();
-    if (n != (*b)->cols())
+    case ROW_RESULT:
     {
-      my_error(ER_OPERAND_COLUMNS, MYF(0), n);
-      comparators= 0;
-      return 1;
-    }
-    if (!(comparators= new Arg_comparator[n]))
-      return 1;
-    comparator_count= n;
-
-    for (uint i=0; i < n; i++)
-    {
-      if ((*a)->element_index(i)->cols() != (*b)->element_index(i)->cols())
+      uint n = (*a)->cols();
+      if (n != (*b)->cols())
       {
-	my_error(ER_OPERAND_COLUMNS, MYF(0), (*a)->element_index(i)->cols());
-	return 1;
-      }
-      if (comparators[i].set_cmp_func(owner, (*a)->addr(i), (*b)->addr(i),
-                                      set_null))
+        my_error(ER_OPERAND_COLUMNS, MYF(0), n);
+        comparators = 0;
         return 1;
-    }
-    break;
-  }
-  case STRING_RESULT:
-  {
-    /*
-      We must set cmp_charset here as we may be called from for an automatic
-      generated item, like in natural join
-    */
-    if (cmp_collation.set((*a)->collation, (*b)->collation, MY_COLL_CMP_CONV) ||
-	cmp_collation.derivation == DERIVATION_NONE)
-    {
-      my_coll_agg_error((*a)->collation, (*b)->collation,
-                        owner->func_name());
-      return 1;
-    }
-    if (cmp_collation.collation == &my_charset_bin)
-    {
-      /*
-	We are using BLOB/BINARY/VARBINARY, change to compare byte by byte,
-	without removing end space
-      */
-      if (func == &Arg_comparator::compare_string)
-	func= &Arg_comparator::compare_binary_string;
-      else if (func == &Arg_comparator::compare_e_string)
-	func= &Arg_comparator::compare_e_binary_string;
+      }
+      if (!(comparators = new Arg_comparator[n]))
+        return 1;
+      comparator_count = n;
 
+      for (uint i = 0; i < n; i++)
+      {
+        if ((*a)->element_index(i)->cols() != (*b)->element_index(i)->cols())
+        {
+          my_error(ER_OPERAND_COLUMNS, MYF(0), (*a)->element_index(i)->cols());
+          return 1;
+        }
+        if (comparators[i].set_cmp_func(owner, (*a)->addr(i), (*b)->addr(i), set_null))
+          return 1;
+      }
+      break;
+    }
+    case STRING_RESULT:
+    {
       /*
-        As this is binary compassion, mark all fields that they can't be
-        transformed. Otherwise we would get into trouble with comparisons
-        like:
-        WHERE col= 'j' AND col LIKE BINARY 'j'
-        which would be transformed to:
-        WHERE col= 'j'
+        We must set cmp_charset here as we may be called from for an automatic
+        generated item, like in natural join
       */
-      (*a)->walk(&Item::set_no_const_sub, Item::WALK_POSTFIX, NULL);
-      (*b)->walk(&Item::set_no_const_sub, Item::WALK_POSTFIX, NULL);
+      if (cmp_collation.set((*a)->collation, (*b)->collation, MY_COLL_CMP_CONV) ||
+          cmp_collation.derivation == DERIVATION_NONE)
+      {
+        my_coll_agg_error((*a)->collation, (*b)->collation, owner->func_name());
+        return 1;
+      }
+      if (cmp_collation.collation == &my_charset_bin)
+      {
+        /*
+          We are using BLOB/BINARY/VARBINARY, change to compare byte by byte,
+          without removing end space
+        */
+        if (func == &Arg_comparator::compare_string)
+          func = &Arg_comparator::compare_binary_string;
+        else if (func == &Arg_comparator::compare_e_string)
+          func = &Arg_comparator::compare_e_binary_string;
+
+        /*
+          As this is binary compassion, mark all fields that they can't be
+          transformed. Otherwise we would get into trouble with comparisons
+          like:
+          WHERE col= 'j' AND col LIKE BINARY 'j'
+          which would be transformed to:
+          WHERE col= 'j'
+        */
+        (*a)->walk(&Item::set_no_const_sub, Item::WALK_POSTFIX, NULL);
+        (*b)->walk(&Item::set_no_const_sub, Item::WALK_POSTFIX, NULL);
+      }
+      break;
     }
-    break;
-  }
-  case INT_RESULT:
-  {
-    if ((*a)->is_temporal() && (*b)->is_temporal())
+    case INT_RESULT:
     {
-      func= is_owner_equal_func() ?
-            &Arg_comparator::compare_e_time_packed :
-            &Arg_comparator::compare_time_packed;
+      if ((*a)->is_temporal() && (*b)->is_temporal())
+      {
+        func = is_owner_equal_func() ? &Arg_comparator::compare_e_time_packed : &Arg_comparator::compare_time_packed;
+      }
+      else if (func == &Arg_comparator::compare_int_signed)
+      {
+        if ((*a)->unsigned_flag)
+          func = (((*b)->unsigned_flag) ? &Arg_comparator::compare_int_unsigned
+                                        : &Arg_comparator::compare_int_unsigned_signed);
+        else if ((*b)->unsigned_flag)
+          func = &Arg_comparator::compare_int_signed_unsigned;
+      }
+      else if (func == &Arg_comparator::compare_e_int)
+      {
+        if ((*a)->unsigned_flag ^ (*b)->unsigned_flag)
+          func = &Arg_comparator::compare_e_int_diff_signedness;
+      }
+      break;
     }
-    else if (func == &Arg_comparator::compare_int_signed)
+    case DECIMAL_RESULT:
+      break;
+    case REAL_RESULT:
     {
-      if ((*a)->unsigned_flag)
-        func= (((*b)->unsigned_flag)?
-               &Arg_comparator::compare_int_unsigned :
-               &Arg_comparator::compare_int_unsigned_signed);
-      else if ((*b)->unsigned_flag)
-        func= &Arg_comparator::compare_int_signed_unsigned;
+      if ((*a)->decimals < NOT_FIXED_DEC && (*b)->decimals < NOT_FIXED_DEC)
+      {
+        precision = 5 / log_10[max((*a)->decimals, (*b)->decimals) + 1];
+        if (func == &Arg_comparator::compare_real)
+          func = &Arg_comparator::compare_real_fixed;
+        else if (func == &Arg_comparator::compare_e_real)
+          func = &Arg_comparator::compare_e_real_fixed;
+      }
+      break;
     }
-    else if (func== &Arg_comparator::compare_e_int)
-    {
-      if ((*a)->unsigned_flag ^ (*b)->unsigned_flag)
-        func= &Arg_comparator::compare_e_int_diff_signedness;
-    }
-    break;
-  }
-  case DECIMAL_RESULT:
-    break;
-  case REAL_RESULT:
-  {
-    if ((*a)->decimals < NOT_FIXED_DEC && (*b)->decimals < NOT_FIXED_DEC)
-    {
-      precision= 5 / log_10[max((*a)->decimals, (*b)->decimals) + 1];
-      if (func == &Arg_comparator::compare_real)
-        func= &Arg_comparator::compare_real_fixed;
-      else if (func == &Arg_comparator::compare_e_real)
-        func= &Arg_comparator::compare_e_real_fixed;
-    }
-    break;
-  }
-  default:
-    assert(0);
+    default:
+      assert(0);
   }
   return 0;
 }
@@ -861,39 +779,35 @@ int Arg_comparator::set_compare_func(Item_result_field *item, Item_result type)
   @retval True Indicates failure.
 */
 
-bool get_mysql_time_from_str(THD *thd, String *str, timestamp_type warn_type, 
-                             const char *warn_name, MYSQL_TIME *l_time)
+bool get_mysql_time_from_str(THD *thd, String *str, timestamp_type warn_type, const char *warn_name, MYSQL_TIME *l_time)
 {
   bool value;
   MYSQL_TIME_STATUS status;
-  my_time_flags_t flags= TIME_FUZZY_DATE | TIME_INVALID_DATES;
+  my_time_flags_t flags = TIME_FUZZY_DATE | TIME_INVALID_DATES;
 
   if (thd->variables.sql_mode & MODE_NO_ZERO_IN_DATE)
-    flags|= TIME_NO_ZERO_IN_DATE;
+    flags |= TIME_NO_ZERO_IN_DATE;
   if (thd->variables.sql_mode & MODE_NO_ZERO_DATE)
-    flags|= TIME_NO_ZERO_DATE;
+    flags |= TIME_NO_ZERO_DATE;
 
   if (!str_to_datetime(str, l_time, flags, &status) &&
-      (l_time->time_type == MYSQL_TIMESTAMP_DATETIME ||
-       l_time->time_type == MYSQL_TIMESTAMP_DATE))
+      (l_time->time_type == MYSQL_TIMESTAMP_DATETIME || l_time->time_type == MYSQL_TIMESTAMP_DATE))
     /*
       Do not return yet, we may still want to throw a "trailing garbage"
       warning.
     */
-    value= FALSE;
+    value = FALSE;
   else
   {
-    value= TRUE;
-    status.warnings= MYSQL_TIME_WARN_TRUNCATED;  /* force warning */
+    value = TRUE;
+    status.warnings = MYSQL_TIME_WARN_TRUNCATED; /* force warning */
   }
 
   if (status.warnings > 0)
-    make_truncated_value_warning(thd, Sql_condition::SL_WARNING,
-                                 ErrConvString(str), warn_type, warn_name);
+    make_truncated_value_warning(thd, Sql_condition::SL_WARNING, ErrConvString(str), warn_type, warn_name);
 
   return value;
 }
-
 
 /**
   @brief Convert date provided in a string
@@ -914,18 +828,16 @@ bool get_mysql_time_from_str(THD *thd, String *str, timestamp_type warn_type,
   @return
     converted value. 0 on error and on zero-dates -- check 'failure'
 */
-static ulonglong get_date_from_str(THD *thd, String *str, 
-                                   timestamp_type warn_type, 
-                                   const char *warn_name, bool *error_arg)
+static ulonglong get_date_from_str(THD *thd, String *str, timestamp_type warn_type, const char *warn_name,
+                                   bool *error_arg)
 {
   MYSQL_TIME l_time;
-  *error_arg= get_mysql_time_from_str(thd, str, warn_type, warn_name, &l_time);
+  *error_arg = get_mysql_time_from_str(thd, str, warn_type, warn_name, &l_time);
 
   if (*error_arg)
     return 0;
   return TIME_to_longlong_datetime_packed(&l_time);
 }
-
 
 /**
   Check if str_arg is a constant and convert it to datetime packed value.
@@ -938,30 +850,26 @@ static ulonglong get_date_from_str(THD *thd, String *str,
 
   @return true on error, false on success, false if str_arg is not a const.
 */
-bool Arg_comparator::get_date_from_const(Item *date_arg,
-                                         Item *str_arg,
-                                         ulonglong *const_value)
+bool Arg_comparator::get_date_from_const(Item *date_arg, Item *str_arg, ulonglong *const_value)
 {
-  THD *thd= current_thd;
+  THD *thd = current_thd;
   /*
     Do not cache GET_USER_VAR() function as its const_item() may return TRUE
     for the current thread but it still may change during the execution.
-    Don't use cache while in the context analysis mode only (i.e. for 
-    EXPLAIN/CREATE VIEW and similar queries). Cache is useless in such 
-    cases and can cause problems. For example evaluating subqueries can 
-    confuse storage engines since in context analysis mode tables 
+    Don't use cache while in the context analysis mode only (i.e. for
+    EXPLAIN/CREATE VIEW and similar queries). Cache is useless in such
+    cases and can cause problems. For example evaluating subqueries can
+    confuse storage engines since in context analysis mode tables
     aren't locked.
   */
-  if (!thd->lex->is_ps_or_view_context_analysis() &&
-      str_arg->const_item() &&
-      (str_arg->type() != Item::FUNC_ITEM ||
-      ((Item_func*) str_arg)->functype() != Item_func::GUSERVAR_FUNC))
+  if (!thd->lex->is_ps_or_view_context_analysis() && str_arg->const_item() &&
+      (str_arg->type() != Item::FUNC_ITEM || ((Item_func *)str_arg)->functype() != Item_func::GUSERVAR_FUNC))
   {
     ulonglong value;
     if (str_arg->field_type() == MYSQL_TYPE_TIME)
     {
       // Convert from TIME to DATETIME
-      value= str_arg->val_date_temporal();
+      value = str_arg->val_date_temporal();
       if (str_arg->null_value)
         return true;
     }
@@ -970,23 +878,21 @@ bool Arg_comparator::get_date_from_const(Item *date_arg,
       // Convert from string to DATETIME
       assert(str_arg->result_type() == STRING_RESULT);
       bool error;
-      String tmp, *str_val= 0;
-      timestamp_type t_type= (date_arg->field_type() == MYSQL_TYPE_DATE ?
-                              MYSQL_TIMESTAMP_DATE : MYSQL_TIMESTAMP_DATETIME);
-      str_val= str_arg->val_str(&tmp);
+      String tmp, *str_val = 0;
+      timestamp_type t_type =
+          (date_arg->field_type() == MYSQL_TYPE_DATE ? MYSQL_TIMESTAMP_DATE : MYSQL_TIMESTAMP_DATETIME);
+      str_val = str_arg->val_str(&tmp);
       if (str_arg->null_value)
         return true;
-      value= get_date_from_str(thd, str_val, t_type,
-                               date_arg->item_name.ptr(), &error);
+      value = get_date_from_str(thd, str_val, t_type, date_arg->item_name.ptr(), &error);
       if (error)
         return true;
     }
     if (const_value)
-      *const_value= value;
+      *const_value = value;
   }
   return false;
 }
-
 
 /*
   Check whether compare_datetime() can be used to compare items.
@@ -1019,34 +925,31 @@ bool Arg_comparator::get_date_from_const(Item *date_arg,
   @return true if can compare as dates, false otherwise.
 */
 
-bool
-Arg_comparator::can_compare_as_dates(Item *a, Item *b, ulonglong *const_value)
+bool Arg_comparator::can_compare_as_dates(Item *a, Item *b, ulonglong *const_value)
 {
   if (a->type() == Item::ROW_ITEM || b->type() == Item::ROW_ITEM)
     return false;
 
   if (a->is_temporal_with_date())
   {
-    if (b->is_temporal_with_date()) //  date[time] + date
+    if (b->is_temporal_with_date())  //  date[time] + date
     {
       return true;
     }
-    else if (b->result_type() == STRING_RESULT) // date[time] + string
+    else if (b->result_type() == STRING_RESULT)  // date[time] + string
     {
       return !get_date_from_const(a, b, const_value);
     }
     else
-      return false; // date[time] + number
+      return false;  // date[time] + number
   }
-  else if (b->is_temporal_with_date() &&
-           a->result_type() == STRING_RESULT) // string + date[time]
+  else if (b->is_temporal_with_date() && a->result_type() == STRING_RESULT)  // string + date[time]
   {
     return !get_date_from_const(b, a, const_value);
   }
   else
-    return false; // No date[time] items found
+    return false;  // No date[time] items found
 }
-
 
 /*
   Retrieves correct TIME value from the given item.
@@ -1073,18 +976,16 @@ Arg_comparator::can_compare_as_dates(Item *a, Item *b, ulonglong *const_value)
     obtained value
 */
 
-longlong
-get_time_value(THD *thd, Item ***item_arg, Item **cache_arg,
-               const Item *warn_item, bool *is_null)
+longlong get_time_value(THD *thd, Item ***item_arg, Item **cache_arg, const Item *warn_item, bool *is_null)
 {
   longlong value;
-  Item *item= **item_arg;
+  Item *item = **item_arg;
 
   /*
     Note, it's wrong to assume that we always get
     a TIME expression or NULL here:
 
-    assert(item->field_type() == MYSQL_TYPE_TIME || 
+    assert(item->field_type() == MYSQL_TYPE_TIME ||
     item->field_type() == MYSQL_TYPE_NULL);
 
     because when this condition is optimized:
@@ -1105,28 +1006,25 @@ get_time_value(THD *thd, Item ***item_arg, Item **cache_arg,
 
     See a similar comment in Arg_comparator::compare_time_packed.
   */
-  value= item->val_time_temporal();
-  *is_null= item->null_value;
+  value = item->val_time_temporal();
+  *is_null = item->null_value;
 
   /*
     Do not cache GET_USER_VAR() function as its const_item() may return TRUE
     for the current thread but it still may change during the execution.
   */
-  if (item->const_item() && cache_arg &&
-      item->type() != Item::CACHE_ITEM &&
-      (item->type() != Item::FUNC_ITEM ||
-       ((Item_func*)item)->functype() != Item_func::GUSERVAR_FUNC))
+  if (item->const_item() && cache_arg && item->type() != Item::CACHE_ITEM &&
+      (item->type() != Item::FUNC_ITEM || ((Item_func *)item)->functype() != Item_func::GUSERVAR_FUNC))
   {
-    Item_cache_datetime *cache= new Item_cache_datetime(item->field_type());
+    Item_cache_datetime *cache = new Item_cache_datetime(item->field_type());
     /* Mark the cache as non-const to prevent re-caching. */
     cache->set_used_tables(1);
     cache->store(item, value);
-    *cache_arg= cache;
-    *item_arg= cache_arg;
+    *cache_arg = cache;
+    *item_arg = cache_arg;
   }
   return value;
 }
-
 
 /**
   Sets compare functions for various datatypes.
@@ -1136,32 +1034,27 @@ get_time_value(THD *thd, Item ***item_arg, Item **cache_arg,
     Here we override the chosen result type for certain expression
     containing date or time or decimal expressions.
  */
-int Arg_comparator::set_cmp_func(Item_result_field *owner_arg,
-                                 Item **a1, Item **a2,
-                                 Item_result type)
+int Arg_comparator::set_cmp_func(Item_result_field *owner_arg, Item **a1, Item **a2, Item_result type)
 {
-  ulonglong const_value= (ulonglong)-1;
-  owner= owner_arg;
-  set_null= set_null && owner_arg;
-  a= a1;
-  b= a2;
+  ulonglong const_value = (ulonglong)-1;
+  owner = owner_arg;
+  set_null = set_null && owner_arg;
+  a = a1;
+  b = a2;
 
-  if (type != ROW_RESULT &&
-      (((*a)->result_type() == STRING_RESULT &&
-        (*a)->field_type() == MYSQL_TYPE_JSON) ||
-       ((*b)->result_type() == STRING_RESULT &&
-        (*b)->field_type() == MYSQL_TYPE_JSON)))
+  if (type != ROW_RESULT && (((*a)->result_type() == STRING_RESULT && (*a)->field_type() == MYSQL_TYPE_JSON) ||
+                             ((*b)->result_type() == STRING_RESULT && (*b)->field_type() == MYSQL_TYPE_JSON)))
   {
     // Use the JSON comparator if at least one of the arguments is JSON.
-    is_nulls_eq= is_owner_equal_func();
-    func= &Arg_comparator::compare_json;
+    is_nulls_eq = is_owner_equal_func();
+    func = &Arg_comparator::compare_json;
     return 0;
   }
 
   if (can_compare_as_dates(*a, *b, &const_value))
   {
-    a_cache= 0;
-    b_cache= 0;
+    a_cache = 0;
+    b_cache = 0;
 
     if (const_value != (ulonglong)-1)
     {
@@ -1169,26 +1062,26 @@ int Arg_comparator::set_cmp_func(Item_result_field *owner_arg,
         cache_converted_constant can't be used here because it can't
         correctly convert a DATETIME value from string to int representation.
       */
-      Item_cache_datetime *cache= new Item_cache_datetime(MYSQL_TYPE_DATETIME);
+      Item_cache_datetime *cache = new Item_cache_datetime(MYSQL_TYPE_DATETIME);
       /* Mark the cache as non-const to prevent re-caching. */
       cache->set_used_tables(1);
       if (!(*a)->is_temporal_with_date())
       {
         cache->store((*a), const_value);
-        a_cache= cache;
-        a= &a_cache;
+        a_cache = cache;
+        a = &a_cache;
       }
       else
       {
         cache->store((*b), const_value);
-        b_cache= cache;
-        b= &b_cache;
+        b_cache = cache;
+        b = &b_cache;
       }
     }
-    is_nulls_eq= is_owner_equal_func();
-    func= &Arg_comparator::compare_datetime;
-    get_value_a_func= &get_datetime_value;
-    get_value_b_func= &get_datetime_value;
+    is_nulls_eq = is_owner_equal_func();
+    func = &Arg_comparator::compare_datetime;
+    get_value_a_func = &get_datetime_value;
+    get_value_b_func = &get_datetime_value;
     cmp_collation.set(&my_charset_numeric);
     set_cmp_context_for_datetime();
     return 0;
@@ -1196,40 +1089,34 @@ int Arg_comparator::set_cmp_func(Item_result_field *owner_arg,
   else if ((type == STRING_RESULT ||
             // When comparing time field and cached/converted time constant
             type == REAL_RESULT) &&
-           (*a)->field_type() == MYSQL_TYPE_TIME &&
-           (*b)->field_type() == MYSQL_TYPE_TIME)
+           (*a)->field_type() == MYSQL_TYPE_TIME && (*b)->field_type() == MYSQL_TYPE_TIME)
   {
     /* Compare TIME values as integers. */
-    a_cache= 0;
-    b_cache= 0;
-    is_nulls_eq= is_owner_equal_func();
-    func= &Arg_comparator::compare_datetime;
-    get_value_a_func= &get_time_value;
-    get_value_b_func= &get_time_value;
+    a_cache = 0;
+    b_cache = 0;
+    is_nulls_eq = is_owner_equal_func();
+    func = &Arg_comparator::compare_datetime;
+    get_value_a_func = &get_time_value;
+    get_value_b_func = &get_time_value;
     set_cmp_context_for_datetime();
     return 0;
   }
-  else if (type == STRING_RESULT &&
-           (*a)->result_type() == STRING_RESULT &&
-           (*b)->result_type() == STRING_RESULT)
+  else if (type == STRING_RESULT && (*a)->result_type() == STRING_RESULT && (*b)->result_type() == STRING_RESULT)
   {
     DTCollation coll;
     coll.set((*a)->collation, (*b)->collation, MY_COLL_CMP_CONV);
-    if (agg_item_set_converter(coll, owner->func_name(), a, 1,
-                               MY_COLL_CMP_CONV, 1) ||
-        agg_item_set_converter(coll, owner->func_name(), b, 1,
-                               MY_COLL_CMP_CONV, 1))
+    if (agg_item_set_converter(coll, owner->func_name(), a, 1, MY_COLL_CMP_CONV, 1) ||
+        agg_item_set_converter(coll, owner->func_name(), b, 1, MY_COLL_CMP_CONV, 1))
       return true;
   }
   else if (try_year_cmp_func(type))
   {
     return 0;
   }
-  else if (type == REAL_RESULT &&
-           (((*a)->result_type() == DECIMAL_RESULT && !(*a)->const_item() &&
-             (*b)->result_type() == STRING_RESULT  &&  (*b)->const_item()) ||
-            ((*b)->result_type() == DECIMAL_RESULT && !(*b)->const_item() &&
-             (*a)->result_type() == STRING_RESULT  &&  (*a)->const_item())))
+  else if (type == REAL_RESULT && (((*a)->result_type() == DECIMAL_RESULT && !(*a)->const_item() &&
+                                    (*b)->result_type() == STRING_RESULT && (*b)->const_item()) ||
+                                   ((*b)->result_type() == DECIMAL_RESULT && !(*b)->const_item() &&
+                                    (*a)->result_type() == STRING_RESULT && (*a)->const_item())))
   {
     /*
      <non-const decimal expression> <cmp> <const string expression>
@@ -1238,23 +1125,19 @@ int Arg_comparator::set_cmp_func(Item_result_field *owner_arg,
 
      Do comparison as decimal rather than float, in order not to lose precision.
     */
-    type= DECIMAL_RESULT;
+    type = DECIMAL_RESULT;
   }
 
-  THD *thd= current_thd;
-  a= cache_converted_constant(thd, a, &a_cache, type);
-  b= cache_converted_constant(thd, b, &b_cache, type);
+  THD *thd = current_thd;
+  a = cache_converted_constant(thd, a, &a_cache, type);
+  b = cache_converted_constant(thd, b, &b_cache, type);
   return set_compare_func(owner_arg, type);
 }
 
-
-int Arg_comparator::set_cmp_func(Item_result_field *owner_arg,
-                                 Item **a1, Item **a2, bool set_null_arg)
+int Arg_comparator::set_cmp_func(Item_result_field *owner_arg, Item **a1, Item **a2, bool set_null_arg)
 {
-  set_null= set_null_arg;
-  const Item_result item_result=
-    item_cmp_type((*a1)->result_type(),
-                  (*a2)->result_type());
+  set_null = set_null_arg;
+  const Item_result item_result = item_cmp_type((*a1)->result_type(), (*a2)->result_type());
   return set_cmp_func(owner_arg, a1, a2, item_result);
 }
 
@@ -1267,32 +1150,32 @@ bool Arg_comparator::try_year_cmp_func(Item_result type)
   if (type == ROW_RESULT)
     return FALSE;
 
-  bool a_is_year= (*a)->field_type() == MYSQL_TYPE_YEAR;
-  bool b_is_year= (*b)->field_type() == MYSQL_TYPE_YEAR;
+  bool a_is_year = (*a)->field_type() == MYSQL_TYPE_YEAR;
+  bool b_is_year = (*b)->field_type() == MYSQL_TYPE_YEAR;
 
   if (!a_is_year && !b_is_year)
     return FALSE;
 
   if (a_is_year && b_is_year)
   {
-    get_value_a_func= &get_year_value;
-    get_value_b_func= &get_year_value;
+    get_value_a_func = &get_year_value;
+    get_value_b_func = &get_year_value;
   }
   else if (a_is_year && (*b)->is_temporal_with_date())
   {
-    get_value_a_func= &get_year_value;
-    get_value_b_func= &get_datetime_value;
+    get_value_a_func = &get_year_value;
+    get_value_b_func = &get_datetime_value;
   }
   else if (b_is_year && (*a)->is_temporal_with_date())
   {
-    get_value_b_func= &get_year_value;
-    get_value_a_func= &get_datetime_value;
+    get_value_b_func = &get_year_value;
+    get_value_a_func = &get_datetime_value;
   }
   else
     return FALSE;
 
-  is_nulls_eq= is_owner_equal_func();
-  func= &Arg_comparator::compare_datetime;
+  is_nulls_eq = is_owner_equal_func();
+  func = &Arg_comparator::compare_datetime;
   set_cmp_context_for_datetime();
 
   return TRUE;
@@ -1315,38 +1198,32 @@ bool Arg_comparator::try_year_cmp_func(Item_result type)
   @return cache item or original value.
 */
 
-Item** Arg_comparator::cache_converted_constant(THD *thd_arg, Item **value,
-                                                Item **cache_item,
-                                                Item_result type)
+Item **Arg_comparator::cache_converted_constant(THD *thd_arg, Item **value, Item **cache_item, Item_result type)
 {
   /* Don't need cache if doing context analysis only. */
-  if (!thd_arg->lex->is_ps_or_view_context_analysis() &&
-      (*value)->const_item() && type != (*value)->result_type())
+  if (!thd_arg->lex->is_ps_or_view_context_analysis() && (*value)->const_item() && type != (*value)->result_type())
   {
-    Item_cache *cache= Item_cache::get_cache(*value, type);
+    Item_cache *cache = Item_cache::get_cache(*value, type);
     cache->setup(*value);
-    *cache_item= cache;
+    *cache_item = cache;
     return cache_item;
   }
   return value;
 }
 
-
-void Arg_comparator::set_datetime_cmp_func(Item_result_field *owner_arg,
-                                           Item **a1, Item **b1)
+void Arg_comparator::set_datetime_cmp_func(Item_result_field *owner_arg, Item **a1, Item **b1)
 {
-  owner= owner_arg;
-  a= a1;
-  b= b1;
-  a_cache= 0;
-  b_cache= 0;
-  is_nulls_eq= FALSE;
-  func= &Arg_comparator::compare_datetime;
-  get_value_a_func= &get_datetime_value;
-  get_value_b_func= &get_datetime_value;
+  owner = owner_arg;
+  a = a1;
+  b = b1;
+  a_cache = 0;
+  b_cache = 0;
+  is_nulls_eq = FALSE;
+  func = &Arg_comparator::compare_datetime;
+  get_value_a_func = &get_datetime_value;
+  get_value_b_func = &get_datetime_value;
   set_cmp_context_for_datetime();
 }
-
 
 /*
   Retrieves correct DATETIME value from given item.
@@ -1377,27 +1254,24 @@ void Arg_comparator::set_datetime_cmp_func(Item_result_field *owner_arg,
     obtained value
 */
 
-
-longlong
-get_datetime_value(THD *thd, Item ***item_arg, Item **cache_arg,
-                   const Item *warn_item, bool *is_null)
+longlong get_datetime_value(THD *thd, Item ***item_arg, Item **cache_arg, const Item *warn_item, bool *is_null)
 {
-  longlong value= 0;
-  String buf, *str= 0;
-  Item *item= **item_arg;
+  longlong value = 0;
+  String buf, *str = 0;
+  Item *item = **item_arg;
 
   if (item->is_temporal())
   {
-    value= item->val_date_temporal();
-    *is_null= item->null_value;
+    value = item->val_date_temporal();
+    *is_null = item->null_value;
   }
   else
   {
-    str= item->val_str(&buf);
-    *is_null= item->null_value;
+    str = item->val_str(&buf);
+    *is_null = item->null_value;
   }
   if (*is_null)
-    return ~(ulonglong) 0;
+    return ~(ulonglong)0;
   /*
     Convert strings to the integer DATE/DATETIME representation.
     Even if both dates provided in strings we can't compare them directly as
@@ -1407,10 +1281,9 @@ get_datetime_value(THD *thd, Item ***item_arg, Item **cache_arg,
   if (str)
   {
     bool error;
-    enum_field_types f_type= warn_item->field_type();
-    timestamp_type t_type= f_type ==
-      MYSQL_TYPE_DATE ? MYSQL_TIMESTAMP_DATE : MYSQL_TIMESTAMP_DATETIME;
-    value= (longlong) get_date_from_str(thd, str, t_type, warn_item->item_name.ptr(), &error);
+    enum_field_types f_type = warn_item->field_type();
+    timestamp_type t_type = f_type == MYSQL_TYPE_DATE ? MYSQL_TIMESTAMP_DATE : MYSQL_TIMESTAMP_DATETIME;
+    value = (longlong)get_date_from_str(thd, str, t_type, warn_item->item_name.ptr(), &error);
     /*
       If str did not contain a valid date according to the current
       SQL_MODE, get_date_from_str() has already thrown a warning,
@@ -1422,21 +1295,18 @@ get_datetime_value(THD *thd, Item ***item_arg, Item **cache_arg,
     Do not cache GET_USER_VAR() function as its const_item() may return TRUE
     for the current thread but it still may change during the execution.
   */
-  if (item->const_item() && cache_arg &&
-      item->type() != Item::CACHE_ITEM &&
-      (item->type() != Item::FUNC_ITEM ||
-       ((Item_func*)item)->functype() != Item_func::GUSERVAR_FUNC))
+  if (item->const_item() && cache_arg && item->type() != Item::CACHE_ITEM &&
+      (item->type() != Item::FUNC_ITEM || ((Item_func *)item)->functype() != Item_func::GUSERVAR_FUNC))
   {
-    Item_cache_datetime *cache= new Item_cache_datetime(MYSQL_TYPE_DATETIME);
+    Item_cache_datetime *cache = new Item_cache_datetime(MYSQL_TYPE_DATETIME);
     /* Mark the cache as non-const to prevent re-caching. */
     cache->set_used_tables(1);
     cache->store(item, value);
-    *cache_arg= cache;
-    *item_arg= cache_arg;
+    *cache_arg = cache;
+    *item_arg = cache_arg;
   }
   return value;
 }
-
 
 /*
   Retrieves YEAR value of 19XX-00-00 00:00:00 form from given item.
@@ -1459,22 +1329,19 @@ get_datetime_value(THD *thd, Item ***item_arg, Item **cache_arg,
     obtained value
 */
 
-static longlong
-get_year_value(THD *thd, Item ***item_arg, Item **cache_arg,
-               const Item *warn_item, bool *is_null)
+static longlong get_year_value(THD *thd, Item ***item_arg, Item **cache_arg, const Item *warn_item, bool *is_null)
 {
-  longlong value= 0;
-  Item *item= **item_arg;
+  longlong value = 0;
+  Item *item = **item_arg;
 
-  value= item->val_int();
-  *is_null= item->null_value;
+  value = item->val_int();
+  *is_null = item->null_value;
   if (*is_null)
-    return ~(ulonglong) 0;
+    return ~(ulonglong)0;
 
   /* Convert year to DATETIME packed format */
-  return year_to_longlong_datetime_packed(static_cast<long>(value));
+  return year_to_longlong_datetime_packed(static_cast< long >(value));
 }
-
 
 /*
   Compare items values as dates.
@@ -1506,36 +1373,35 @@ int Arg_comparator::compare_datetime()
 {
   bool a_is_null, b_is_null;
   longlong a_value, b_value;
-  THD *thd= current_thd;
+  THD *thd = current_thd;
 
   /* Get DATE/DATETIME/TIME value of the 'a' item. */
-  a_value= (*get_value_a_func)(thd, &a, &a_cache, *b, &a_is_null);
+  a_value = (*get_value_a_func)(thd, &a, &a_cache, *b, &a_is_null);
   if (!is_nulls_eq && a_is_null)
   {
     if (set_null)
-      owner->null_value= 1;
+      owner->null_value = 1;
     return -1;
   }
 
   /* Get DATE/DATETIME/TIME value of the 'b' item. */
-  b_value= (*get_value_b_func)(thd, &b, &b_cache, *a, &b_is_null);
+  b_value = (*get_value_b_func)(thd, &b, &b_cache, *a, &b_is_null);
   if (a_is_null || b_is_null)
   {
     if (set_null)
-      owner->null_value= is_nulls_eq ? 0 : 1;
+      owner->null_value = is_nulls_eq ? 0 : 1;
     return is_nulls_eq ? (a_is_null == b_is_null) : -1;
   }
 
   /* Here we have two not-NULL values. */
   if (set_null)
-    owner->null_value= 0;
+    owner->null_value = 0;
 
   /* Compare values. */
   if (is_nulls_eq)
     return (a_value == b_value);
   return a_value < b_value ? -1 : (a_value > b_value ? 1 : 0);
 }
-
 
 /**
   Get one of the arguments to the comparator as a JSON value.
@@ -1552,10 +1418,9 @@ int Arg_comparator::compare_datetime()
   @retval false on success
   @retval true on failure
 */
-static bool get_json_arg(Item* arg, String *value, String *tmp,
-                         Json_wrapper *result, Json_scalar_holder **scalar)
+static bool get_json_arg(Item *arg, String *value, String *tmp, Json_wrapper *result, Json_scalar_holder **scalar)
 {
-  Json_scalar_holder *holder= NULL;
+  Json_scalar_holder *holder = NULL;
 
   /*
     If the argument is a non-JSON type, it gets converted to a JSON
@@ -1563,8 +1428,7 @@ static bool get_json_arg(Item* arg, String *value, String *tmp,
     argument. Note, however, that geometry types are not converted
     to scalars. They are converted to JSON objects by get_json_atom_wrapper().
   */
-  if ((arg->field_type() != MYSQL_TYPE_JSON) &&
-      (arg->field_type() != MYSQL_TYPE_GEOMETRY))
+  if ((arg->field_type() != MYSQL_TYPE_JSON) && (arg->field_type() != MYSQL_TYPE_GEOMETRY))
   {
     /*
       If it's a constant item, and we've already read it, just return
@@ -1583,14 +1447,13 @@ static bool get_json_arg(Item* arg, String *value, String *tmp,
       so. Otherwise, we reuse the previously allocated memory.
     */
     if (!*scalar)
-      *scalar= create_json_scalar_holder();
+      *scalar = create_json_scalar_holder();
 
-    holder= *scalar;
+    holder = *scalar;
   }
 
   return get_json_atom_wrapper(&arg, 0, "<=", value, tmp, result, holder, true);
 }
-
 
 /**
   Compare two Item objects as JSON.
@@ -1618,13 +1481,13 @@ int Arg_comparator::compare_json()
   if (get_json_arg(*a, &value1, &tmp, &aw, &json_scalar))
     return 1;
 
-  bool a_is_null= (*a)->null_value;
+  bool a_is_null = (*a)->null_value;
   if (a_is_null)
   {
     if (!is_nulls_eq)
     {
       if (set_null)
-        owner->null_value= true;
+        owner->null_value = true;
       return -1;
     }
   }
@@ -1634,19 +1497,19 @@ int Arg_comparator::compare_json()
   if (get_json_arg(*b, &value1, &tmp, &bw, &json_scalar))
     return 1;
 
-  bool b_is_null= (*b)->null_value;
+  bool b_is_null = (*b)->null_value;
   if (b_is_null)
   {
     if (!is_nulls_eq)
     {
       if (set_null)
-        owner->null_value= true;
+        owner->null_value = true;
       return -1;
     }
   }
 
   if (set_null)
-    owner->null_value= false;
+    owner->null_value = false;
 
   /*
     If we were called by the <=> operator, we should return 0/1
@@ -1665,24 +1528,22 @@ int Arg_comparator::compare_json()
   return aw.compare(bw);
 }
 
-
 int Arg_comparator::compare_string()
 {
-  String *res1,*res2;
-  if ((res1= (*a)->val_str(&value1)))
+  String *res1, *res2;
+  if ((res1 = (*a)->val_str(&value1)))
   {
-    if ((res2= (*b)->val_str(&value2)))
+    if ((res2 = (*b)->val_str(&value2)))
     {
       if (set_null)
-        owner->null_value= 0;
-      return sortcmp(res1,res2,cmp_collation.collation);
+        owner->null_value = 0;
+      return sortcmp(res1, res2, cmp_collation.collation);
     }
   }
   if (set_null)
-    owner->null_value= 1;
+    owner->null_value = 1;
   return -1;
 }
-
 
 /**
   Compare strings byte by byte. End spaces are also compared.
@@ -1697,51 +1558,47 @@ int Arg_comparator::compare_string()
 
 int Arg_comparator::compare_binary_string()
 {
-  String *res1,*res2;
-  if ((res1= (*a)->val_str(&value1)))
+  String *res1, *res2;
+  if ((res1 = (*a)->val_str(&value1)))
   {
-    if ((res2= (*b)->val_str(&value2)))
+    if ((res2 = (*b)->val_str(&value2)))
     {
       if (set_null)
-        owner->null_value= 0;
-      size_t res1_length= res1->length();
-      size_t res2_length= res2->length();
-      int cmp= memcmp(res1->ptr(), res2->ptr(), min(res1_length,res2_length));
-      return cmp ? cmp : (int) (res1_length - res2_length);
+        owner->null_value = 0;
+      size_t res1_length = res1->length();
+      size_t res2_length = res2->length();
+      int cmp = memcmp(res1->ptr(), res2->ptr(), min(res1_length, res2_length));
+      return cmp ? cmp : (int)(res1_length - res2_length);
     }
   }
   if (set_null)
-    owner->null_value= 1;
+    owner->null_value = 1;
   return -1;
 }
-
 
 /**
   Compare strings, but take into account that NULL == NULL.
 */
 
-
 int Arg_comparator::compare_e_string()
 {
-  String *res1,*res2;
-  res1= (*a)->val_str(&value1);
-  res2= (*b)->val_str(&value2);
+  String *res1, *res2;
+  res1 = (*a)->val_str(&value1);
+  res2 = (*b)->val_str(&value2);
   if (!res1 || !res2)
     return MY_TEST(res1 == res2);
   return MY_TEST(sortcmp(res1, res2, cmp_collation.collation) == 0);
 }
 
-
 int Arg_comparator::compare_e_binary_string()
 {
-  String *res1,*res2;
-  res1= (*a)->val_str(&value1);
-  res2= (*b)->val_str(&value2);
+  String *res1, *res2;
+  res1 = (*a)->val_str(&value1);
+  res2 = (*b)->val_str(&value2);
   if (!res1 || !res2)
     return MY_TEST(res1 == res2);
   return MY_TEST(stringcmp(res1, res2) == 0);
 }
-
 
 int Arg_comparator::compare_real()
 {
@@ -1751,48 +1608,50 @@ int Arg_comparator::compare_real()
     performing the comparison.
   */
   volatile double val1, val2;
-  val1= (*a)->val_real();
+  val1 = (*a)->val_real();
   if (!(*a)->null_value)
   {
-    val2= (*b)->val_real();
+    val2 = (*b)->val_real();
     if (!(*b)->null_value)
     {
       if (set_null)
-        owner->null_value= 0;
-      if (val1 < val2)	return -1;
-      if (val1 == val2) return 0;
+        owner->null_value = 0;
+      if (val1 < val2)
+        return -1;
+      if (val1 == val2)
+        return 0;
       return 1;
     }
   }
   if (set_null)
-    owner->null_value= 1;
+    owner->null_value = 1;
   return -1;
 }
 
 int Arg_comparator::compare_decimal()
 {
   my_decimal decimal1;
-  my_decimal *val1= (*a)->val_decimal(&decimal1);
+  my_decimal *val1 = (*a)->val_decimal(&decimal1);
   if (!(*a)->null_value)
   {
     my_decimal decimal2;
-    my_decimal *val2= (*b)->val_decimal(&decimal2);
+    my_decimal *val2 = (*b)->val_decimal(&decimal2);
     if (!(*b)->null_value)
     {
       if (set_null)
-        owner->null_value= 0;
+        owner->null_value = 0;
       return my_decimal_cmp(val1, val2);
     }
   }
   if (set_null)
-    owner->null_value= 1;
+    owner->null_value = 1;
   return -1;
 }
 
 int Arg_comparator::compare_e_real()
 {
-  double val1= (*a)->val_real();
-  double val2= (*b)->val_real();
+  double val1 = (*a)->val_real();
+  double val2 = (*b)->val_real();
   if ((*a)->null_value || (*b)->null_value)
     return MY_TEST((*a)->null_value && (*b)->null_value);
   return MY_TEST(val1 == val2);
@@ -1801,13 +1660,12 @@ int Arg_comparator::compare_e_real()
 int Arg_comparator::compare_e_decimal()
 {
   my_decimal decimal1, decimal2;
-  my_decimal *val1= (*a)->val_decimal(&decimal1);
-  my_decimal *val2= (*b)->val_decimal(&decimal2);
+  my_decimal *val1 = (*a)->val_decimal(&decimal1);
+  my_decimal *val2 = (*b)->val_decimal(&decimal2);
   if ((*a)->null_value || (*b)->null_value)
     return MY_TEST((*a)->null_value && (*b)->null_value);
   return MY_TEST(my_decimal_cmp(val1, val2) == 0);
 }
-
 
 int Arg_comparator::compare_real_fixed()
 {
@@ -1817,14 +1675,14 @@ int Arg_comparator::compare_real_fixed()
     performing the comparison.
   */
   volatile double val1, val2;
-  val1= (*a)->val_real();
+  val1 = (*a)->val_real();
   if (!(*a)->null_value)
   {
-    val2= (*b)->val_real();
+    val2 = (*b)->val_real();
     if (!(*b)->null_value)
     {
       if (set_null)
-        owner->null_value= 0;
+        owner->null_value = 0;
       if (val1 == val2 || fabs(val1 - val2) < precision)
         return 0;
       if (val1 < val2)
@@ -1833,41 +1691,40 @@ int Arg_comparator::compare_real_fixed()
     }
   }
   if (set_null)
-    owner->null_value= 1;
+    owner->null_value = 1;
   return -1;
 }
 
-
 int Arg_comparator::compare_e_real_fixed()
 {
-  double val1= (*a)->val_real();
-  double val2= (*b)->val_real();
+  double val1 = (*a)->val_real();
+  double val2 = (*b)->val_real();
   if ((*a)->null_value || (*b)->null_value)
     return MY_TEST((*a)->null_value && (*b)->null_value);
   return MY_TEST(val1 == val2 || fabs(val1 - val2) < precision);
 }
 
-
 int Arg_comparator::compare_int_signed()
 {
-  longlong val1= (*a)->val_int();
+  longlong val1 = (*a)->val_int();
   if (!(*a)->null_value)
   {
-    longlong val2= (*b)->val_int();
+    longlong val2 = (*b)->val_int();
     if (!(*b)->null_value)
     {
       if (set_null)
-        owner->null_value= 0;
-      if (val1 < val2)	return -1;
-      if (val1 == val2)   return 0;
+        owner->null_value = 0;
+      if (val1 < val2)
+        return -1;
+      if (val1 == val2)
+        return 0;
       return 1;
     }
   }
   if (set_null)
-    owner->null_value= 1;
+    owner->null_value = 1;
   return -1;
 }
-
 
 /**
   Compare arguments using numeric packed temporal representation.
@@ -1878,7 +1735,7 @@ int Arg_comparator::compare_time_packed()
     Note, we cannot do this:
     assert((*a)->field_type() == MYSQL_TYPE_TIME);
     assert((*b)->field_type() == MYSQL_TYPE_TIME);
-    
+
     SELECT col_time_key FROM t1
     WHERE
       col_time_key != UTC_DATE()
@@ -1893,36 +1750,33 @@ int Arg_comparator::compare_time_packed()
     AND
       col_time_key = MAKEDATE(43, -2852);
   */
-  longlong val1= (*a)->val_time_temporal();
+  longlong val1 = (*a)->val_time_temporal();
   if (!(*a)->null_value)
   {
-    longlong val2= (*b)->val_time_temporal();
+    longlong val2 = (*b)->val_time_temporal();
     if (!(*b)->null_value)
     {
       if (set_null)
-        owner->null_value= 0;
+        owner->null_value = 0;
       return val1 < val2 ? -1 : val1 > val2 ? 1 : 0;
     }
   }
   if (set_null)
-    owner->null_value= 1;
+    owner->null_value = 1;
   return -1;
 }
-
 
 /**
   Compare arguments using numeric packed representation for '<=>'.
 */
 int Arg_comparator::compare_e_time_packed()
 {
-  longlong val1= (*a)->val_time_temporal();
-  longlong val2= (*b)->val_time_temporal();
+  longlong val1 = (*a)->val_time_temporal();
+  longlong val2 = (*b)->val_time_temporal();
   if ((*a)->null_value || (*b)->null_value)
     return MY_TEST((*a)->null_value && (*b)->null_value);
   return MY_TEST(val1 == val2);
 }
-
-
 
 /**
   Compare values as BIGINT UNSIGNED.
@@ -1930,24 +1784,25 @@ int Arg_comparator::compare_e_time_packed()
 
 int Arg_comparator::compare_int_unsigned()
 {
-  ulonglong val1= (*a)->val_int();
+  ulonglong val1 = (*a)->val_int();
   if (!(*a)->null_value)
   {
-    ulonglong val2= (*b)->val_int();
+    ulonglong val2 = (*b)->val_int();
     if (!(*b)->null_value)
     {
       if (set_null)
-        owner->null_value= 0;
-      if (val1 < val2)	return -1;
-      if (val1 == val2)   return 0;
+        owner->null_value = 0;
+      if (val1 < val2)
+        return -1;
+      if (val1 == val2)
+        return 0;
       return 1;
     }
   }
   if (set_null)
-    owner->null_value= 1;
+    owner->null_value = 1;
   return -1;
 }
-
 
 /**
   Compare signed (*a) with unsigned (*B)
@@ -1955,14 +1810,14 @@ int Arg_comparator::compare_int_unsigned()
 
 int Arg_comparator::compare_int_signed_unsigned()
 {
-  longlong sval1= (*a)->val_int();
+  longlong sval1 = (*a)->val_int();
   if (!(*a)->null_value)
   {
-    ulonglong uval2= (ulonglong)(*b)->val_int();
+    ulonglong uval2 = (ulonglong)(*b)->val_int();
     if (!(*b)->null_value)
     {
       if (set_null)
-        owner->null_value= 0;
+        owner->null_value = 0;
       if (sval1 < 0 || (ulonglong)sval1 < uval2)
         return -1;
       if ((ulonglong)sval1 == uval2)
@@ -1971,10 +1826,9 @@ int Arg_comparator::compare_int_signed_unsigned()
     }
   }
   if (set_null)
-    owner->null_value= 1;
+    owner->null_value = 1;
   return -1;
 }
-
 
 /**
   Compare unsigned (*a) with signed (*B)
@@ -1982,14 +1836,14 @@ int Arg_comparator::compare_int_signed_unsigned()
 
 int Arg_comparator::compare_int_unsigned_signed()
 {
-  ulonglong uval1= (ulonglong)(*a)->val_int();
+  ulonglong uval1 = (ulonglong)(*a)->val_int();
   if (!(*a)->null_value)
   {
-    longlong sval2= (*b)->val_int();
+    longlong sval2 = (*b)->val_int();
     if (!(*b)->null_value)
     {
       if (set_null)
-        owner->null_value= 0;
+        owner->null_value = 0;
       if (sval2 < 0)
         return 1;
       if (uval1 < (ulonglong)sval2)
@@ -2000,15 +1854,14 @@ int Arg_comparator::compare_int_unsigned_signed()
     }
   }
   if (set_null)
-    owner->null_value= 1;
+    owner->null_value = 1;
   return -1;
 }
 
-
 int Arg_comparator::compare_e_int()
 {
-  longlong val1= (*a)->val_int();
-  longlong val2= (*b)->val_int();
+  longlong val1 = (*a)->val_int();
+  longlong val2 = (*b)->val_int();
   if ((*a)->null_value || (*b)->null_value)
     return MY_TEST((*a)->null_value && (*b)->null_value);
   return MY_TEST(val1 == val2);
@@ -2019,8 +1872,8 @@ int Arg_comparator::compare_e_int()
 */
 int Arg_comparator::compare_e_int_diff_signedness()
 {
-  longlong val1= (*a)->val_int();
-  longlong val2= (*b)->val_int();
+  longlong val1 = (*a)->val_int();
+  longlong val2 = (*b)->val_int();
   if ((*a)->null_value || (*b)->null_value)
     return MY_TEST((*a)->null_value && (*b)->null_value);
   return (val1 >= 0) && MY_TEST(val1 == val2);
@@ -2028,40 +1881,41 @@ int Arg_comparator::compare_e_int_diff_signedness()
 
 int Arg_comparator::compare_row()
 {
-  int res= 0;
-  bool was_null= 0;
+  int res = 0;
+  bool was_null = 0;
   (*a)->bring_value();
   (*b)->bring_value();
 
   if ((*a)->null_value || (*b)->null_value)
   {
-    owner->null_value= 1;
+    owner->null_value = 1;
     return -1;
   }
 
-  uint n= (*a)->cols();
-  for (uint i= 0; i<n; i++)
+  uint n = (*a)->cols();
+  for (uint i = 0; i < n; i++)
   {
-    res= comparators[i].compare();
+    res = comparators[i].compare();
     /* Aggregate functions don't need special null handling. */
     if (owner->null_value && owner->type() == Item::FUNC_ITEM)
     {
       // NULL was compared
-      switch (((Item_func*)owner)->functype()) {
-      case Item_func::NE_FUNC:
-        break; // NE never aborts on NULL even if abort_on_null is set
-      case Item_func::LT_FUNC:
-      case Item_func::LE_FUNC:
-      case Item_func::GT_FUNC:
-      case Item_func::GE_FUNC:
-        return -1; // <, <=, > and >= always fail on NULL
-      default: // EQ_FUNC
-        if (((Item_bool_func2*)owner)->abort_on_null)
-          return -1; // We do not need correct NULL returning
+      switch (((Item_func *)owner)->functype())
+      {
+        case Item_func::NE_FUNC:
+          break;  // NE never aborts on NULL even if abort_on_null is set
+        case Item_func::LT_FUNC:
+        case Item_func::LE_FUNC:
+        case Item_func::GT_FUNC:
+        case Item_func::GE_FUNC:
+          return -1;  // <, <=, > and >= always fail on NULL
+        default:      // EQ_FUNC
+          if (((Item_bool_func2 *)owner)->abort_on_null)
+            return -1;  // We do not need correct NULL returning
       }
-      was_null= 1;
-      owner->null_value= 0;
-      res= 0;  // continue comparison (maybe we will meet explicit difference)
+      was_null = 1;
+      owner->null_value = 0;
+      res = 0;  // continue comparison (maybe we will meet explicit difference)
     }
     else if (res)
       return res;
@@ -2072,19 +1926,18 @@ int Arg_comparator::compare_row()
       There was NULL(s) in comparison in some parts, but there was no
       explicit difference in other parts, so we have to return NULL.
     */
-    owner->null_value= 1;
+    owner->null_value = 1;
     return -1;
   }
   return 0;
 }
 
-
 int Arg_comparator::compare_e_row()
 {
   (*a)->bring_value();
   (*b)->bring_value();
-  uint n= (*a)->cols();
-  for (uint i= 0; i<n; i++)
+  uint n = (*a)->cols();
+  for (uint i = 0; i < n; i++)
   {
     if (!comparators[i].compare())
       return 0;
@@ -2092,22 +1945,20 @@ int Arg_comparator::compare_e_row()
   return 1;
 }
 
-
 void Item_func_truth::fix_length_and_dec()
 {
-  maybe_null= 0;
-  null_value= 0;
-  decimals= 0;
-  max_length= 1;
+  maybe_null = 0;
+  null_value = 0;
+  decimals = 0;
+  max_length = 1;
 }
-
 
 void Item_func_truth::print(String *str, enum_query_type query_type)
 {
   str->append('(');
   args[0]->print(str, query_type);
   str->append(STRING_WITH_LEN(" is "));
-  if (! affirmative)
+  if (!affirmative)
     str->append(STRING_WITH_LEN("not "));
   if (value)
     str->append(STRING_WITH_LEN("true"));
@@ -2116,17 +1967,16 @@ void Item_func_truth::print(String *str, enum_query_type query_type)
   str->append(')');
 }
 
-
 bool Item_func_truth::val_bool()
 {
-  bool val= args[0]->val_bool();
+  bool val = args[0]->val_bool();
   if (args[0]->null_value)
   {
     /*
       NULL val IS {TRUE, FALSE} --> FALSE
       NULL val IS NOT {TRUE, FALSE} --> TRUE
     */
-    return (! affirmative);
+    return (!affirmative);
   }
 
   if (affirmative)
@@ -2139,12 +1989,7 @@ bool Item_func_truth::val_bool()
   return (val != value);
 }
 
-
-longlong Item_func_truth::val_int()
-{
-  return (val_bool() ? 1 : 0);
-}
-
+longlong Item_func_truth::val_int() { return (val_bool() ? 1 : 0); }
 
 bool Item_in_optimizer::fix_left(THD *thd, Item **ref)
 {
@@ -2152,34 +1997,31 @@ bool Item_in_optimizer::fix_left(THD *thd, Item **ref)
     Refresh this pointer as left_expr may have been substituted
     during resolving.
   */
-  args[0]= ((Item_in_subselect *)args[1])->left_expr;
+  args[0] = ((Item_in_subselect *)args[1])->left_expr;
 
-  if ((!args[0]->fixed && args[0]->fix_fields(thd, args)) ||
-      (!cache && !(cache= Item_cache::get_cache(args[0]))))
+  if ((!args[0]->fixed && args[0]->fix_fields(thd, args)) || (!cache && !(cache = Item_cache::get_cache(args[0]))))
     return 1;
 
   cache->setup(args[0]);
-  used_tables_cache= args[0]->used_tables();
+  used_tables_cache = args[0]->used_tables();
   if (cache->cols() == 1)
   {
     cache->set_used_tables(used_tables_cache);
   }
   else
   {
-    uint n= cache->cols();
-    for (uint i= 0; i < n; i++)
+    uint n = cache->cols();
+    for (uint i = 0; i < n; i++)
     {
-      ((Item_cache *)cache->element_index(i))->
-        set_used_tables(args[0]->element_index(i)->used_tables());
+      ((Item_cache *)cache->element_index(i))->set_used_tables(args[0]->element_index(i)->used_tables());
     }
   }
-  not_null_tables_cache= args[0]->not_null_tables();
-  with_sum_func= args[0]->with_sum_func;
-  if ((const_item_cache= args[0]->const_item()))
+  not_null_tables_cache = args[0]->not_null_tables();
+  with_sum_func = args[0]->with_sum_func;
+  if ((const_item_cache = args[0]->const_item()))
     cache->store(args[0]);
   return 0;
 }
-
 
 bool Item_in_optimizer::fix_fields(THD *thd, Item **ref)
 {
@@ -2187,21 +2029,21 @@ bool Item_in_optimizer::fix_fields(THD *thd, Item **ref)
   if (fix_left(thd, ref))
     return TRUE;
   if (args[0]->maybe_null)
-    maybe_null=1;
+    maybe_null = 1;
 
-  if (!args[1]->fixed && args[1]->fix_fields(thd, args+1))
+  if (!args[1]->fixed && args[1]->fix_fields(thd, args + 1))
     return TRUE;
-  Item_in_subselect * sub= (Item_in_subselect *)args[1];
+  Item_in_subselect *sub = (Item_in_subselect *)args[1];
   if (args[0]->cols() != sub->engine->cols())
   {
     my_error(ER_OPERAND_COLUMNS, MYF(0), args[0]->cols());
     return TRUE;
   }
   if (args[1]->maybe_null)
-    maybe_null=1;
-  with_sum_func= with_sum_func || args[1]->with_sum_func;
-  used_tables_cache|= args[1]->used_tables();
-  not_null_tables_cache|= args[1]->not_null_tables();
+    maybe_null = 1;
+  with_sum_func = with_sum_func || args[1]->with_sum_func;
+  used_tables_cache |= args[1]->used_tables();
+  not_null_tables_cache |= args[1]->not_null_tables();
 
   if (!sub->is_top_level_item())
   {
@@ -2211,20 +2053,18 @@ bool Item_in_optimizer::fix_fields(THD *thd, Item **ref)
       must be considered in the evaluation, hence filter out these tables
       from the set of null-rejecting tables.
     */
-    not_null_tables_cache&= ~args[0]->not_null_tables();
+    not_null_tables_cache &= ~args[0]->not_null_tables();
   }
-  const_item_cache&= args[1]->const_item();
-  fixed= 1;
+  const_item_cache &= args[1]->const_item();
+  fixed = 1;
   return FALSE;
 }
 
-
-void Item_in_optimizer::fix_after_pullout(st_select_lex *parent_select,
-                                          st_select_lex *removed_select)
+void Item_in_optimizer::fix_after_pullout(st_select_lex *parent_select, st_select_lex *removed_select)
 {
-  used_tables_cache= get_initial_pseudo_tables();
-  not_null_tables_cache= 0;
-  const_item_cache= 1;
+  used_tables_cache = get_initial_pseudo_tables();
+  not_null_tables_cache = 0;
+  const_item_cache = 1;
 
   /*
     No need to call fix_after_pullout() on args[0] (ie left expression),
@@ -2234,11 +2074,10 @@ void Item_in_optimizer::fix_after_pullout(st_select_lex *parent_select,
 
   args[1]->fix_after_pullout(parent_select, removed_select);
 
-  used_tables_cache|= args[1]->used_tables();
-  not_null_tables_cache|= args[1]->not_null_tables();
-  const_item_cache&= args[1]->const_item();
+  used_tables_cache |= args[1]->used_tables();
+  not_null_tables_cache |= args[1]->not_null_tables();
+  const_item_cache &= args[1]->const_item();
 }
-
 
 /**
    The implementation of optimized \<outer expression\> [NOT] IN \<subquery\>
@@ -2248,7 +2087,7 @@ void Item_in_optimizer::fix_after_pullout(st_select_lex *parent_select,
 
    The implementation works as follows.
    For the current value of the outer expression
-   
+
    - If it contains only NULL values, the original (before rewrite by the
      Item_in_subselect rewrite methods) inner subquery is non-correlated and
      was previously executed, there is no need to re-execute it, and the
@@ -2259,22 +2098,22 @@ void Item_in_optimizer::fix_after_pullout(st_select_lex *parent_select,
      transformation previously performed on the sub-query. The expression
 
      <tt>
-     ( oc_1, ..., oc_n ) 
+     ( oc_1, ..., oc_n )
      \<in predicate\>
      ( SELECT ic_1, ..., ic_n
        FROM \<table\>
-       WHERE \<inner where\> 
+       WHERE \<inner where\>
      )
      </tt>
 
      was transformed into
-     
+
      <tt>
-     ( oc_1, ..., oc_n ) 
+     ( oc_1, ..., oc_n )
      \<in predicate\>
-     ( SELECT ic_1, ..., ic_n 
-       FROM \<table\> 
-       WHERE \<inner where\> AND ... ( ic_k = oc_k OR ic_k IS NULL ) 
+     ( SELECT ic_1, ..., ic_n
+       FROM \<table\>
+       WHERE \<inner where\> AND ... ( ic_k = oc_k OR ic_k IS NULL )
        HAVING ... NOT ic_k IS NULL
      )
      </tt>
@@ -2285,11 +2124,11 @@ void Item_in_optimizer::fix_after_pullout(st_select_lex *parent_select,
      - The HAVING NOT \<inner column\> IS NULL conditions added by the
        aforementioned rewrite methods will detect whether they evaluated (and
        rejected) a NULL value and if so, will cause the subquery to evaluate
-       to NULL. 
+       to NULL.
 
      - The added WHERE and HAVING conditions are present only for those inner
        columns that correspond to outer column that are not NULL at the moment.
-     
+
      - If there is an eligible index for executing the subquery, the special
        access method "Full scan on NULL key" is employed which ensures that
        the inner query will detect if there are NULL values resulting from the
@@ -2298,7 +2137,7 @@ void Item_in_optimizer::fix_after_pullout(st_select_lex *parent_select,
 
      - Under these conditions, the sub-query need only be evaluated in order to
        find out whether it produced any rows.
-     
+
        - If it did, we know that there was a partial match since there are
          NULL values in the outer row expression.
 
@@ -2320,56 +2159,54 @@ longlong Item_in_optimizer::val_int()
   assert(fixed == 1);
   cache->store(args[0]);
   cache->cache_value();
-  
+
   if (cache->null_value)
   {
-    Item_in_subselect * const item_subs=
-      static_cast<Item_in_subselect *>(args[1]);
+    Item_in_subselect *const item_subs = static_cast< Item_in_subselect * >(args[1]);
     /*
-      We're evaluating 
-      "<outer_value_list> [NOT] IN (SELECT <inner_value_list>...)" 
-      where one or more of the outer values is NULL. 
+      We're evaluating
+      "<outer_value_list> [NOT] IN (SELECT <inner_value_list>...)"
+      where one or more of the outer values is NULL.
     */
     if (item_subs->is_top_level_item())
     {
       /*
-        We're evaluating a top level item, e.g. 
-	"<outer_value_list> IN (SELECT <inner_value_list>...)",
-	and in this case a NULL value in the outer_value_list means
+        We're evaluating a top level item, e.g.
+        "<outer_value_list> IN (SELECT <inner_value_list>...)",
+        and in this case a NULL value in the outer_value_list means
         that the result shall be NULL/FALSE (makes no difference for
         top level items). The cached value is NULL, so just return
         NULL.
       */
-      null_value= 1;
+      null_value = 1;
     }
     else
     {
       /*
-	We're evaluating an item where a NULL value in either the
+        We're evaluating an item where a NULL value in either the
         outer or inner value list does not automatically mean that we
         can return NULL/FALSE. An example of such a query is
-        "<outer_value_list> NOT IN (SELECT <inner_value_list>...)" 
+        "<outer_value_list> NOT IN (SELECT <inner_value_list>...)"
         The result when there is at least one NULL value is: NULL if the
         SELECT evaluated over the non-NULL values produces at least
         one row, FALSE otherwise
       */
-      bool all_left_cols_null= true;
-      const uint ncols= cache->cols();
+      bool all_left_cols_null = true;
+      const uint ncols = cache->cols();
 
       /*
         Turn off the predicates that are based on column compares for
         which the left part is currently NULL
       */
-      for (uint i= 0; i < ncols; i++)
+      for (uint i = 0; i < ncols; i++)
       {
         if (cache->element_index(i)->null_value)
           item_subs->set_cond_guard_var(i, FALSE);
-        else 
-          all_left_cols_null= false;
+        else
+          all_left_cols_null = false;
       }
 
-      if (all_left_cols_null && result_for_null_param != UNKNOWN &&
-          !item_subs->dependent_before_in2exists())
+      if (all_left_cols_null && result_for_null_param != UNKNOWN && !item_subs->dependent_before_in2exists())
       {
         /*
            This subquery was originally not correlated. The IN->EXISTS
@@ -2378,55 +2215,50 @@ longlong Item_in_optimizer::val_int()
            already evaluated the subquery for all NULL values: return the same
            result we did last time without evaluating the subquery.
         */
-        null_value= result_for_null_param;
-      } 
-      else 
+        null_value = result_for_null_param;
+      }
+      else
       {
         /* The subquery has to be evaluated */
-        (void) item_subs->val_bool_result();
+        (void)item_subs->val_bool_result();
         if (!item_subs->value)
-          null_value= item_subs->null_value;
+          null_value = item_subs->null_value;
         else
-          null_value= TRUE;
+          null_value = TRUE;
         if (all_left_cols_null)
-          result_for_null_param= null_value;
+          result_for_null_param = null_value;
       }
 
       /* Turn all predicates back on */
-      for (uint i= 0; i < ncols; i++)
-        item_subs->set_cond_guard_var(i, TRUE);
+      for (uint i = 0; i < ncols; i++) item_subs->set_cond_guard_var(i, TRUE);
     }
     return 0;
   }
-  tmp= args[1]->val_bool_result();
-  null_value= args[1]->null_value;
+  tmp = args[1]->val_bool_result();
+  null_value = args[1]->null_value;
   return tmp;
 }
-
 
 void Item_in_optimizer::keep_top_level_cache()
 {
   cache->keep_array();
-  save_cache= 1;
+  save_cache = 1;
 }
-
 
 void Item_in_optimizer::cleanup()
 {
   DBUG_ENTER("Item_in_optimizer::cleanup");
   Item_bool_func::cleanup();
   if (!save_cache)
-    cache= 0;
+    cache = 0;
   DBUG_VOID_RETURN;
 }
-
 
 bool Item_in_optimizer::is_null()
 {
   val_int();
   return null_value;
 }
-
 
 /**
   Transform an Item_in_optimizer and its arguments with a callback function.
@@ -2458,7 +2290,7 @@ Item *Item_in_optimizer::transform(Item_transformer transformer, uchar *argument
   assert(arg_count == 2);
 
   /* Transform the left IN operand. */
-  new_item= args[0]->transform(transformer, argument);
+  new_item = args[0]->transform(transformer, argument);
   if (!new_item)
     return 0;
   /*
@@ -2478,14 +2310,11 @@ Item *Item_in_optimizer::transform(Item_transformer transformer, uchar *argument
     TODO: is it the way it should be?
   */
   assert((args[1])->type() == Item::SUBSELECT_ITEM &&
-         (((Item_subselect*)(args[1]))->substype() ==
-          Item_subselect::IN_SUBS ||
-          ((Item_subselect*)(args[1]))->substype() ==
-          Item_subselect::ALL_SUBS ||
-          ((Item_subselect*)(args[1]))->substype() ==
-          Item_subselect::ANY_SUBS));
+         (((Item_subselect *)(args[1]))->substype() == Item_subselect::IN_SUBS ||
+          ((Item_subselect *)(args[1]))->substype() == Item_subselect::ALL_SUBS ||
+          ((Item_subselect *)(args[1]))->substype() == Item_subselect::ANY_SUBS));
 
-  Item_in_subselect *in_arg= (Item_in_subselect*)args[1];
+  Item_in_subselect *in_arg = (Item_in_subselect *)args[1];
 
   if (in_arg->left_expr != args[0])
     current_thd->change_item_tree(&in_arg->left_expr, args[0]);
@@ -2493,11 +2322,10 @@ Item *Item_in_optimizer::transform(Item_transformer transformer, uchar *argument
   return (this->*transformer)(argument);
 }
 
-
 void Item_in_optimizer::replace_argument(THD *thd, Item **oldpp, Item *newp)
 {
   // Maintain the invariant described in this class's comment
-  Item_in_subselect *ss= down_cast<Item_in_subselect *>(args[1]);
+  Item_in_subselect *ss = down_cast< Item_in_subselect * >(args[1]);
   thd->change_item_tree(&ss->left_expr, newp);
   /*
     fix_left() does cache setup. This setup() does (mainly)
@@ -2513,17 +2341,16 @@ void Item_in_optimizer::replace_argument(THD *thd, Item **oldpp, Item *newp)
 longlong Item_func_eq::val_int()
 {
   assert(fixed == 1);
-  int value= cmp.compare();
+  int value = cmp.compare();
   return value == 0 ? 1 : 0;
 }
-
 
 /** Same as Item_func_eq, but NULL = NULL. */
 
 void Item_func_equal::fix_length_and_dec()
 {
   Item_bool_func2::fix_length_and_dec();
-  maybe_null=null_value=0;
+  maybe_null = null_value = 0;
 }
 
 longlong Item_func_equal::val_int()
@@ -2532,142 +2359,115 @@ longlong Item_func_equal::val_int()
   return cmp.compare();
 }
 
-float Item_func_ne::get_filtering_effect(table_map filter_for_table,
-                                         table_map read_tables,
-                                         const MY_BITMAP *fields_to_ignore,
-                                         double rows_in_table)
+float Item_func_ne::get_filtering_effect(table_map filter_for_table, table_map read_tables,
+                                         const MY_BITMAP *fields_to_ignore, double rows_in_table)
 {
-  const Item_field* fld= 
-    contributes_to_filter(read_tables, filter_for_table, fields_to_ignore);
+  const Item_field *fld = contributes_to_filter(read_tables, filter_for_table, fields_to_ignore);
   if (!fld)
     return COND_FILTER_ALLPASS;
 
-  return 1.0f - fld->get_cond_filter_default_probability(rows_in_table,
-                                                         COND_FILTER_EQUALITY);
+  return 1.0f - fld->get_cond_filter_default_probability(rows_in_table, COND_FILTER_EQUALITY);
 }
 
 longlong Item_func_ne::val_int()
 {
   assert(fixed == 1);
-  int value= cmp.compare();
+  int value = cmp.compare();
   return value != 0 && !null_value ? 1 : 0;
 }
 
-float Item_func_equal::get_filtering_effect(table_map filter_for_table,
-                                            table_map read_tables,
-                                            const MY_BITMAP *fields_to_ignore,
-                                            double rows_in_table)
+float Item_func_equal::get_filtering_effect(table_map filter_for_table, table_map read_tables,
+                                            const MY_BITMAP *fields_to_ignore, double rows_in_table)
 {
-  const Item_field* fld= 
-    contributes_to_filter(read_tables, filter_for_table, fields_to_ignore);
+  const Item_field *fld = contributes_to_filter(read_tables, filter_for_table, fields_to_ignore);
   if (!fld)
     return COND_FILTER_ALLPASS;
 
-  return fld->get_cond_filter_default_probability(rows_in_table,
-                                                  COND_FILTER_EQUALITY);
+  return fld->get_cond_filter_default_probability(rows_in_table, COND_FILTER_EQUALITY);
 }
 
-float Item_func_ge::get_filtering_effect(table_map filter_for_table,
-                                         table_map read_tables,
-                                         const MY_BITMAP *fields_to_ignore,
-                                         double rows_in_table)
+float Item_func_ge::get_filtering_effect(table_map filter_for_table, table_map read_tables,
+                                         const MY_BITMAP *fields_to_ignore, double rows_in_table)
 {
-  const Item_field* fld= 
-    contributes_to_filter(read_tables, filter_for_table, fields_to_ignore);
+  const Item_field *fld = contributes_to_filter(read_tables, filter_for_table, fields_to_ignore);
   if (!fld)
     return COND_FILTER_ALLPASS;
 
-  return fld->get_cond_filter_default_probability(rows_in_table,
-                                                  COND_FILTER_INEQUALITY);
+  return fld->get_cond_filter_default_probability(rows_in_table, COND_FILTER_INEQUALITY);
 }
 
-float Item_func_lt::get_filtering_effect(table_map filter_for_table,
-                                         table_map read_tables,
-                                         const MY_BITMAP *fields_to_ignore,
-                                         double rows_in_table)
+float Item_func_lt::get_filtering_effect(table_map filter_for_table, table_map read_tables,
+                                         const MY_BITMAP *fields_to_ignore, double rows_in_table)
 {
-  const Item_field* fld= 
-    contributes_to_filter(read_tables, filter_for_table, fields_to_ignore);
+  const Item_field *fld = contributes_to_filter(read_tables, filter_for_table, fields_to_ignore);
   if (!fld)
     return COND_FILTER_ALLPASS;
 
-  return fld->get_cond_filter_default_probability(rows_in_table,
-                                                  COND_FILTER_INEQUALITY);
+  return fld->get_cond_filter_default_probability(rows_in_table, COND_FILTER_INEQUALITY);
 }
 
-float Item_func_le::get_filtering_effect(table_map filter_for_table,
-                                         table_map read_tables,
-                                         const MY_BITMAP *fields_to_ignore,
-                                         double rows_in_table)
+float Item_func_le::get_filtering_effect(table_map filter_for_table, table_map read_tables,
+                                         const MY_BITMAP *fields_to_ignore, double rows_in_table)
 {
-  const Item_field* fld= 
-    contributes_to_filter(read_tables, filter_for_table, fields_to_ignore);
+  const Item_field *fld = contributes_to_filter(read_tables, filter_for_table, fields_to_ignore);
   if (!fld)
     return COND_FILTER_ALLPASS;
 
-  return fld->get_cond_filter_default_probability(rows_in_table,
-                                                  COND_FILTER_INEQUALITY);
+  return fld->get_cond_filter_default_probability(rows_in_table, COND_FILTER_INEQUALITY);
 }
 
-float Item_func_gt::get_filtering_effect(table_map filter_for_table,
-                                         table_map read_tables,
-                                         const MY_BITMAP *fields_to_ignore,
-                                         double rows_in_table)
+float Item_func_gt::get_filtering_effect(table_map filter_for_table, table_map read_tables,
+                                         const MY_BITMAP *fields_to_ignore, double rows_in_table)
 {
-  const Item_field* fld= 
-    contributes_to_filter(read_tables, filter_for_table, fields_to_ignore);
+  const Item_field *fld = contributes_to_filter(read_tables, filter_for_table, fields_to_ignore);
   if (!fld)
     return COND_FILTER_ALLPASS;
 
-  return fld->get_cond_filter_default_probability(rows_in_table,
-                                                  COND_FILTER_INEQUALITY);
+  return fld->get_cond_filter_default_probability(rows_in_table, COND_FILTER_INEQUALITY);
 }
 
 longlong Item_func_ge::val_int()
 {
   assert(fixed == 1);
-  int value= cmp.compare();
+  int value = cmp.compare();
   return value >= 0 ? 1 : 0;
 }
 
 longlong Item_func_gt::val_int()
 {
   assert(fixed == 1);
-  int value= cmp.compare();
+  int value = cmp.compare();
   return value > 0 ? 1 : 0;
 }
 
 longlong Item_func_le::val_int()
 {
   assert(fixed == 1);
-  int value= cmp.compare();
+  int value = cmp.compare();
   return value <= 0 && !null_value ? 1 : 0;
 }
-
 
 longlong Item_func_lt::val_int()
 {
   assert(fixed == 1);
-  int value= cmp.compare();
+  int value = cmp.compare();
   return value < 0 && !null_value ? 1 : 0;
 }
-
 
 longlong Item_func_strcmp::val_int()
 {
   assert(fixed == 1);
-  String *a=args[0]->val_str(&cmp.value1);
-  String *b=args[1]->val_str(&cmp.value2);
+  String *a = args[0]->val_str(&cmp.value1);
+  String *b = args[1]->val_str(&cmp.value2);
   if (!a || !b)
   {
-    null_value=1;
+    null_value = 1;
     return 0;
   }
-  int value= sortcmp(a,b,cmp.cmp_collation.collation);
-  null_value=0;
-  return !value ? 0 : (value < 0 ? (longlong) -1 : (longlong) 1);
+  int value = sortcmp(a, b, cmp.cmp_collation.collation);
+  null_value = 0;
+  return !value ? 0 : (value < 0 ? (longlong)-1 : (longlong)1);
 }
-
 
 bool Item_func_opt_neg::eq(const Item *item, bool binary_cmp) const
 {
@@ -2676,115 +2476,103 @@ bool Item_func_opt_neg::eq(const Item *item, bool binary_cmp) const
     return 1;
   if (item->type() != FUNC_ITEM)
     return 0;
-  Item_func *item_func=(Item_func*) item;
-  if (arg_count != item_func->arg_count ||
-      functype() != item_func->functype())
+  Item_func *item_func = (Item_func *)item;
+  if (arg_count != item_func->arg_count || functype() != item_func->functype())
     return 0;
-  if (negated != ((Item_func_opt_neg *) item_func)->negated)
+  if (negated != ((Item_func_opt_neg *)item_func)->negated)
     return 0;
-  for (uint i=0; i < arg_count ; i++)
+  for (uint i = 0; i < arg_count; i++)
     if (!args[i]->eq(item_func->arguments()[i], binary_cmp))
       return 0;
   return 1;
 }
 
-
 bool Item_func_interval::itemize(Parse_context *pc, Item **res)
 {
   if (skip_itemize(res))
     return false;
-  if (row == NULL || // OOM in constructor
+  if (row == NULL ||  // OOM in constructor
       super::itemize(pc, res))
     return true;
-  assert(row == args[0]); // row->itemize() is not needed
+  assert(row == args[0]);  // row->itemize() is not needed
   return false;
 }
 
-
-Item_row *Item_func_interval::alloc_row(const POS &pos, MEM_ROOT *mem_root,
-                                        Item *expr1, Item *expr2,
+Item_row *Item_func_interval::alloc_row(const POS &pos, MEM_ROOT *mem_root, Item *expr1, Item *expr2,
                                         PT_item_list *opt_expr_list)
 {
-  List<Item> *list= opt_expr_list ? &opt_expr_list->value
-                                  : new (mem_root) List<Item>;
+  List< Item > *list = opt_expr_list ? &opt_expr_list->value : new (mem_root) List< Item >;
   if (list == NULL)
     return NULL;
   list->push_front(expr2);
-  row= new (mem_root) Item_row(pos, expr1, *list);
+  row = new (mem_root) Item_row(pos, expr1, *list);
   return row;
 }
 
-
 void Item_func_interval::fix_length_and_dec()
 {
-  uint rows= row->cols();
-  
-  //The number of columns in one argument is limited to one
-  for (uint i= 0; i < rows; i++)
+  uint rows = row->cols();
+
+  // The number of columns in one argument is limited to one
+  for (uint i = 0; i < rows; i++)
   {
     if (row->element_index(i)->check_cols(1))
       return;
   }
 
-  use_decimal_comparison= ((row->element_index(0)->result_type() ==
-                            DECIMAL_RESULT) ||
-                           (row->element_index(0)->result_type() ==
-                            INT_RESULT));
+  use_decimal_comparison = ((row->element_index(0)->result_type() == DECIMAL_RESULT) ||
+                            (row->element_index(0)->result_type() == INT_RESULT));
   if (rows > 8)
   {
-    bool not_null_consts= TRUE;
+    bool not_null_consts = TRUE;
 
-    for (uint i= 1; not_null_consts && i < rows; i++)
+    for (uint i = 1; not_null_consts && i < rows; i++)
     {
-      Item *el= row->element_index(i);
-      not_null_consts= el->const_item() && !el->is_null();
+      Item *el = row->element_index(i);
+      not_null_consts = el->const_item() && !el->is_null();
     }
 
-    if (not_null_consts &&
-        (intervals=
-          (interval_range*) sql_alloc(sizeof(interval_range) * (rows - 1))))
+    if (not_null_consts && (intervals = (interval_range *)sql_alloc(sizeof(interval_range) * (rows - 1))))
     {
       if (use_decimal_comparison)
       {
-        for (uint i= 1; i < rows; i++)
+        for (uint i = 1; i < rows; i++)
         {
-          Item *el= row->element_index(i);
-          interval_range *range= intervals + (i-1);
-          if ((el->result_type() == DECIMAL_RESULT) ||
-              (el->result_type() == INT_RESULT))
+          Item *el = row->element_index(i);
+          interval_range *range = intervals + (i - 1);
+          if ((el->result_type() == DECIMAL_RESULT) || (el->result_type() == INT_RESULT))
           {
-            range->type= DECIMAL_RESULT;
+            range->type = DECIMAL_RESULT;
             range->dec.init();
-            my_decimal *dec= el->val_decimal(&range->dec);
+            my_decimal *dec = el->val_decimal(&range->dec);
             if (dec != &range->dec)
             {
-              range->dec= *dec;
+              range->dec = *dec;
             }
           }
           else
           {
-            range->type= REAL_RESULT;
-            range->dbl= el->val_real();
+            range->type = REAL_RESULT;
+            range->dbl = el->val_real();
           }
         }
       }
       else
       {
-        for (uint i= 1; i < rows; i++)
+        for (uint i = 1; i < rows; i++)
         {
-          intervals[i-1].dbl= row->element_index(i)->val_real();
+          intervals[i - 1].dbl = row->element_index(i)->val_real();
         }
       }
     }
   }
-  maybe_null= 0;
-  max_length= 2;
-  used_tables_cache|= row->used_tables();
-  not_null_tables_cache= row->not_null_tables();
-  with_sum_func= with_sum_func || row->with_sum_func;
-  const_item_cache&= row->const_item();
+  maybe_null = 0;
+  max_length = 2;
+  used_tables_cache |= row->used_tables();
+  not_null_tables_cache = row->not_null_tables();
+  with_sum_func = with_sum_func || row->with_sum_func;
+  const_item_cache &= row->const_item();
 }
-
 
 /**
   Appends function name and arguments list to the String str.
@@ -2795,7 +2583,7 @@ void Item_func_interval::fix_length_and_dec()
     function append "(", "argument_list" and ")" to String str.
 
   @param str          [in/out]  String to which the func_name and argument list
-                                should be appeneded. 
+                                should be appeneded.
   @param query_type   [in]      Query type
 */
 
@@ -2804,7 +2592,6 @@ void Item_func_interval::print(String *str, enum_query_type query_type)
   str->append(func_name());
   print_args(str, 0, query_type);
 }
-
 
 /**
   Execute Item_func_interval().
@@ -2824,32 +2611,32 @@ longlong Item_func_interval::val_int()
 {
   assert(fixed == 1);
   double value;
-  my_decimal dec_buf, *dec= NULL;
+  my_decimal dec_buf, *dec = NULL;
   uint i;
 
   if (use_decimal_comparison)
   {
-    dec= row->element_index(0)->val_decimal(&dec_buf);
+    dec = row->element_index(0)->val_decimal(&dec_buf);
     if (row->element_index(0)->null_value)
       return -1;
     my_decimal2double(E_DEC_FATAL_ERROR, dec, &value);
   }
   else
   {
-    value= row->element_index(0)->val_real();
+    value = row->element_index(0)->val_real();
     if (row->element_index(0)->null_value)
       return -1;
   }
 
   if (intervals)
-  {					// Use binary search to find interval
-    uint start,end;
-    start= 0;
-    end=   row->cols()-2;
+  {  // Use binary search to find interval
+    uint start, end;
+    start = 0;
+    end = row->cols() - 2;
     while (start != end)
     {
-      uint mid= (start + end + 1) / 2;
-      interval_range *range= intervals + mid;
+      uint mid = (start + end + 1) / 2;
+      interval_range *range = intervals + mid;
       my_bool cmp_result;
       /*
         The values in the range intervall may have different types,
@@ -2857,37 +2644,35 @@ longlong Item_func_interval::val_int()
         and we are comparing against a decimal
       */
       if (dec && range->type == DECIMAL_RESULT)
-        cmp_result= my_decimal_cmp(&range->dec, dec) <= 0;
+        cmp_result = my_decimal_cmp(&range->dec, dec) <= 0;
       else
-        cmp_result= (range->dbl <= value);
+        cmp_result = (range->dbl <= value);
       if (cmp_result)
-	start= mid;
+        start = mid;
       else
-	end= mid - 1;
+        end = mid - 1;
     }
-    interval_range *range= intervals+start;
-    return ((dec && range->type == DECIMAL_RESULT) ?
-            my_decimal_cmp(dec, &range->dec) < 0 :
-            value < range->dbl) ? 0 : start + 1;
+    interval_range *range = intervals + start;
+    return ((dec && range->type == DECIMAL_RESULT) ? my_decimal_cmp(dec, &range->dec) < 0 : value < range->dbl)
+               ? 0
+               : start + 1;
   }
 
-  for (i=1 ; i < row->cols() ; i++)
+  for (i = 1; i < row->cols(); i++)
   {
-    Item *el= row->element_index(i);
-    if (use_decimal_comparison &&
-        ((el->result_type() == DECIMAL_RESULT) ||
-         (el->result_type() == INT_RESULT)))
+    Item *el = row->element_index(i);
+    if (use_decimal_comparison && ((el->result_type() == DECIMAL_RESULT) || (el->result_type() == INT_RESULT)))
     {
-      my_decimal e_dec_buf, *e_dec= el->val_decimal(&e_dec_buf);
+      my_decimal e_dec_buf, *e_dec = el->val_decimal(&e_dec_buf);
       /* Skip NULL ranges. */
       if (el->null_value)
         continue;
       if (my_decimal_cmp(e_dec, dec) > 0)
         return i - 1;
     }
-    else 
+    else
     {
-      double val= el->val_real();
+      double val = el->val_real();
       /* Skip NULL ranges. */
       if (el->null_value)
         continue;
@@ -2895,9 +2680,8 @@ longlong Item_func_interval::val_int()
         return i - 1;
     }
   }
-  return i-1;
+  return i - 1;
 }
-
 
 /**
   Perform context analysis of a BETWEEN item tree.
@@ -2939,16 +2723,12 @@ bool Item_func_between::fix_fields(THD *thd, Item **ref)
     return 0;
 
   // not_null_tables_cache == union(T1(e), intersection(T1(e1),T1(e2)))
-  not_null_tables_cache= (args[0]->not_null_tables() |
-                          (args[1]->not_null_tables() &
-                           args[2]->not_null_tables()));
+  not_null_tables_cache = (args[0]->not_null_tables() | (args[1]->not_null_tables() & args[2]->not_null_tables()));
 
   return 0;
 }
 
-
-void Item_func_between::fix_after_pullout(st_select_lex *parent_select,
-                                          st_select_lex *removed_select)
+void Item_func_between::fix_after_pullout(st_select_lex *parent_select, st_select_lex *removed_select)
 {
   Item_func_opt_neg::fix_after_pullout(parent_select, removed_select);
 
@@ -2957,21 +2737,18 @@ void Item_func_between::fix_after_pullout(st_select_lex *parent_select,
     return;
 
   // not_null_tables_cache == union(T1(e), intersection(T1(e1),T1(e2)))
-  not_null_tables_cache= args[0]->not_null_tables() |
-                         (args[1]->not_null_tables() &
-                          args[2]->not_null_tables());
+  not_null_tables_cache = args[0]->not_null_tables() | (args[1]->not_null_tables() & args[2]->not_null_tables());
 }
-
 
 void Item_func_between::fix_length_and_dec()
 {
-  max_length= 1;
+  max_length = 1;
   int i;
-  int datetime_items_found= 0;
-  int time_items_found= 0;
-  compare_as_dates_with_strings= false;
-  compare_as_temporal_times= compare_as_temporal_dates= false;
-  THD *thd= current_thd;
+  int datetime_items_found = 0;
+  int time_items_found = 0;
+  compare_as_dates_with_strings = false;
+  compare_as_temporal_times = compare_as_temporal_dates = false;
+  THD *thd = current_thd;
 
   /*
     As some compare functions are generated after sql_yacc,
@@ -2979,11 +2756,10 @@ void Item_func_between::fix_length_and_dec()
   */
   if (!args[0] || !args[1] || !args[2])
     return;
-  if ( agg_cmp_type(&cmp_type, args, 3))
+  if (agg_cmp_type(&cmp_type, args, 3))
     return;
-  if (cmp_type == STRING_RESULT &&
-      agg_arg_charsets_for_comparison(cmp_collation, args, 3))
-   return;
+  if (cmp_type == STRING_RESULT && agg_arg_charsets_for_comparison(cmp_collation, args, 3))
+    return;
 
   /*
     See comments for the code block doing similar checks in
@@ -2996,8 +2772,7 @@ void Item_func_between::fix_length_and_dec()
     comparator as one might expect. Raise a warning if one of the
     arguments is JSON.
   */
-  unsupported_json_comparison(arg_count, args,
-                              "comparison of JSON in the BETWEEN operator");
+  unsupported_json_comparison(arg_count, args, "comparison of JSON in the BETWEEN operator");
 
   /*
     Detect the comparison of DATE/DATETIME items.
@@ -3006,12 +2781,11 @@ void Item_func_between::fix_length_and_dec()
   */
   if (cmp_type == STRING_RESULT)
   {
-    for (i= 0; i < 3; i++)
+    for (i = 0; i < 3; i++)
     {
       if (args[i]->is_temporal_with_date())
         datetime_items_found++;
-      else
-      if (args[i]->field_type() == MYSQL_TYPE_TIME)
+      else if (args[i]->field_type() == MYSQL_TYPE_TIME)
         time_items_found++;
     }
   }
@@ -3021,8 +2795,8 @@ void Item_func_between::fix_length_and_dec()
     if (time_items_found == 3)
     {
       // All items are TIME
-      cmp_type= INT_RESULT;
-      compare_as_temporal_times= true;
+      cmp_type = INT_RESULT;
+      compare_as_temporal_times = true;
     }
     else
     {
@@ -3030,8 +2804,8 @@ void Item_func_between::fix_length_and_dec()
         There is at least one DATE or DATETIME item,
         all other items are DATE, DATETIME or TIME.
       */
-      cmp_type= INT_RESULT;
-      compare_as_temporal_dates= true;
+      cmp_type = INT_RESULT;
+      compare_as_temporal_dates = true;
     }
   }
   else if (datetime_items_found > 0)
@@ -3040,37 +2814,34 @@ void Item_func_between::fix_length_and_dec()
        There is at least one DATE or DATETIME item.
        All other items are DATE, DATETIME or strings.
     */
-    compare_as_dates_with_strings= true;
+    compare_as_dates_with_strings = true;
     ge_cmp.set_datetime_cmp_func(this, args, args + 1);
     le_cmp.set_datetime_cmp_func(this, args, args + 2);
   }
-  else if (args[0]->real_item()->type() == FIELD_ITEM &&
-           thd->lex->sql_command != SQLCOM_CREATE_VIEW &&
+  else if (args[0]->real_item()->type() == FIELD_ITEM && thd->lex->sql_command != SQLCOM_CREATE_VIEW &&
            thd->lex->sql_command != SQLCOM_SHOW_CREATE)
   {
-    Item_field *field_item= (Item_field*) (args[0]->real_item());
+    Item_field *field_item = (Item_field *)(args[0]->real_item());
     if (field_item->field->can_be_compared_as_longlong())
     {
       /*
         The following can't be recoded with || as convert_constant_item
         changes the argument
       */
-      const bool cvt_arg1= convert_constant_item(thd, field_item, &args[1]);
-      const bool cvt_arg2= convert_constant_item(thd, field_item, &args[2]);
+      const bool cvt_arg1 = convert_constant_item(thd, field_item, &args[1]);
+      const bool cvt_arg2 = convert_constant_item(thd, field_item, &args[2]);
       if (args[0]->is_temporal())
-      { // special handling of date/time etc.
+      {  // special handling of date/time etc.
         if (cvt_arg1 || cvt_arg2)
-          cmp_type=INT_RESULT;
+          cmp_type = INT_RESULT;
       }
       else
       {
         if (cvt_arg1 && cvt_arg2)
-          cmp_type=INT_RESULT;
+          cmp_type = INT_RESULT;
       }
 
-      if (args[0]->is_temporal() &&
-          args[1]->is_temporal() &&
-          args[2]->is_temporal())
+      if (args[0]->is_temporal() && args[1]->is_temporal() && args[2]->is_temporal())
       {
         /*
           An expression:
@@ -3087,28 +2858,22 @@ void Item_func_between::fix_length_and_dec()
               AND     Item_datetime_with_ref2
         */
         if (field_item->field_type() == MYSQL_TYPE_TIME)
-          compare_as_temporal_times= true;
+          compare_as_temporal_times = true;
         else if (field_item->is_temporal_with_date())
-          compare_as_temporal_dates= true;
+          compare_as_temporal_dates = true;
       }
     }
   }
 }
 
-float
-Item_func_between::get_filtering_effect(table_map filter_for_table,
-                                        table_map read_tables,
-                                        const MY_BITMAP *fields_to_ignore,
-                                        double rows_in_table)
+float Item_func_between::get_filtering_effect(table_map filter_for_table, table_map read_tables,
+                                              const MY_BITMAP *fields_to_ignore, double rows_in_table)
 {
-  const Item_field* fld= 
-    contributes_to_filter(read_tables, filter_for_table, fields_to_ignore);
+  const Item_field *fld = contributes_to_filter(read_tables, filter_for_table, fields_to_ignore);
   if (!fld)
     return COND_FILTER_ALLPASS;
 
-  const float filter=
-    fld->get_cond_filter_default_probability(rows_in_table,
-                                             COND_FILTER_BETWEEN);
+  const float filter = fld->get_cond_filter_default_probability(rows_in_table, COND_FILTER_BETWEEN);
 
   return negated ? 1.0f - filter : filter;
 }
@@ -3127,34 +2892,31 @@ Item_func_between::get_filtering_effect(table_map filter_for_table,
 
   @retval true if: args[1] <= args[0] <= args[2]
  */
-template<typename LLorULL>
-longlong compare_between_int_result(bool compare_as_temporal_dates,
-                                    bool compare_as_temporal_times,
-                                    bool negated,
-                                    Item **args,
-                                    my_bool *null_value)
+template < typename LLorULL >
+longlong compare_between_int_result(bool compare_as_temporal_dates, bool compare_as_temporal_times, bool negated,
+                                    Item **args, my_bool *null_value)
 {
   {
     LLorULL a, b, value;
-    value= compare_as_temporal_times ? args[0]->val_time_temporal() :
-           compare_as_temporal_dates ? args[0]->val_date_temporal() :
-           args[0]->val_int();
-    if ((*null_value= args[0]->null_value))
-      return 0;                               /* purecov: inspected */
+    value = compare_as_temporal_times   ? args[0]->val_time_temporal()
+            : compare_as_temporal_dates ? args[0]->val_date_temporal()
+                                        : args[0]->val_int();
+    if ((*null_value = args[0]->null_value))
+      return 0; /* purecov: inspected */
     if (compare_as_temporal_times)
     {
-      a= args[1]->val_time_temporal();
-      b= args[2]->val_time_temporal();
+      a = args[1]->val_time_temporal();
+      b = args[2]->val_time_temporal();
     }
     else if (compare_as_temporal_dates)
     {
-      a= args[1]->val_date_temporal();
-      b= args[2]->val_date_temporal();
+      a = args[1]->val_date_temporal();
+      b = args[2]->val_date_temporal();
     }
     else
     {
-      a= args[1]->val_int();
-      b= args[2]->val_int();
+      a = args[1]->val_int();
+      b = args[2]->val_int();
     }
 
     if (args[0]->unsigned_flag)
@@ -3165,7 +2927,7 @@ longlong compare_between_int_result(bool compare_as_temporal_dates,
         rewritten to
         value BETWEEN 0 AND <some number>
       */
-      if (!args[1]->unsigned_flag && static_cast<longlong>(a) < 0)
+      if (!args[1]->unsigned_flag && static_cast< longlong >(a) < 0)
         a = 0;
       /*
         Comparing as unsigned.
@@ -3173,145 +2935,134 @@ longlong compare_between_int_result(bool compare_as_temporal_dates,
         rewritten to
         1 BETWEEN <some number> AND 0
       */
-      if (!args[2]->unsigned_flag && static_cast<longlong>(b) < 0)
+      if (!args[2]->unsigned_flag && static_cast< longlong >(b) < 0)
       {
-        b= 0;
-        value= 1;
+        b = 0;
+        value = 1;
       }
     }
     else
     {
       // Comparing as signed, but b is unsigned, and really large
-      if (args[2]->unsigned_flag && (longlong) b < 0)
-        b= LLONG_MAX;
+      if (args[2]->unsigned_flag && (longlong)b < 0)
+        b = LLONG_MAX;
     }
 
     if (!args[1]->null_value && !args[2]->null_value)
-      return (longlong) ((value >= a && value <= b) != negated);
+      return (longlong)((value >= a && value <= b) != negated);
     if (args[1]->null_value && args[2]->null_value)
-      *null_value= 1;
+      *null_value = 1;
     else if (args[1]->null_value)
     {
-      *null_value= value <= b;                  // not null if false range.
+      *null_value = value <= b;  // not null if false range.
     }
     else
     {
-      *null_value= value >= a;
+      *null_value = value >= a;
     }
     return value;
   }
 }
 
-
 longlong Item_func_between::val_int()
-{                                               // ANSI BETWEEN
+{  // ANSI BETWEEN
   assert(fixed == 1);
   if (compare_as_dates_with_strings)
   {
     int ge_res, le_res;
 
-    ge_res= ge_cmp.compare();
-    if ((null_value= args[0]->null_value))
+    ge_res = ge_cmp.compare();
+    if ((null_value = args[0]->null_value))
       return 0;
-    le_res= le_cmp.compare();
+    le_res = le_cmp.compare();
 
     if (!args[1]->null_value && !args[2]->null_value)
-      return (longlong) ((ge_res >= 0 && le_res <=0) != negated);
+      return (longlong)((ge_res >= 0 && le_res <= 0) != negated);
     else if (args[1]->null_value)
     {
-      null_value= le_res > 0;                   // not null if false range.
+      null_value = le_res > 0;  // not null if false range.
     }
     else
     {
-      null_value= ge_res < 0;
+      null_value = ge_res < 0;
     }
   }
   else if (cmp_type == STRING_RESULT)
   {
-    String *value,*a,*b;
-    value=args[0]->val_str(&value0);
-    if ((null_value=args[0]->null_value))
+    String *value, *a, *b;
+    value = args[0]->val_str(&value0);
+    if ((null_value = args[0]->null_value))
       return 0;
-    a=args[1]->val_str(&value1);
-    b=args[2]->val_str(&value2);
+    a = args[1]->val_str(&value1);
+    b = args[2]->val_str(&value2);
     if (!args[1]->null_value && !args[2]->null_value)
-      return (longlong) ((sortcmp(value,a,cmp_collation.collation) >= 0 &&
-                          sortcmp(value,b,cmp_collation.collation) <= 0) !=
-                         negated);
+      return (longlong)((sortcmp(value, a, cmp_collation.collation) >= 0 &&
+                         sortcmp(value, b, cmp_collation.collation) <= 0) != negated);
     if (args[1]->null_value && args[2]->null_value)
-      null_value=1;
+      null_value = 1;
     else if (args[1]->null_value)
     {
       // Set to not null if false range.
-      null_value= sortcmp(value,b,cmp_collation.collation) <= 0;
+      null_value = sortcmp(value, b, cmp_collation.collation) <= 0;
     }
     else
     {
       // Set to not null if false range.
-      null_value= sortcmp(value,a,cmp_collation.collation) >= 0;
+      null_value = sortcmp(value, a, cmp_collation.collation) >= 0;
     }
   }
   else if (cmp_type == INT_RESULT)
   {
     longlong value;
     if (args[0]->unsigned_flag)
-      value= compare_between_int_result<ulonglong>(compare_as_temporal_dates,
-                                                   compare_as_temporal_times,
-                                                   negated,
-                                                   args,
-                                                   &null_value);
+      value = compare_between_int_result< ulonglong >(compare_as_temporal_dates, compare_as_temporal_times, negated,
+                                                      args, &null_value);
     else
-      value= compare_between_int_result<longlong>(compare_as_temporal_dates,
-                                                  compare_as_temporal_times,
-                                                  negated,
-                                                  args,
-                                                  &null_value);
+      value = compare_between_int_result< longlong >(compare_as_temporal_dates, compare_as_temporal_times, negated,
+                                                     args, &null_value);
     if (args[0]->null_value)
-      return 0;                                 /* purecov: inspected */
+      return 0; /* purecov: inspected */
     if (!args[1]->null_value && !args[2]->null_value)
       return value;
   }
   else if (cmp_type == DECIMAL_RESULT)
   {
-    my_decimal dec_buf, *dec= args[0]->val_decimal(&dec_buf),
-               a_buf, *a_dec, b_buf, *b_dec;
-    if ((null_value=args[0]->null_value))
-      return 0;                                 /* purecov: inspected */
-    a_dec= args[1]->val_decimal(&a_buf);
-    b_dec= args[2]->val_decimal(&b_buf);
+    my_decimal dec_buf, *dec = args[0]->val_decimal(&dec_buf), a_buf, *a_dec, b_buf, *b_dec;
+    if ((null_value = args[0]->null_value))
+      return 0; /* purecov: inspected */
+    a_dec = args[1]->val_decimal(&a_buf);
+    b_dec = args[2]->val_decimal(&b_buf);
     if (!args[1]->null_value && !args[2]->null_value)
-      return (longlong) ((my_decimal_cmp(dec, a_dec) >= 0 &&
-                          my_decimal_cmp(dec, b_dec) <= 0) != negated);
+      return (longlong)((my_decimal_cmp(dec, a_dec) >= 0 && my_decimal_cmp(dec, b_dec) <= 0) != negated);
     if (args[1]->null_value && args[2]->null_value)
-      null_value=1;
+      null_value = 1;
     else if (args[1]->null_value)
-      null_value= (my_decimal_cmp(dec, b_dec) <= 0);
+      null_value = (my_decimal_cmp(dec, b_dec) <= 0);
     else
-      null_value= (my_decimal_cmp(dec, a_dec) >= 0);
+      null_value = (my_decimal_cmp(dec, a_dec) >= 0);
   }
   else
   {
-    double value= args[0]->val_real(),a,b;
-    if ((null_value=args[0]->null_value))
-      return 0;					/* purecov: inspected */
-    a= args[1]->val_real();
-    b= args[2]->val_real();
+    double value = args[0]->val_real(), a, b;
+    if ((null_value = args[0]->null_value))
+      return 0; /* purecov: inspected */
+    a = args[1]->val_real();
+    b = args[2]->val_real();
     if (!args[1]->null_value && !args[2]->null_value)
-      return (longlong) ((value >= a && value <= b) != negated);
+      return (longlong)((value >= a && value <= b) != negated);
     if (args[1]->null_value && args[2]->null_value)
-      null_value=1;
+      null_value = 1;
     else if (args[1]->null_value)
     {
-      null_value= value <= b;			// not null if false range.
+      null_value = value <= b;  // not null if false range.
     }
     else
     {
-      null_value= value >= a;
+      null_value = value >= a;
     }
   }
-  return (longlong) (!null_value && negated);
+  return (longlong)(!null_value && negated);
 }
-
 
 void Item_func_between::print(String *str, enum_query_type query_type)
 {
@@ -3326,114 +3077,103 @@ void Item_func_between::print(String *str, enum_query_type query_type)
   str->append(')');
 }
 
-void
-Item_func_ifnull::fix_length_and_dec()
+void Item_func_ifnull::fix_length_and_dec()
 {
   uint32 char_length;
   agg_result_type(&hybrid_type, &unsigned_flag, args, 2);
-  cached_field_type= agg_field_type(args, 2);
-  maybe_null=args[1]->maybe_null;
-  decimals= max(args[0]->decimals, args[1]->decimals);
+  cached_field_type = agg_field_type(args, 2);
+  maybe_null = args[1]->maybe_null;
+  decimals = max(args[0]->decimals, args[1]->decimals);
 
-  if (hybrid_type == DECIMAL_RESULT || hybrid_type == INT_RESULT) 
+  if (hybrid_type == DECIMAL_RESULT || hybrid_type == INT_RESULT)
   {
-    int len0= args[0]->max_char_length() - args[0]->decimals
-      - (args[0]->unsigned_flag ? 0 : 1);
+    int len0 = args[0]->max_char_length() - args[0]->decimals - (args[0]->unsigned_flag ? 0 : 1);
 
-    int len1= args[1]->max_char_length() - args[1]->decimals
-      - (args[1]->unsigned_flag ? 0 : 1);
+    int len1 = args[1]->max_char_length() - args[1]->decimals - (args[1]->unsigned_flag ? 0 : 1);
 
-    char_length= max(len0, len1) + decimals + (unsigned_flag ? 0 : 1);
+    char_length = max(len0, len1) + decimals + (unsigned_flag ? 0 : 1);
   }
   else
-    char_length= max(args[0]->max_char_length(), args[1]->max_char_length());
+    char_length = max(args[0]->max_char_length(), args[1]->max_char_length());
 
-  switch (hybrid_type) {
-  case STRING_RESULT:
-    if (count_string_result_length(cached_field_type, args, arg_count))
-      return;
-    break;
-  case DECIMAL_RESULT:
-  case REAL_RESULT:
-    break;
-  case INT_RESULT:
-    decimals= 0;
-    break;
-  case ROW_RESULT:
-  default:
-    assert(0);
+  switch (hybrid_type)
+  {
+    case STRING_RESULT:
+      if (count_string_result_length(cached_field_type, args, arg_count))
+        return;
+      break;
+    case DECIMAL_RESULT:
+    case REAL_RESULT:
+      break;
+    case INT_RESULT:
+      decimals = 0;
+      break;
+    case ROW_RESULT:
+    default:
+      assert(0);
   }
   fix_char_length(char_length);
 }
 
-
 uint Item_func_ifnull::decimal_precision() const
 {
-  int arg0_int_part= args[0]->decimal_int_part();
-  int arg1_int_part= args[1]->decimal_int_part();
-  int max_int_part= max(arg0_int_part, arg1_int_part);
-  int precision= max_int_part + decimals;
-  return min<uint>(precision, DECIMAL_MAX_PRECISION);
+  int arg0_int_part = args[0]->decimal_int_part();
+  int arg1_int_part = args[1]->decimal_int_part();
+  int max_int_part = max(arg0_int_part, arg1_int_part);
+  int precision = max_int_part + decimals;
+  return min< uint >(precision, DECIMAL_MAX_PRECISION);
 }
 
+Field *Item_func_ifnull::tmp_table_field(TABLE *table) { return tmp_table_field_from_field_type(table, 0); }
 
-Field *Item_func_ifnull::tmp_table_field(TABLE *table)
-{
-  return tmp_table_field_from_field_type(table, 0);
-}
-
-double
-Item_func_ifnull::real_op()
+double Item_func_ifnull::real_op()
 {
   assert(fixed == 1);
-  double value= args[0]->val_real();
+  double value = args[0]->val_real();
   if (!args[0]->null_value)
   {
-    null_value=0;
+    null_value = 0;
     return value;
   }
-  value= args[1]->val_real();
-  if ((null_value=args[1]->null_value))
+  value = args[1]->val_real();
+  if ((null_value = args[1]->null_value))
     return 0.0;
   return value;
 }
 
-longlong
-Item_func_ifnull::int_op()
+longlong Item_func_ifnull::int_op()
 {
   assert(fixed == 1);
-  longlong value=args[0]->val_int();
+  longlong value = args[0]->val_int();
   if (!args[0]->null_value)
   {
-    null_value=0;
+    null_value = 0;
     return value;
   }
-  value=args[1]->val_int();
-  if ((null_value=args[1]->null_value))
+  value = args[1]->val_int();
+  if ((null_value = args[1]->null_value))
     return 0;
   return value;
 }
-
 
 my_decimal *Item_func_ifnull::decimal_op(my_decimal *decimal_value)
 {
   assert(fixed == 1);
-  my_decimal *value= args[0]->val_decimal(decimal_value);
+  my_decimal *value = args[0]->val_decimal(decimal_value);
   if (!args[0]->null_value)
   {
-    null_value= 0;
+    null_value = 0;
     return value;
   }
-  value= args[1]->val_decimal(decimal_value);
-  if ((null_value= args[1]->null_value))
+  value = args[1]->val_decimal(decimal_value);
+  if ((null_value = args[1]->null_value))
     return 0;
   return value;
 }
 
-
 bool Item_func_ifnull::val_json(Json_wrapper *result)
 {
-  null_value= 0;
+  null_value = 0;
   if (json_value(args, 0, result))
     return error_json();
 
@@ -3443,47 +3183,42 @@ bool Item_func_ifnull::val_json(Json_wrapper *result)
   if (json_value(args, 1, result))
     return error_json();
 
-  null_value= args[1]->null_value;
+  null_value = args[1]->null_value;
   return false;
 }
-
 
 bool Item_func_ifnull::date_op(MYSQL_TIME *ltime, my_time_flags_t fuzzydate)
 {
   assert(fixed == 1);
   if (!args[0]->get_date(ltime, fuzzydate))
-    return (null_value= false);
-  return (null_value= args[1]->get_date(ltime, fuzzydate));
+    return (null_value = false);
+  return (null_value = args[1]->get_date(ltime, fuzzydate));
 }
-
 
 bool Item_func_ifnull::time_op(MYSQL_TIME *ltime)
 {
   assert(fixed == 1);
   if (!args[0]->get_time(ltime))
-    return (null_value= false);
-  return (null_value= args[1]->get_time(ltime));
+    return (null_value = false);
+  return (null_value = args[1]->get_time(ltime));
 }
 
-
-String *
-Item_func_ifnull::str_op(String *str)
+String *Item_func_ifnull::str_op(String *str)
 {
   assert(fixed == 1);
-  String *res  =args[0]->val_str(str);
+  String *res = args[0]->val_str(str);
   if (!args[0]->null_value)
   {
-    null_value=0;
+    null_value = 0;
     res->set_charset(collation.collation);
     return res;
   }
-  res=args[1]->val_str(str);
-  if ((null_value=args[1]->null_value))
+  res = args[1]->val_str(str);
+  if ((null_value = args[1]->null_value))
     return 0;
   res->set_charset(collation.collation);
   return res;
 }
-
 
 /**
   Perform context analysis of an IF item tree.
@@ -3511,8 +3246,7 @@ Item_func_ifnull::str_op(String *str)
     1   got error
 */
 
-bool
-Item_func_if::fix_fields(THD *thd, Item **ref)
+bool Item_func_if::fix_fields(THD *thd, Item **ref)
 {
   assert(fixed == 0);
   args[0]->top_level_item();
@@ -3520,59 +3254,52 @@ Item_func_if::fix_fields(THD *thd, Item **ref)
   if (Item_func::fix_fields(thd, ref))
     return 1;
 
-  not_null_tables_cache= (args[1]->not_null_tables() &
-                          args[2]->not_null_tables());
+  not_null_tables_cache = (args[1]->not_null_tables() & args[2]->not_null_tables());
 
   return 0;
 }
 
-
-void Item_func_if::fix_after_pullout(st_select_lex *parent_select,
-                                     st_select_lex *removed_select)
+void Item_func_if::fix_after_pullout(st_select_lex *parent_select, st_select_lex *removed_select)
 {
   Item_func::fix_after_pullout(parent_select, removed_select);
 
-  not_null_tables_cache= (args[1]->not_null_tables() &
-                          args[2]->not_null_tables());
+  not_null_tables_cache = (args[1]->not_null_tables() & args[2]->not_null_tables());
 }
-
 
 void Item_func_if::cache_type_info(Item *source)
 {
   collation.set(source->collation);
-  cached_field_type=  source->field_type();
-  cached_result_type= source->result_type();
-  decimals=           source->decimals;
-  max_length=         source->max_length;
-  maybe_null=         source->maybe_null;
-  unsigned_flag=      source->unsigned_flag;
+  cached_field_type = source->field_type();
+  cached_result_type = source->result_type();
+  decimals = source->decimals;
+  max_length = source->max_length;
+  maybe_null = source->maybe_null;
+  unsigned_flag = source->unsigned_flag;
 }
 
-
-void
-Item_func_if::fix_length_and_dec()
+void Item_func_if::fix_length_and_dec()
 {
   // Let IF(cond, expr, NULL) and IF(cond, NULL, expr) inherit type from expr.
   if (args[1]->type() == NULL_ITEM)
   {
     cache_type_info(args[2]);
-    maybe_null= true;
+    maybe_null = true;
     // If both arguments are NULL, make resulting type BINARY(0).
     if (args[2]->type() == NULL_ITEM)
-      cached_field_type= MYSQL_TYPE_STRING;
+      cached_field_type = MYSQL_TYPE_STRING;
     return;
   }
   if (args[2]->type() == NULL_ITEM)
   {
     cache_type_info(args[1]);
-    maybe_null= true;
+    maybe_null = true;
     return;
   }
 
   agg_result_type(&cached_result_type, &unsigned_flag, args + 1, 2);
-  cached_field_type= agg_field_type(args + 1, 2);
-  maybe_null= args[1]->maybe_null || args[2]->maybe_null;
-  decimals= max(args[1]->decimals, args[2]->decimals);
+  cached_field_type = agg_field_type(args + 1, 2);
+  maybe_null = args[1]->maybe_null || args[2]->maybe_null;
+  decimals = max(args[1]->decimals, args[2]->decimals);
 
   if (cached_result_type == STRING_RESULT)
   {
@@ -3581,142 +3308,125 @@ Item_func_if::fix_length_and_dec()
   }
   else
   {
-    collation.set_numeric(); // Number
+    collation.set_numeric();  // Number
   }
 
   uint32 char_length;
-  if ((cached_result_type == DECIMAL_RESULT )
-      || (cached_result_type == INT_RESULT))
+  if ((cached_result_type == DECIMAL_RESULT) || (cached_result_type == INT_RESULT))
   {
-    int len1= args[1]->max_length - args[1]->decimals
-      - (args[1]->unsigned_flag ? 0 : 1);
+    int len1 = args[1]->max_length - args[1]->decimals - (args[1]->unsigned_flag ? 0 : 1);
 
-    int len2= args[2]->max_length - args[2]->decimals
-      - (args[2]->unsigned_flag ? 0 : 1);
+    int len2 = args[2]->max_length - args[2]->decimals - (args[2]->unsigned_flag ? 0 : 1);
 
-    char_length= max(len1, len2) + decimals + (unsigned_flag ? 0 : 1);
+    char_length = max(len1, len2) + decimals + (unsigned_flag ? 0 : 1);
   }
   else
-    char_length= max(args[1]->max_char_length(), args[2]->max_char_length());
+    char_length = max(args[1]->max_char_length(), args[2]->max_char_length());
   fix_char_length(char_length);
 }
 
-
 uint Item_func_if::decimal_precision() const
 {
-  int arg1_prec= args[1]->decimal_int_part();
-  int arg2_prec= args[2]->decimal_int_part();
-  int precision=max(arg1_prec,arg2_prec) + decimals;
-  return min<uint>(precision, DECIMAL_MAX_PRECISION);
+  int arg1_prec = args[1]->decimal_int_part();
+  int arg2_prec = args[2]->decimal_int_part();
+  int precision = max(arg1_prec, arg2_prec) + decimals;
+  return min< uint >(precision, DECIMAL_MAX_PRECISION);
 }
 
-
-double
-Item_func_if::val_real()
+double Item_func_if::val_real()
 {
   assert(fixed == 1);
-  Item *arg= args[0]->val_bool() ? args[1] : args[2];
-  double value= arg->val_real();
-  null_value=arg->null_value;
+  Item *arg = args[0]->val_bool() ? args[1] : args[2];
+  double value = arg->val_real();
+  null_value = arg->null_value;
   return value;
 }
 
-longlong
-Item_func_if::val_int()
+longlong Item_func_if::val_int()
 {
   assert(fixed == 1);
-  Item *arg= args[0]->val_bool() ? args[1] : args[2];
-  longlong value=arg->val_int();
-  null_value=arg->null_value;
+  Item *arg = args[0]->val_bool() ? args[1] : args[2];
+  longlong value = arg->val_int();
+  null_value = arg->null_value;
   return value;
 }
 
-String *
-Item_func_if::val_str(String *str)
+String *Item_func_if::val_str(String *str)
 {
   assert(fixed == 1);
 
   switch (field_type())
   {
-  case MYSQL_TYPE_DATETIME:
-  case MYSQL_TYPE_TIMESTAMP:
-    return val_string_from_datetime(str);
-  case MYSQL_TYPE_DATE:
-    return val_string_from_date(str);
-  case MYSQL_TYPE_TIME:
-    return val_string_from_time(str);
-  default:
+    case MYSQL_TYPE_DATETIME:
+    case MYSQL_TYPE_TIMESTAMP:
+      return val_string_from_datetime(str);
+    case MYSQL_TYPE_DATE:
+      return val_string_from_date(str);
+    case MYSQL_TYPE_TIME:
+      return val_string_from_time(str);
+    default:
     {
-      Item *item= args[0]->val_bool() ? args[1] : args[2];
+      Item *item = args[0]->val_bool() ? args[1] : args[2];
       String *res;
-      if ((res= item->val_str(str)))
+      if ((res = item->val_str(str)))
       {
         res->set_charset(collation.collation);
-        null_value= 0;
-        return res;   
+        null_value = 0;
+        return res;
       }
     }
   }
-  null_value= true;
-  return (String *) 0;
+  null_value = true;
+  return (String *)0;
 }
 
-
-my_decimal *
-Item_func_if::val_decimal(my_decimal *decimal_value)
+my_decimal *Item_func_if::val_decimal(my_decimal *decimal_value)
 {
   assert(fixed == 1);
-  Item *arg= args[0]->val_bool() ? args[1] : args[2];
-  my_decimal *value= arg->val_decimal(decimal_value);
-  null_value= arg->null_value;
+  Item *arg = args[0]->val_bool() ? args[1] : args[2];
+  my_decimal *value = arg->val_decimal(decimal_value);
+  null_value = arg->null_value;
   return value;
 }
-
 
 bool Item_func_if::val_json(Json_wrapper *wr)
 {
   assert(fixed == 1);
-  Item *arg= args[0]->val_bool() ? args[1] : args[2];
-  Item *args[]= {arg};
-  bool ok= json_value(args, 0, wr);
-  null_value= arg->null_value;
+  Item *arg = args[0]->val_bool() ? args[1] : args[2];
+  Item *args[] = {arg};
+  bool ok = json_value(args, 0, wr);
+  null_value = arg->null_value;
   return ok;
 }
-
 
 bool Item_func_if::get_date(MYSQL_TIME *ltime, my_time_flags_t fuzzydate)
 {
   assert(fixed == 1);
-  Item *arg= args[0]->val_bool() ? args[1] : args[2];
-  return (null_value= arg->get_date(ltime, fuzzydate));
+  Item *arg = args[0]->val_bool() ? args[1] : args[2];
+  return (null_value = arg->get_date(ltime, fuzzydate));
 }
-
 
 bool Item_func_if::get_time(MYSQL_TIME *ltime)
 {
   assert(fixed == 1);
-  Item *arg= args[0]->val_bool() ? args[1] : args[2];
-  return (null_value= arg->get_time(ltime));
+  Item *arg = args[0]->val_bool() ? args[1] : args[2];
+  return (null_value = arg->get_time(ltime));
 }
 
-
-void
-Item_func_nullif::fix_length_and_dec()
+void Item_func_nullif::fix_length_and_dec()
 {
   Item_bool_func2::fix_length_and_dec();
-  maybe_null=1;
-  if (args[0])					// Only false if EOM
+  maybe_null = 1;
+  if (args[0])  // Only false if EOM
   {
-    max_length=args[0]->max_length;
-    decimals=args[0]->decimals;
-    unsigned_flag= args[0]->unsigned_flag;
-    cached_result_type= args[0]->result_type();
-    if (cached_result_type == STRING_RESULT &&
-        agg_arg_charsets_for_comparison(collation, args, arg_count))
+    max_length = args[0]->max_length;
+    decimals = args[0]->decimals;
+    unsigned_flag = args[0]->unsigned_flag;
+    cached_result_type = args[0]->result_type();
+    if (cached_result_type == STRING_RESULT && agg_arg_charsets_for_comparison(collation, args, arg_count))
       return;
   }
 }
-
 
 /**
   @note
@@ -3728,74 +3438,63 @@ Item_func_nullif::fix_length_and_dec()
     the first argument if not equal
 */
 
-double
-Item_func_nullif::val_real()
+double Item_func_nullif::val_real()
 {
   assert(fixed == 1);
   double value;
   if (!cmp.compare())
   {
-    null_value=1;
+    null_value = 1;
     return 0.0;
   }
-  value= args[0]->val_real();
-  null_value=args[0]->null_value;
+  value = args[0]->val_real();
+  null_value = args[0]->null_value;
   return value;
 }
 
-longlong
-Item_func_nullif::val_int()
+longlong Item_func_nullif::val_int()
 {
   assert(fixed == 1);
   longlong value;
   if (!cmp.compare())
   {
-    null_value=1;
+    null_value = 1;
     return 0;
   }
-  value=args[0]->val_int();
-  null_value=args[0]->null_value;
+  value = args[0]->val_int();
+  null_value = args[0]->null_value;
   return value;
 }
 
-String *
-Item_func_nullif::val_str(String *str)
+String *Item_func_nullif::val_str(String *str)
 {
   assert(fixed == 1);
   String *res;
   if (!cmp.compare())
   {
-    null_value=1;
+    null_value = 1;
     return 0;
   }
-  res=args[0]->val_str(str);
-  null_value=args[0]->null_value;
+  res = args[0]->val_str(str);
+  null_value = args[0]->null_value;
   return res;
 }
 
-
-my_decimal *
-Item_func_nullif::val_decimal(my_decimal * decimal_value)
+my_decimal *Item_func_nullif::val_decimal(my_decimal *decimal_value)
 {
   assert(fixed == 1);
   my_decimal *res;
   if (!cmp.compare())
   {
-    null_value=1;
+    null_value = 1;
     return 0;
   }
-  res= args[0]->val_decimal(decimal_value);
-  null_value= args[0]->null_value;
+  res = args[0]->val_decimal(decimal_value);
+  null_value = args[0]->null_value;
   return res;
 }
 
-
-bool
-Item_func_nullif::is_null()
-{
-  return (null_value= (!cmp.compare() ? 1 : args[0]->null_value)); 
-}
-
+bool Item_func_nullif::is_null() { return (null_value = (!cmp.compare() ? 1 : args[0]->null_value)); }
 
 /**
     Find and return matching items for CASE or ELSE item if all compares
@@ -3820,34 +3519,34 @@ Item_func_nullif::is_null()
 
 Item *Item_func_case::find_item(String *str)
 {
-  uint value_added_map= 0;
+  uint value_added_map = 0;
 
   if (first_expr_num == -1)
   {
-    for (uint i=0 ; i < ncases ; i+=2)
+    for (uint i = 0; i < ncases; i += 2)
     {
       // No expression between CASE and the first WHEN
       if (args[i]->val_bool())
-	return args[i+1];
+        return args[i + 1];
       continue;
     }
   }
   else
   {
     /* Compare every WHEN argument with it and return the first match */
-    for (uint i=0 ; i < ncases ; i+=2)
+    for (uint i = 0; i < ncases; i += 2)
     {
       if (args[i]->real_item()->type() == NULL_ITEM)
         continue;
-      cmp_type= item_cmp_type(left_result_type, args[i]->result_type());
+      cmp_type = item_cmp_type(left_result_type, args[i]->result_type());
       assert(cmp_type != ROW_RESULT);
       assert(cmp_items[(uint)cmp_type]);
       if (!(value_added_map & (1U << (uint)cmp_type)))
       {
         cmp_items[(uint)cmp_type]->store_value(args[first_expr_num]);
-        if ((null_value=args[first_expr_num]->null_value))
+        if ((null_value = args[first_expr_num]->null_value))
           return else_expr_num != -1 ? args[else_expr_num] : 0;
-        value_added_map|= 1U << (uint)cmp_type;
+        value_added_map |= 1U << (uint)cmp_type;
       }
       if (cmp_items[(uint)cmp_type]->cmp(args[i]) == FALSE)
         return args[i + 1];
@@ -3857,53 +3556,52 @@ Item *Item_func_case::find_item(String *str)
   return else_expr_num != -1 ? args[else_expr_num] : 0;
 }
 
-
 String *Item_func_case::val_str(String *str)
 {
   assert(fixed == 1);
-  switch (field_type()) {
-  case MYSQL_TYPE_DATETIME:
-  case MYSQL_TYPE_TIMESTAMP:
-    return val_string_from_datetime(str);
-  case MYSQL_TYPE_DATE:
-    return val_string_from_date(str);
-  case MYSQL_TYPE_TIME:
-    return val_string_from_time(str);
-  default:
+  switch (field_type())
+  {
+    case MYSQL_TYPE_DATETIME:
+    case MYSQL_TYPE_TIMESTAMP:
+      return val_string_from_datetime(str);
+    case MYSQL_TYPE_DATE:
+      return val_string_from_date(str);
+    case MYSQL_TYPE_TIME:
+      return val_string_from_time(str);
+    default:
     {
-      Item *item= find_item(str);
+      Item *item = find_item(str);
       if (item)
       {
         String *res;
-        if ((res= item->val_str(str)))
+        if ((res = item->val_str(str)))
         {
           res->set_charset(collation.collation);
-          null_value= 0;
+          null_value = 0;
           return res;
         }
       }
     }
   }
-  null_value= true;
-  return (String *) 0;
+  null_value = true;
+  return (String *)0;
 }
-
 
 longlong Item_func_case::val_int()
 {
   assert(fixed == 1);
   char buff[MAX_FIELD_WIDTH];
-  String dummy_str(buff,sizeof(buff),default_charset());
-  Item *item=find_item(&dummy_str);
+  String dummy_str(buff, sizeof(buff), default_charset());
+  Item *item = find_item(&dummy_str);
   longlong res;
 
   if (!item)
   {
-    null_value=1;
+    null_value = 1;
     return 0;
   }
-  res=item->val_int();
-  null_value=item->null_value;
+  res = item->val_int();
+  null_value = item->null_value;
   return res;
 }
 
@@ -3911,82 +3609,77 @@ double Item_func_case::val_real()
 {
   assert(fixed == 1);
   char buff[MAX_FIELD_WIDTH];
-  String dummy_str(buff,sizeof(buff),default_charset());
-  Item *item=find_item(&dummy_str);
+  String dummy_str(buff, sizeof(buff), default_charset());
+  Item *item = find_item(&dummy_str);
   double res;
 
   if (!item)
   {
-    null_value=1;
+    null_value = 1;
     return 0;
   }
-  res= item->val_real();
-  null_value=item->null_value;
+  res = item->val_real();
+  null_value = item->null_value;
   return res;
 }
-
 
 my_decimal *Item_func_case::val_decimal(my_decimal *decimal_value)
 {
   assert(fixed == 1);
   char buff[MAX_FIELD_WIDTH];
   String dummy_str(buff, sizeof(buff), default_charset());
-  Item *item= find_item(&dummy_str);
+  Item *item = find_item(&dummy_str);
   my_decimal *res;
 
   if (!item)
   {
-    null_value=1;
+    null_value = 1;
     return 0;
   }
 
-  res= item->val_decimal(decimal_value);
-  null_value= item->null_value;
+  res = item->val_decimal(decimal_value);
+  null_value = item->null_value;
   return res;
 }
-
 
 bool Item_func_case::val_json(Json_wrapper *wr)
 {
   assert(fixed == 1);
   char buff[MAX_FIELD_WIDTH];
   String dummy_str(buff, sizeof(buff), default_charset());
-  Item *item= find_item(&dummy_str);
+  Item *item = find_item(&dummy_str);
 
   if (!item)
   {
-    null_value= true;
+    null_value = true;
     return false;
   }
 
-  Item *args[]= {item};
+  Item *args[] = {item};
   return json_value(args, 0, wr);
 }
-
 
 bool Item_func_case::get_date(MYSQL_TIME *ltime, my_time_flags_t fuzzydate)
 {
   assert(fixed == 1);
   char buff[MAX_FIELD_WIDTH];
   String dummy_str(buff, sizeof(buff), default_charset());
-  Item *item= find_item(&dummy_str);
+  Item *item = find_item(&dummy_str);
   if (!item)
-    return (null_value= true);
-  return (null_value= item->get_date(ltime, fuzzydate));
+    return (null_value = true);
+  return (null_value = item->get_date(ltime, fuzzydate));
 }
-
 
 bool Item_func_case::get_time(MYSQL_TIME *ltime)
 {
   assert(fixed == 1);
   char buff[MAX_FIELD_WIDTH];
   String dummy_str(buff, sizeof(buff), default_charset());
-  Item *item= find_item(&dummy_str);
+  Item *item = find_item(&dummy_str);
   if (!item)
-    return (null_value= true);
-  return (null_value= item->get_time(ltime));
+    return (null_value = true);
+  return (null_value = item->get_time(ltime));
 }
-
 
 bool Item_func_case::fix_fields(THD *thd, Item **ref)
 {
@@ -3994,14 +3687,15 @@ bool Item_func_case::fix_fields(THD *thd, Item **ref)
     buff should match stack usage from
     Item_func_case::val_int() -> Item_func_case::find_item()
   */
-  uchar buff[MAX_FIELD_WIDTH*2+sizeof(String)*2+sizeof(String*)*2+sizeof(double)*2+sizeof(longlong)*2];
-  bool res= Item_func::fix_fields(thd, ref);
+  uchar
+      buff[MAX_FIELD_WIDTH * 2 + sizeof(String) * 2 + sizeof(String *) * 2 + sizeof(double) * 2 + sizeof(longlong) * 2];
+  bool res = Item_func::fix_fields(thd, ref);
   /*
     Call check_stack_overrun after fix_fields to be sure that stack variable
     is not optimized away
   */
   if (check_stack_overrun(thd, STACK_MIN_SIZE, buff))
-    return TRUE;				// Fatal error flag is set!
+    return TRUE;  // Fatal error flag is set!
   return res;
 }
 
@@ -4012,13 +3706,11 @@ bool Item_func_case::fix_fields(THD *thd, Item **ref)
   This function is a workaround for implementation deficiency in
   Item_func_case. The problem there is that the 'args' attribute contains
   Items from different expressions.
- 
+
   The function must not be used elsewhere and will be remove eventually.
 */
 
-static void change_item_tree_if_needed(THD *thd,
-                                       Item **place,
-                                       Item *new_value)
+static void change_item_tree_if_needed(THD *thd, Item **place, Item *new_value)
 {
   if (*place == new_value)
     return;
@@ -4031,26 +3723,24 @@ static void change_item_tree_if_needed(THD *thd,
   type of CASE and COALESCE.
   COALESCE is a CASE abbreviation according to the standard.
  */
-static void fix_num_length_and_dec_shared_for_case(Item_func *item_func,
-                                            Item_result result_type,
-                                            Item **item,
-                                            uint nitems)
+static void fix_num_length_and_dec_shared_for_case(Item_func *item_func, Item_result result_type, Item **item,
+                                                   uint nitems)
 {
   switch (result_type)
   {
-  case DECIMAL_RESULT:
-    item_func->count_decimal_length(item, nitems);
-    break;
-  case REAL_RESULT:
-    item_func->count_real_length(item, nitems);
-    break;
-  case INT_RESULT:
-    item_func->count_only_length(item, nitems);
-    item_func->decimals= 0;
-    break;
-  case ROW_RESULT:
-  default:
-    assert(0);
+    case DECIMAL_RESULT:
+      item_func->count_decimal_length(item, nitems);
+      break;
+    case REAL_RESULT:
+      item_func->count_real_length(item, nitems);
+      break;
+    case INT_RESULT:
+      item_func->count_only_length(item, nitems);
+      item_func->decimals = 0;
+      break;
+    case ROW_RESULT:
+    default:
+      assert(0);
   }
 }
 
@@ -4058,31 +3748,29 @@ void Item_func_case::fix_length_and_dec()
 {
   Item **agg;
   uint nagg;
-  uint found_types= 0;
-  THD *thd= current_thd;
+  uint found_types = 0;
+  THD *thd = current_thd;
 
-  if (!(agg= (Item**) sql_alloc(sizeof(Item*)*(ncases+1))))
+  if (!(agg = (Item **)sql_alloc(sizeof(Item *) * (ncases + 1))))
     return;
 
   // Determine nullability based on THEN and ELSE expressions:
 
-  maybe_null= else_expr_num == -1 || args[else_expr_num]->maybe_null;
+  maybe_null = else_expr_num == -1 || args[else_expr_num]->maybe_null;
 
-  for (Item **arg= args + 1; arg < args + arg_count; arg+= 2)
-    maybe_null|= (*arg)->maybe_null;
+  for (Item **arg = args + 1; arg < args + arg_count; arg += 2) maybe_null |= (*arg)->maybe_null;
 
   /*
     Aggregate all THEN and ELSE expression types
     and collations when string result
   */
 
-  for (nagg= 0; nagg < ncases / 2; nagg++)
-    agg[nagg]= args[nagg * 2 + 1];
+  for (nagg = 0; nagg < ncases / 2; nagg++) agg[nagg] = args[nagg * 2 + 1];
 
   if (else_expr_num != -1)
-    agg[nagg++]= args[else_expr_num];
+    agg[nagg++] = args[else_expr_num];
 
-  cached_field_type= agg_field_type(agg, nagg);
+  cached_field_type = agg_field_type(agg, nagg);
   agg_result_type(&cached_result_type, &unsigned_flag, agg, nagg);
   if (cached_result_type == STRING_RESULT)
   {
@@ -4093,8 +3781,7 @@ void Item_func_case::fix_length_and_dec()
       Copy all THEN and ELSE items back to args[] array.
       Some of the items might have been changed to Item_func_conv_charset.
     */
-    for (nagg= 0 ; nagg < ncases / 2 ; nagg++)
-      change_item_tree_if_needed(thd, &args[nagg * 2 + 1], agg[nagg]);
+    for (nagg = 0; nagg < ncases / 2; nagg++) change_item_tree_if_needed(thd, &args[nagg * 2 + 1], agg[nagg]);
 
     if (else_expr_num != -1)
       change_item_tree_if_needed(thd, &args[else_expr_num], agg[nagg++]);
@@ -4102,10 +3789,8 @@ void Item_func_case::fix_length_and_dec()
   else
   {
     collation.set_numeric();
-    fix_num_length_and_dec_shared_for_case(this, cached_result_type, agg,
-                                           nagg);
+    fix_num_length_and_dec_shared_for_case(this, cached_result_type, agg, nagg);
   }
-
 
   /*
     Aggregate first expression and all WHEN expression types
@@ -4114,19 +3799,18 @@ void Item_func_case::fix_length_and_dec()
   if (first_expr_num != -1)
   {
     uint i;
-    agg[0]= args[first_expr_num];
-    left_result_type= agg[0]->result_type();
+    agg[0] = args[first_expr_num];
+    left_result_type = agg[0]->result_type();
 
     /*
       As the first expression and WHEN expressions
       are intermixed in args[] array THEN and ELSE items,
-      extract the first expression and all WHEN expressions into 
+      extract the first expression and all WHEN expressions into
       a temporary array, to process them easier.
     */
-    for (nagg= 0; nagg < ncases/2 ; nagg++)
-      agg[nagg+1]= args[nagg*2];
+    for (nagg = 0; nagg < ncases / 2; nagg++) agg[nagg + 1] = args[nagg * 2];
     nagg++;
-    if (!(found_types= collect_cmp_types(agg, nagg)))
+    if (!(found_types = collect_cmp_types(agg, nagg)))
       return;
     if (found_types & (1U << STRING_RESULT))
     {
@@ -4163,17 +3847,14 @@ void Item_func_case::fix_length_and_dec()
       */
       change_item_tree_if_needed(thd, &args[first_expr_num], agg[0]);
 
-      for (nagg= 0; nagg < ncases / 2; nagg++)
-        change_item_tree_if_needed(thd, &args[nagg * 2], agg[nagg + 1]);
+      for (nagg = 0; nagg < ncases / 2; nagg++) change_item_tree_if_needed(thd, &args[nagg * 2], agg[nagg + 1]);
     }
-    for (i= 0; i <= (uint)DECIMAL_RESULT; i++)
+    for (i = 0; i <= (uint)DECIMAL_RESULT; i++)
     {
       if (found_types & (1U << i) && !cmp_items[i])
       {
         assert((Item_result)i != ROW_RESULT);
-        if (!(cmp_items[i]=
-            cmp_item::get_comparator((Item_result)i, args[first_expr_num],
-                                     cmp_collation.collation)))
+        if (!(cmp_items[i] = cmp_item::get_comparator((Item_result)i, args[first_expr_num], cmp_collation.collation)))
           return;
       }
     }
@@ -4183,25 +3864,19 @@ void Item_func_case::fix_length_and_dec()
       zerofill argument into a string constant. Such a change would
       require rebuilding cmp_items.
     */
-    for (i= 0; i < ncases; i+= 2)
-      args[i]->cmp_context= item_cmp_type(left_result_type,
-                                          args[i]->result_type());
+    for (i = 0; i < ncases; i += 2) args[i]->cmp_context = item_cmp_type(left_result_type, args[i]->result_type());
   }
-
 }
-
 
 uint Item_func_case::decimal_precision() const
 {
-  int max_int_part=0;
-  for (uint i=0 ; i < ncases ; i+=2)
-    set_if_bigger(max_int_part, args[i+1]->decimal_int_part());
+  int max_int_part = 0;
+  for (uint i = 0; i < ncases; i += 2) set_if_bigger(max_int_part, args[i + 1]->decimal_int_part());
 
-  if (else_expr_num != -1) 
+  if (else_expr_num != -1)
     set_if_bigger(max_int_part, args[else_expr_num]->decimal_int_part());
-  return min<uint>(max_int_part + decimals, DECIMAL_MAX_PRECISION);
+  return min< uint >(max_int_part + decimals, DECIMAL_MAX_PRECISION);
 }
-
 
 /**
   @todo
@@ -4216,12 +3891,12 @@ void Item_func_case::print(String *str, enum_query_type query_type)
     args[first_expr_num]->print(str, query_type);
     str->append(' ');
   }
-  for (uint i=0 ; i < ncases ; i+=2)
+  for (uint i = 0; i < ncases; i += 2)
   {
     str->append(STRING_WITH_LEN("when "));
     args[i]->print(str, query_type);
     str->append(STRING_WITH_LEN(" then "));
-    args[i+1]->print(str, query_type);
+    args[i + 1]->print(str, query_type);
     str->append(' ');
   }
   if (else_expr_num != -1)
@@ -4233,49 +3908,44 @@ void Item_func_case::print(String *str, enum_query_type query_type)
   str->append(STRING_WITH_LEN("end)"));
 }
 
-
 void Item_func_case::cleanup()
 {
   uint i;
   DBUG_ENTER("Item_func_case::cleanup");
   Item_func::cleanup();
-  for (i= 0; i <= (uint)DECIMAL_RESULT; i++)
+  for (i = 0; i <= (uint)DECIMAL_RESULT; i++)
   {
     delete cmp_items[i];
-    cmp_items[i]= 0;
+    cmp_items[i] = 0;
   }
   DBUG_VOID_RETURN;
 }
-
 
 /**
   Coalesce - return first not NULL argument.
 */
 
-Item_func_coalesce::Item_func_coalesce(const POS &pos, PT_item_list *list)
-  : Item_func_numhybrid(pos, list)
-{}
+Item_func_coalesce::Item_func_coalesce(const POS &pos, PT_item_list *list) : Item_func_numhybrid(pos, list) {}
 
 String *Item_func_coalesce::str_op(String *str)
 {
   assert(fixed == 1);
-  null_value=0;
-  for (uint i=0 ; i < arg_count ; i++)
+  null_value = 0;
+  for (uint i = 0; i < arg_count; i++)
   {
     String *res;
-    if ((res=args[i]->val_str(str)))
+    if ((res = args[i]->val_str(str)))
       return res;
   }
-  null_value=1;
+  null_value = 1;
   return 0;
 }
-
 
 bool Item_func_coalesce::val_json(Json_wrapper *wr)
 {
   assert(fixed == 1);
-  null_value= false;
-  for (uint i= 0; i < arg_count; i++)
+  null_value = false;
+  for (uint i = 0; i < arg_count; i++)
   {
     if (json_value(args, i, wr))
       return error_json();
@@ -4284,89 +3954,82 @@ bool Item_func_coalesce::val_json(Json_wrapper *wr)
       return false;
   }
 
-  null_value= true;
+  null_value = true;
   return false;
 }
-
 
 longlong Item_func_coalesce::int_op()
 {
   assert(fixed == 1);
-  null_value=0;
-  for (uint i=0 ; i < arg_count ; i++)
+  null_value = 0;
+  for (uint i = 0; i < arg_count; i++)
   {
-    longlong res=args[i]->val_int();
+    longlong res = args[i]->val_int();
     if (!args[i]->null_value)
       return res;
   }
-  null_value=1;
+  null_value = 1;
   return 0;
 }
 
 double Item_func_coalesce::real_op()
 {
   assert(fixed == 1);
-  null_value=0;
-  for (uint i=0 ; i < arg_count ; i++)
+  null_value = 0;
+  for (uint i = 0; i < arg_count; i++)
   {
-    double res= args[i]->val_real();
+    double res = args[i]->val_real();
     if (!args[i]->null_value)
       return res;
   }
-  null_value=1;
+  null_value = 1;
   return 0;
 }
-
 
 my_decimal *Item_func_coalesce::decimal_op(my_decimal *decimal_value)
 {
   assert(fixed == 1);
-  null_value= 0;
-  for (uint i= 0; i < arg_count; i++)
+  null_value = 0;
+  for (uint i = 0; i < arg_count; i++)
   {
-    my_decimal *res= args[i]->val_decimal(decimal_value);
+    my_decimal *res = args[i]->val_decimal(decimal_value);
     if (!args[i]->null_value)
       return res;
   }
-  null_value=1;
+  null_value = 1;
   return 0;
 }
-
-
 
 bool Item_func_coalesce::date_op(MYSQL_TIME *ltime, my_time_flags_t fuzzydate)
 {
   assert(fixed == 1);
-  for (uint i= 0; i < arg_count; i++)
+  for (uint i = 0; i < arg_count; i++)
   {
     if (!args[i]->get_date(ltime, fuzzydate))
-      return (null_value= false);
+      return (null_value = false);
   }
-  return (null_value= true);
+  return (null_value = true);
 }
-
 
 bool Item_func_coalesce::time_op(MYSQL_TIME *ltime)
 {
   assert(fixed == 1);
-  for (uint i= 0; i < arg_count; i++)
+  for (uint i = 0; i < arg_count; i++)
   {
     if (!args[i]->get_time(ltime))
-      return (null_value= false);
+      return (null_value = false);
   }
-  return (null_value= true);
+  return (null_value = true);
 }
-
 
 void Item_func_coalesce::fix_length_and_dec()
 {
-  cached_field_type= agg_field_type(args, arg_count);
+  cached_field_type = agg_field_type(args, arg_count);
   agg_result_type(&hybrid_type, &unsigned_flag, args, arg_count);
   if (hybrid_type == STRING_RESULT)
     count_string_result_length(cached_field_type, args, arg_count);
   else
-    fix_num_length_and_dec_shared_for_case(this, hybrid_type, args,
-                                           arg_count);
+    fix_num_length_and_dec_shared_for_case(this, hybrid_type, args, arg_count);
 }
 
 /****************************************************************************
@@ -4391,11 +4054,7 @@ void Item_func_coalesce::fix_length_and_dec()
     0           left argument is equal to the right argument.
     1           left argument is greater than the right argument.
 */
-static inline int cmp_longs (longlong a_val, longlong b_val)
-{
-  return a_val < b_val ? -1 : a_val == b_val ? 0 : 1;
-}
-
+static inline int cmp_longs(longlong a_val, longlong b_val) { return a_val < b_val ? -1 : a_val == b_val ? 0 : 1; }
 
 /*
   Determine which of the unsigned longlong arguments is bigger
@@ -4415,14 +4074,10 @@ static inline int cmp_longs (longlong a_val, longlong b_val)
     0           left argument is equal to the right argument.
     1           left argument is greater than the right argument.
 */
-static inline int cmp_ulongs (ulonglong a_val, ulonglong b_val)
-{
-  return a_val < b_val ? -1 : a_val == b_val ? 0 : 1;
-}
-
+static inline int cmp_ulongs(ulonglong a_val, ulonglong b_val) { return a_val < b_val ? -1 : a_val == b_val ? 0 : 1; }
 
 /*
-  Compare two integers in IN value list format (packed_longlong) 
+  Compare two integers in IN value list format (packed_longlong)
 
   SYNOPSIS
     cmp_longlong()
@@ -4443,123 +4098,94 @@ static inline int cmp_ulongs (ulonglong a_val, ulonglong b_val)
     0           left argument is equal to the right argument.
     1           left argument is greater than the right argument.
 */
-int cmp_longlong(const in_longlong::packed_longlong *a,
-                 const in_longlong::packed_longlong *b)
+int cmp_longlong(const in_longlong::packed_longlong *a, const in_longlong::packed_longlong *b)
 {
   if (a->unsigned_flag != b->unsigned_flag)
-  { 
-    /* 
-      One of the args is unsigned and is too big to fit into the 
+  {
+    /*
+      One of the args is unsigned and is too big to fit into the
       positive signed range. Report no match.
-    */  
-    if ((a->unsigned_flag && ((ulonglong) a->val) > (ulonglong) LLONG_MAX) ||
-        (b->unsigned_flag && ((ulonglong) b->val) > (ulonglong) LLONG_MAX))
+    */
+    if ((a->unsigned_flag && ((ulonglong)a->val) > (ulonglong)LLONG_MAX) ||
+        (b->unsigned_flag && ((ulonglong)b->val) > (ulonglong)LLONG_MAX))
       return a->unsigned_flag ? 1 : -1;
     /*
-      Although the signedness differs both args can fit into the signed 
+      Although the signedness differs both args can fit into the signed
       positive range. Make them signed and compare as usual.
-    */  
-    return cmp_longs (a->val, b->val);
+    */
+    return cmp_longs(a->val, b->val);
   }
   if (a->unsigned_flag)
-    return cmp_ulongs ((ulonglong) a->val, (ulonglong) b->val);
+    return cmp_ulongs((ulonglong)a->val, (ulonglong)b->val);
   else
-    return cmp_longs (a->val, b->val);
+    return cmp_longs(a->val, b->val);
 }
 
-
-class Cmp_longlong :
-  public std::binary_function<const in_longlong::packed_longlong &,
-                              const in_longlong::packed_longlong &, bool>
+class Cmp_longlong
+    : public std::binary_function< const in_longlong::packed_longlong &, const in_longlong::packed_longlong &, bool >
 {
-public:
-  bool operator()(const in_longlong::packed_longlong &a,
-                  const in_longlong::packed_longlong &b)
+ public:
+  bool operator()(const in_longlong::packed_longlong &a, const in_longlong::packed_longlong &b)
   {
     return cmp_longlong(&a, &b) < 0;
   }
 };
 
-
-void in_longlong::sort()
-{
-  std::sort(base.begin(), base.end(), Cmp_longlong());
-}
-
+void in_longlong::sort() { std::sort(base.begin(), base.end(), Cmp_longlong()); }
 
 bool in_longlong::find_value(const void *value) const
 {
-  const in_longlong::packed_longlong *val=
-    static_cast<const in_longlong::packed_longlong*>(value);
+  const in_longlong::packed_longlong *val = static_cast< const in_longlong::packed_longlong * >(value);
 
   return std::binary_search(base.begin(), base.end(), *val, Cmp_longlong());
 }
 
+bool in_longlong::compare_elems(uint pos1, uint pos2) const { return cmp_longlong(&base[pos1], &base[pos2]) != 0; }
 
-bool in_longlong::compare_elems(uint pos1, uint pos2) const
+class Cmp_row : public std::binary_function< const cmp_item_row *, const cmp_item_row *, bool >
 {
-  return cmp_longlong(&base[pos1], &base[pos2]) != 0;
-}
-
-
-class Cmp_row :
-  public std::binary_function<const cmp_item_row *, const cmp_item_row *, bool>
-{
-public:
-  bool operator()(const cmp_item_row *a, const cmp_item_row *b)
-  {
-    return a->compare(b) < 0;
-  }
+ public:
+  bool operator()(const cmp_item_row *a, const cmp_item_row *b) { return a->compare(b) < 0; }
 };
 
-
-void in_row::sort()
-{
-  std::sort(base_pointers.begin(), base_pointers.end(), Cmp_row());
-}
-
+void in_row::sort() { std::sort(base_pointers.begin(), base_pointers.end(), Cmp_row()); }
 
 bool in_row::find_value(const void *value) const
 {
-  const cmp_item_row *row= static_cast<const cmp_item_row*>(value);
-  return std::binary_search(base_pointers.begin(), base_pointers.end(),
-                            row, Cmp_row());
+  const cmp_item_row *row = static_cast< const cmp_item_row * >(value);
+  return std::binary_search(base_pointers.begin(), base_pointers.end(), row, Cmp_row());
 }
-
 
 bool in_row::compare_elems(uint pos1, uint pos2) const
 {
   return base_pointers[pos1]->compare(base_pointers[pos2]) != 0;
 }
 
-
 bool in_vector::find_item(Item *item)
 {
-  uchar *result=get_value(item);
+  uchar *result = get_value(item);
   if (!result || !used_count)
-    return false;				// Null value
+    return false;  // Null value
   return find_value(result);
 }
 
-
-in_string::in_string(THD *thd, uint elements, qsort2_cmp cmp_func,
-                     const CHARSET_INFO *cs)
-  : in_vector(elements),
-    tmp(buff, sizeof(buff), &my_charset_bin),
-    base_objects(thd->mem_root, elements),
-    base_pointers(thd->mem_root, elements),
-    compare(cmp_func),
-    collation(cs)
+in_string::in_string(THD *thd, uint elements, qsort2_cmp cmp_func, const CHARSET_INFO *cs)
+    : in_vector(elements),
+      tmp(buff, sizeof(buff), &my_charset_bin),
+      base_objects(thd->mem_root, elements),
+      base_pointers(thd->mem_root, elements),
+      compare(cmp_func),
+      collation(cs)
 {
-  for (uint ix= 0; ix < elements; ++ix)
+  for (uint ix = 0; ix < elements; ++ix)
   {
-    base_pointers[ix]= &base_objects[ix];
+    base_pointers[ix] = &base_objects[ix];
   }
 }
 
 in_string::~in_string()
 {
-  for (uint i= 0; i < base_objects.size(); i++)
+  for (uint i = 0; i < base_objects.size(); i++)
   {
     base_objects[i].mem_free();
   }
@@ -4567,8 +4193,8 @@ in_string::~in_string()
 
 void in_string::set(uint pos, Item *item)
 {
-  String *str= base_pointers[pos];
-  String *res= item->val_str(str);
+  String *str = base_pointers[pos];
+  String *res = item->val_str(str);
   if (res && res != str)
   {
     if (res->uses_buffer_owned_by(str))
@@ -4576,78 +4202,54 @@ void in_string::set(uint pos, Item *item)
     if (item->type() == Item::FUNC_ITEM)
       str->copy(*res);
     else
-      *str= *res;
+      *str = *res;
   }
   if (!str->charset())
   {
     const CHARSET_INFO *cs;
-    if (!(cs= item->collation.collation))
-      cs= &my_charset_bin;		// Should never happen for STR items
+    if (!(cs = item->collation.collation))
+      cs = &my_charset_bin;  // Should never happen for STR items
     str->set_charset(cs);
   }
 }
 
+uchar *in_string::get_value(Item *item) { return (uchar *)item->val_str(&tmp); }
 
-uchar *in_string::get_value(Item *item)
+class Cmp_string : public std::binary_function< const String *, const String *, bool >
 {
-  return (uchar*) item->val_str(&tmp);
-}
+ public:
+  Cmp_string(qsort2_cmp cmp_func, const CHARSET_INFO *cs) : compare(cmp_func), collation(cs) {}
+  bool operator()(const String *a, const String *b) { return compare(collation, a, b) < 0; }
 
-
-class Cmp_string :
-  public std::binary_function<const String *, const String *, bool>
-{
-public:
-  Cmp_string(qsort2_cmp cmp_func, const CHARSET_INFO *cs)
-    : compare(cmp_func), collation(cs)
-  {}
-  bool operator()(const String *a, const String *b)
-  {
-    return compare(collation, a, b) < 0;
-  }
-private:
+ private:
   qsort2_cmp compare;
   const CHARSET_INFO *collation;
 };
 
-
 // Our String objects have strange copy semantics, sort pointers instead.
-void in_string::sort()
-{
-  std::sort(base_pointers.begin(), base_pointers.end(),
-            Cmp_string(compare, collation));
-}
-
+void in_string::sort() { std::sort(base_pointers.begin(), base_pointers.end(), Cmp_string(compare, collation)); }
 
 bool in_string::find_value(const void *value) const
 {
-  const String *str= static_cast<const String*>(value);
-  return std::binary_search(base_pointers.begin(), base_pointers.end(),
-                            str, Cmp_string(compare, collation));
+  const String *str = static_cast< const String * >(value);
+  return std::binary_search(base_pointers.begin(), base_pointers.end(), str, Cmp_string(compare, collation));
 }
-
 
 bool in_string::compare_elems(uint pos1, uint pos2) const
 {
   return compare(collation, base_pointers[pos1], base_pointers[pos2]) != 0;
 }
 
-
-in_row::in_row(THD *thd, uint elements, Item * item)
-  : in_vector(elements),
-    base_objects(thd->mem_root, elements),
-    base_pointers(thd->mem_root, elements)
+in_row::in_row(THD *thd, uint elements, Item *item)
+    : in_vector(elements), base_objects(thd->mem_root, elements), base_pointers(thd->mem_root, elements)
 {
-  for (uint ix= 0; ix < elements; ++ix)
+  for (uint ix = 0; ix < elements; ++ix)
   {
-    base_pointers[ix]= &base_objects[ix];
+    base_pointers[ix] = &base_objects[ix];
   }
 }
 
-in_row::~in_row()
-{
-  delete_container_pointers(base_pointers);
-}
+in_row::~in_row() { delete_container_pointers(base_pointers); }
 
 uchar *in_row::get_value(Item *item)
 {
@@ -4660,267 +4262,205 @@ uchar *in_row::get_value(Item *item)
 void in_row::set(uint pos, Item *item)
 {
   DBUG_ENTER("in_row::set");
-  DBUG_PRINT("enter", ("pos: %u  item: 0x%lx", pos, (ulong) item));
+  DBUG_PRINT("enter", ("pos: %u  item: 0x%lx", pos, (ulong)item));
   base_pointers[pos]->store_value_by_template(&tmp, item);
   DBUG_VOID_RETURN;
 }
 
-in_longlong::in_longlong(THD *thd, uint elements)
-  : in_vector(elements),
-    base(thd->mem_root, elements)
-{
-}
+in_longlong::in_longlong(THD *thd, uint elements) : in_vector(elements), base(thd->mem_root, elements) {}
 
-void in_longlong::set(uint pos,Item *item)
+void in_longlong::set(uint pos, Item *item)
 {
-  struct packed_longlong *buff= &base[pos];
-  
-  buff->val= item->val_int();
-  buff->unsigned_flag= item->unsigned_flag;
+  struct packed_longlong *buff = &base[pos];
+
+  buff->val = item->val_int();
+  buff->unsigned_flag = item->unsigned_flag;
 }
 
 uchar *in_longlong::get_value(Item *item)
 {
-  tmp.val= item->val_int();
+  tmp.val = item->val_int();
   if (item->null_value)
     return 0;
-  tmp.unsigned_flag= item->unsigned_flag;
-  return (uchar*) &tmp;
+  tmp.unsigned_flag = item->unsigned_flag;
+  return (uchar *)&tmp;
 }
 
-
-void in_time_as_longlong::set(uint pos,Item *item)
+void in_time_as_longlong::set(uint pos, Item *item)
 {
-  struct packed_longlong *buff= &base[pos];
-  buff->val= item->val_time_temporal();
-  buff->unsigned_flag= item->unsigned_flag;
+  struct packed_longlong *buff = &base[pos];
+  buff->val = item->val_time_temporal();
+  buff->unsigned_flag = item->unsigned_flag;
 }
-
 
 uchar *in_time_as_longlong::get_value(Item *item)
 {
-  tmp.val= item->val_time_temporal();
+  tmp.val = item->val_time_temporal();
   if (item->null_value)
     return 0;
-  tmp.unsigned_flag= item->unsigned_flag;
-  return (uchar*) &tmp;
+  tmp.unsigned_flag = item->unsigned_flag;
+  return (uchar *)&tmp;
 }
 
-
-void in_datetime_as_longlong::set(uint pos,Item *item)
+void in_datetime_as_longlong::set(uint pos, Item *item)
 {
-  struct packed_longlong *buff= &base[pos];
-  buff->val= item->val_date_temporal();
-  buff->unsigned_flag= item->unsigned_flag;
+  struct packed_longlong *buff = &base[pos];
+  buff->val = item->val_date_temporal();
+  buff->unsigned_flag = item->unsigned_flag;
 }
-
 
 uchar *in_datetime_as_longlong::get_value(Item *item)
 {
-  tmp.val= item->val_date_temporal();
+  tmp.val = item->val_date_temporal();
   if (item->null_value)
     return 0;
-  tmp.unsigned_flag= item->unsigned_flag;
-  return (uchar*) &tmp;
+  tmp.unsigned_flag = item->unsigned_flag;
+  return (uchar *)&tmp;
 }
 
-
-void in_datetime::set(uint pos,Item *item)
+void in_datetime::set(uint pos, Item *item)
 {
-  Item **tmp_item= &item;
+  Item **tmp_item = &item;
   bool is_null;
-  struct packed_longlong *buff= &base[pos];
+  struct packed_longlong *buff = &base[pos];
 
-  buff->val= get_datetime_value(current_thd, &tmp_item, 0, warn_item, &is_null);
-  buff->unsigned_flag= 1L;
+  buff->val = get_datetime_value(current_thd, &tmp_item, 0, warn_item, &is_null);
+  buff->unsigned_flag = 1L;
 }
-
 
 uchar *in_datetime::get_value(Item *item)
 {
   bool is_null;
-  Item **tmp_item= lval_cache ? &lval_cache : &item;
-  tmp.val= get_datetime_value(current_thd, &tmp_item, &lval_cache, warn_item, &is_null);
+  Item **tmp_item = lval_cache ? &lval_cache : &item;
+  tmp.val = get_datetime_value(current_thd, &tmp_item, &lval_cache, warn_item, &is_null);
   if (item->null_value)
     return 0;
-  tmp.unsigned_flag= 1L;
-  return (uchar*) &tmp;
+  tmp.unsigned_flag = 1L;
+  return (uchar *)&tmp;
 }
 
+in_double::in_double(THD *thd, uint elements) : in_vector(elements), base(thd->mem_root, elements) {}
 
-in_double::in_double(THD *thd, uint elements)
-  : in_vector(elements),
-    base(thd->mem_root, elements)
-{
-}
-
-void in_double::set(uint pos,Item *item)
-{
-  base[pos]= item->val_real();
-}
+void in_double::set(uint pos, Item *item) { base[pos] = item->val_real(); }
 
 uchar *in_double::get_value(Item *item)
 {
-  tmp= item->val_real();
+  tmp = item->val_real();
   if (item->null_value)
-    return 0;					/* purecov: inspected */
-  return (uchar*) &tmp;
+    return 0; /* purecov: inspected */
+  return (uchar *)&tmp;
 }
 
-
-void in_double::sort()
-{
-  std::sort(base.begin(), base.end());
-}
-
+void in_double::sort() { std::sort(base.begin(), base.end()); }
 
 bool in_double::find_value(const void *value) const
 {
-  const double *dbl= static_cast<const double*>(value);
+  const double *dbl = static_cast< const double * >(value);
   return std::binary_search(base.begin(), base.end(), *dbl);
 }
 
+bool in_double::compare_elems(uint pos1, uint pos2) const { return base[pos1] != base[pos2]; }
 
-bool in_double::compare_elems(uint pos1, uint pos2) const
-{
-  return base[pos1] != base[pos2];
-}
-
-
-in_decimal::in_decimal(THD *thd, uint elements)
-  : in_vector(elements),
-    base(thd->mem_root, elements)
-{
-}
-
+in_decimal::in_decimal(THD *thd, uint elements) : in_vector(elements), base(thd->mem_root, elements) {}
 
 void in_decimal::set(uint pos, Item *item)
 {
   /* as far as 'item' is constant, we can store reference on my_decimal */
-  my_decimal *dec= &base[pos];
-  my_decimal *res= item->val_decimal(dec);
-  /* if item->val_decimal() is evaluated to NULL then res == 0 */ 
+  my_decimal *dec = &base[pos];
+  my_decimal *res = item->val_decimal(dec);
+  /* if item->val_decimal() is evaluated to NULL then res == 0 */
   if (!item->null_value && res != dec)
     my_decimal2decimal(res, dec);
 }
 
-
 uchar *in_decimal::get_value(Item *item)
 {
-  my_decimal *result= item->val_decimal(&val);
+  my_decimal *result = item->val_decimal(&val);
   if (item->null_value)
     return 0;
   return (uchar *)result;
 }
 
-
-void in_decimal::sort()
-{
-  std::sort(base.begin(), base.end());
-}
-
+void in_decimal::sort() { std::sort(base.begin(), base.end()); }
 
 bool in_decimal::find_value(const void *value) const
 {
-  const my_decimal *dec= static_cast<const my_decimal*>(value);
+  const my_decimal *dec = static_cast< const my_decimal * >(value);
   return std::binary_search(base.begin(), base.end(), *dec);
 }
 
+bool in_decimal::compare_elems(uint pos1, uint pos2) const { return base[pos1] != base[pos2]; }
 
-bool in_decimal::compare_elems(uint pos1, uint pos2) const
+cmp_item *cmp_item::get_comparator(Item_result result_type, const Item *item, const CHARSET_INFO *cs)
 {
-  return base[pos1] != base[pos2];
-}
-
-
-cmp_item* cmp_item::get_comparator(Item_result result_type, const Item *item,
-                                   const CHARSET_INFO *cs)
-{
-  switch (result_type) {
-  case STRING_RESULT:
-    /*
-      Temporal types shouldn't be compared as strings. Since date/time formats
-      may be different, e.g. '20000102' == '2000-01-02'."
-    */
-    if (item->is_temporal())
-      return new cmp_item_datetime(item);
-    else
-      return new cmp_item_string(cs);
-  case INT_RESULT:
-    return new cmp_item_int;
-  case REAL_RESULT:
-    return new cmp_item_real;
-  case ROW_RESULT:
-    return new cmp_item_row;
-  case DECIMAL_RESULT:
-    return new cmp_item_decimal;
-  default:
-    assert(0);
-    break;
+  switch (result_type)
+  {
+    case STRING_RESULT:
+      /*
+        Temporal types shouldn't be compared as strings. Since date/time formats
+        may be different, e.g. '20000102' == '2000-01-02'."
+      */
+      if (item->is_temporal())
+        return new cmp_item_datetime(item);
+      else
+        return new cmp_item_string(cs);
+    case INT_RESULT:
+      return new cmp_item_int;
+    case REAL_RESULT:
+      return new cmp_item_real;
+    case ROW_RESULT:
+      return new cmp_item_row;
+    case DECIMAL_RESULT:
+      return new cmp_item_decimal;
+    default:
+      assert(0);
+      break;
   }
-  return 0; // to satisfy compiler :)
+  return 0;  // to satisfy compiler :)
 }
 
+cmp_item *cmp_item_string::make_same() { return new cmp_item_string(cmp_charset); }
 
-cmp_item* cmp_item_string::make_same()
-{
-  return new cmp_item_string(cmp_charset);
-}
+cmp_item *cmp_item_int::make_same() { return new cmp_item_int(); }
 
-cmp_item* cmp_item_int::make_same()
-{
-  return new cmp_item_int();
-}
+cmp_item *cmp_item_real::make_same() { return new cmp_item_real(); }
 
-cmp_item* cmp_item_real::make_same()
-{
-  return new cmp_item_real();
-}
-
-cmp_item* cmp_item_row::make_same()
-{
-  return new cmp_item_row();
-}
-
+cmp_item *cmp_item_row::make_same() { return new cmp_item_row(); }
 
 cmp_item_row::~cmp_item_row()
 {
   DBUG_ENTER("~cmp_item_row");
-  DBUG_PRINT("enter",("this: 0x%lx", (long) this));
+  DBUG_PRINT("enter", ("this: 0x%lx", (long)this));
   if (comparators)
   {
-    for (uint i= 0; i < n; i++)
+    for (uint i = 0; i < n; i++)
     {
       if (comparators[i])
-	delete comparators[i];
+        delete comparators[i];
     }
   }
   DBUG_VOID_RETURN;
 }
 
-
 void cmp_item_row::alloc_comparators(Item *item)
 {
-  n= item->cols();
+  n = item->cols();
   assert(comparators == NULL);
   if (!comparators)
-    comparators= (cmp_item **) current_thd->mem_calloc(sizeof(cmp_item *)*n);
+    comparators = (cmp_item **)current_thd->mem_calloc(sizeof(cmp_item *) * n);
   if (comparators)
   {
-    for (uint i= 0; i < n; i++)
+    for (uint i = 0; i < n; i++)
     {
       assert(comparators[i] == NULL);
-      Item *item_i= item->element_index(i);
-      if (!(comparators[i]=
-            cmp_item::get_comparator(item_i->result_type(), item_i,
-                                     item_i->collation.collation)))
-        break;                                  // new failed
+      Item *item_i = item->element_index(i);
+      if (!(comparators[i] = cmp_item::get_comparator(item_i->result_type(), item_i, item_i->collation.collation)))
+        break;  // new failed
       if (item_i->result_type() == ROW_RESULT)
-        static_cast<cmp_item_row*>(comparators[i])->alloc_comparators(item_i);
+        static_cast< cmp_item_row * >(comparators[i])->alloc_comparators(item_i);
     }
   }
 }
-
 
 void cmp_item_row::store_value(Item *item)
 {
@@ -4929,193 +4469,162 @@ void cmp_item_row::store_value(Item *item)
   if (comparators)
   {
     item->bring_value();
-    item->null_value= 0;
-    for (uint i= 0; i < n; i++)
+    item->null_value = 0;
+    for (uint i = 0; i < n; i++)
     {
       comparators[i]->store_value(item->element_index(i));
-      item->null_value|= item->element_index(i)->null_value;
+      item->null_value |= item->element_index(i)->null_value;
     }
   }
   DBUG_VOID_RETURN;
 }
 
-
 void cmp_item_row::store_value_by_template(cmp_item *t, Item *item)
 {
-  cmp_item_row *tmpl= (cmp_item_row*) t;
+  cmp_item_row *tmpl = (cmp_item_row *)t;
   if (tmpl->n != item->cols())
   {
     my_error(ER_OPERAND_COLUMNS, MYF(0), tmpl->n);
     return;
   }
-  n= tmpl->n;
-  if ((comparators= (cmp_item **) sql_alloc(sizeof(cmp_item *)*n)))
+  n = tmpl->n;
+  if ((comparators = (cmp_item **)sql_alloc(sizeof(cmp_item *) * n)))
   {
     item->bring_value();
-    item->null_value= 0;
-    for (uint i=0; i < n; i++)
+    item->null_value = 0;
+    for (uint i = 0; i < n; i++)
     {
-      if (!(comparators[i]= tmpl->comparators[i]->make_same()))
-	break;					// new failed
-      comparators[i]->store_value_by_template(tmpl->comparators[i],
-					      item->element_index(i));
-      item->null_value|= item->element_index(i)->null_value;
+      if (!(comparators[i] = tmpl->comparators[i]->make_same()))
+        break;  // new failed
+      comparators[i]->store_value_by_template(tmpl->comparators[i], item->element_index(i));
+      item->null_value |= item->element_index(i)->null_value;
     }
   }
 }
 
-
 int cmp_item_row::cmp(Item *arg)
 {
-  arg->null_value= 0;
+  arg->null_value = 0;
   if (arg->cols() != n)
   {
     my_error(ER_OPERAND_COLUMNS, MYF(0), n);
     return 1;
   }
-  bool was_null= 0;
+  bool was_null = 0;
   arg->bring_value();
-  for (uint i=0; i < n; i++)
+  for (uint i = 0; i < n; i++)
   {
-    const int rc= comparators[i]->cmp(arg->element_index(i));
+    const int rc = comparators[i]->cmp(arg->element_index(i));
     switch (rc)
     {
-    case UNKNOWN:
-      was_null= true;
-      break;
-    case TRUE:
-      return TRUE;
-    case FALSE:
-      break;                                    // elements #i are equal
+      case UNKNOWN:
+        was_null = true;
+        break;
+      case TRUE:
+        return TRUE;
+      case FALSE:
+        break;  // elements #i are equal
     }
-    arg->null_value|= arg->element_index(i)->null_value;
+    arg->null_value |= arg->element_index(i)->null_value;
   }
   return was_null ? UNKNOWN : FALSE;
 }
 
-
 int cmp_item_row::compare(const cmp_item *c) const
 {
-  const cmp_item_row *l_cmp= down_cast<const cmp_item_row*>(c);
-  for (uint i=0; i < n; i++)
+  const cmp_item_row *l_cmp = down_cast< const cmp_item_row * >(c);
+  for (uint i = 0; i < n; i++)
   {
     int res;
-    if ((res= comparators[i]->compare(l_cmp->comparators[i])))
+    if ((res = comparators[i]->compare(l_cmp->comparators[i])))
       return res;
   }
   return 0;
 }
 
-
 void cmp_item_decimal::store_value(Item *item)
 {
-  my_decimal *val= item->val_decimal(&value);
+  my_decimal *val = item->val_decimal(&value);
   /* val may be zero if item is nnull */
   if (val && val != &value)
     my_decimal2decimal(val, &value);
   set_null_value(item->null_value);
 }
 
-
 int cmp_item_decimal::cmp(Item *arg)
 {
-  my_decimal tmp_buf, *tmp= arg->val_decimal(&tmp_buf);
-  return (m_null_value || arg->null_value) ?
-    UNKNOWN : (my_decimal_cmp(&value, tmp) != 0);
+  my_decimal tmp_buf, *tmp = arg->val_decimal(&tmp_buf);
+  return (m_null_value || arg->null_value) ? UNKNOWN : (my_decimal_cmp(&value, tmp) != 0);
 }
-
 
 int cmp_item_decimal::compare(const cmp_item *arg) const
 {
-  const cmp_item_decimal *l_cmp= down_cast<const cmp_item_decimal*>(arg);
+  const cmp_item_decimal *l_cmp = down_cast< const cmp_item_decimal * >(arg);
   return my_decimal_cmp(&value, &l_cmp->value);
 }
 
-
-cmp_item* cmp_item_decimal::make_same()
-{
-  return new cmp_item_decimal();
-}
-
+cmp_item *cmp_item_decimal::make_same() { return new cmp_item_decimal(); }
 
 cmp_item_datetime::cmp_item_datetime(const Item *warn_item_arg)
-  :warn_item(warn_item_arg), lval_cache(0),
-  has_date(warn_item_arg->is_temporal_with_date())
-{}
+    : warn_item(warn_item_arg), lval_cache(0), has_date(warn_item_arg->is_temporal_with_date())
+{
+}
 
 void cmp_item_datetime::store_value(Item *item)
 {
   bool is_null;
-  Item **tmp_item= lval_cache ? &lval_cache : &item;
+  Item **tmp_item = lval_cache ? &lval_cache : &item;
   if (has_date)
-    value= get_datetime_value(current_thd, &tmp_item, &lval_cache, warn_item,
-                              &is_null);
+    value = get_datetime_value(current_thd, &tmp_item, &lval_cache, warn_item, &is_null);
   else
-    value= get_time_value(current_thd, &tmp_item, &lval_cache, warn_item,
-                          &is_null);
+    value = get_time_value(current_thd, &tmp_item, &lval_cache, warn_item, &is_null);
   set_null_value(item->null_value);
 }
-
 
 int cmp_item_datetime::cmp(Item *arg)
 {
   bool is_null;
-  Item **tmp_item= &arg;
-  longlong value2= 0;
+  Item **tmp_item = &arg;
+  longlong value2 = 0;
   if (has_date)
-    value2= get_datetime_value(current_thd, &tmp_item, 0, warn_item, &is_null);
+    value2 = get_datetime_value(current_thd, &tmp_item, 0, warn_item, &is_null);
   else
-    value2= get_time_value(current_thd, &tmp_item, 0, warn_item, &is_null);
+    value2 = get_time_value(current_thd, &tmp_item, 0, warn_item, &is_null);
 
-  const bool rc= (value != value2);
+  const bool rc = (value != value2);
   return (m_null_value || arg->null_value) ? UNKNOWN : rc;
 }
 
-
 int cmp_item_datetime::compare(const cmp_item *ci) const
 {
-  const cmp_item_datetime *l_cmp= down_cast<const cmp_item_datetime*>(ci);
+  const cmp_item_datetime *l_cmp = down_cast< const cmp_item_datetime * >(ci);
   return (value < l_cmp->value) ? -1 : ((value == l_cmp->value) ? 0 : 1);
 }
 
+cmp_item *cmp_item_datetime::make_same() { return new cmp_item_datetime(warn_item); }
 
-cmp_item *cmp_item_datetime::make_same()
+float Item_func_in::get_single_col_filtering_effect(Item_ident *fieldref, table_map filter_for_table,
+                                                    const MY_BITMAP *fields_to_ignore, double rows_in_table)
 {
-  return new cmp_item_datetime(warn_item);
-}
-
-
-float 
-Item_func_in::get_single_col_filtering_effect(Item_ident *fieldref,
-                                              table_map filter_for_table,
-                                              const MY_BITMAP *fields_to_ignore,
-                                              double rows_in_table)
-{
-  /* 
+  /*
     Does not contribute to filtering effect if
     1) This field belongs to another table.
     2) Filter effect for this field has already been taken into
        account. 'fieldref' may be a field or a reference to a field
        (through a view, to an outer table etc)
   */
-  if ((fieldref->used_tables() != filter_for_table) ||             // 1)
+  if ((fieldref->used_tables() != filter_for_table) ||  // 1)
       bitmap_is_set(fields_to_ignore,
-                    static_cast<Item_field*>
-                    (fieldref->real_item())->field->field_index))  // 2)
+                    static_cast< Item_field * >(fieldref->real_item())->field->field_index))  // 2)
     return COND_FILTER_ALLPASS;
 
-  const Item_field *fld= (Item_field*)fieldref->real_item();
-  return fld->get_cond_filter_default_probability(rows_in_table,
-                                                  COND_FILTER_EQUALITY);
-
+  const Item_field *fld = (Item_field *)fieldref->real_item();
+  return fld->get_cond_filter_default_probability(rows_in_table, COND_FILTER_EQUALITY);
 }
 
-float Item_func_in::get_filtering_effect(table_map filter_for_table,
-                                         table_map read_tables,
-                                         const MY_BITMAP *fields_to_ignore,
-                                         double rows_in_table)
+float Item_func_in::get_filtering_effect(table_map filter_for_table, table_map read_tables,
+                                         const MY_BITMAP *fields_to_ignore, double rows_in_table)
 {
-
   assert((read_tables & filter_for_table) == 0);
   /*
     To contribute to filtering effect, the condition must refer to
@@ -5127,26 +4636,25 @@ float Item_func_in::get_filtering_effect(table_map filter_for_table,
     contains one. dep_subq_in_list is 'true' if the IN list contains a
     dependent subquery.
   */
-  if ((used_tables() & ~read_tables) != filter_for_table ||
-      dep_subq_in_list)
+  if ((used_tables() & ~read_tables) != filter_for_table || dep_subq_in_list)
     return COND_FILTER_ALLPASS;
 
   /*
     No matter how many row values are input the filtering effect
     shall not be higher than in_max_filter (currently 0.5).
   */
-  const float in_max_filter= 0.5f;
+  const float in_max_filter = 0.5f;
 
-  float filter= COND_FILTER_ALLPASS;
+  float filter = COND_FILTER_ALLPASS;
   if (args[0]->type() == Item::ROW_ITEM)
   {
     /*
-      This is a row value IN predicate: 
+      This is a row value IN predicate:
          "WHERE (col1, col2, ...) IN ((1,2,..), ...)"
       which can be rewritten to:
          "WHERE (col1=1 AND col2=2...) OR (col1=.. AND col2=...) OR ..."
 
-      The filtering effect is: 
+      The filtering effect is:
         filter= #row_values * filter(<single_row_value>)
 
       where filter(<single_row_value>) = filter(col1) * filter(col2) * ...
@@ -5155,10 +4663,10 @@ float Item_func_in::get_filtering_effect(table_map filter_for_table,
       row values since writing "WHERE (a,b) IN ((1,1), (1,1), ...)" is
       not expected input from a user.
     */
-    Item_row* lhs_row= static_cast<Item_row*>(args[0]);
+    Item_row *lhs_row = static_cast< Item_row * >(args[0]);
     // For all items in the left row
-    float single_rowval_filter= COND_FILTER_ALLPASS;
-    for (uint i= 0; i < lhs_row->cols(); i++)
+    float single_rowval_filter = COND_FILTER_ALLPASS;
+    for (uint i = 0; i < lhs_row->cols(); i++)
     {
       /*
         May contribute to condition filtering only if
@@ -5167,14 +4675,11 @@ float Item_func_in::get_filtering_effect(table_map filter_for_table,
       */
       if (lhs_row->element_index(i)->real_item()->type() == Item::FIELD_ITEM)
       {
-        Item_ident *fieldref= 
-          static_cast<Item_ident*>(lhs_row->element_index(i));
+        Item_ident *fieldref = static_cast< Item_ident * >(lhs_row->element_index(i));
 
-        const float tmp_filt= get_single_col_filtering_effect(fieldref,
-                                                              filter_for_table,
-                                                              fields_to_ignore,
-                                                              rows_in_table);
-        single_rowval_filter*= tmp_filt;
+        const float tmp_filt =
+            get_single_col_filtering_effect(fieldref, filter_for_table, fields_to_ignore, rows_in_table);
+        single_rowval_filter *= tmp_filt;
       }
     }
 
@@ -5187,7 +4692,7 @@ float Item_func_in::get_filtering_effect(table_map filter_for_table,
       arg_count includes the left hand side item
     */
     if (single_rowval_filter != COND_FILTER_ALLPASS)
-      filter= min((arg_count - 1) * single_rowval_filter, in_max_filter);
+      filter = min((arg_count - 1) * single_rowval_filter, in_max_filter);
   }
   else if (args[0]->real_item()->type() == Item::FIELD_ITEM)
   {
@@ -5203,12 +4708,9 @@ float Item_func_in::get_filtering_effect(table_map filter_for_table,
       hand side are identical.
     */
     assert(args[0]->type() == FIELD_ITEM || args[0]->type() == REF_ITEM);
-    Item_ident *fieldref= static_cast<Item_ident*>(args[0]);
+    Item_ident *fieldref = static_cast< Item_ident * >(args[0]);
 
-    const float tmp_filt= get_single_col_filtering_effect(fieldref,
-                                                          filter_for_table,
-                                                          fields_to_ignore,
-                                                          rows_in_table);
+    const float tmp_filt = get_single_col_filtering_effect(fieldref, filter_for_table, fields_to_ignore, rows_in_table);
     /*
       If tmp_filt == COND_FILTER_ALLPASS, the filtering effect of this
       field should be ignored. If not, selectivity should not be
@@ -5218,11 +4720,11 @@ float Item_func_in::get_filtering_effect(table_map filter_for_table,
       arg_count includes the left hand side item
     */
     if (tmp_filt != COND_FILTER_ALLPASS)
-      filter= min((arg_count - 1) * tmp_filt, in_max_filter);
+      filter = min((arg_count - 1) * tmp_filt, in_max_filter);
   }
 
   if (negated && filter != COND_FILTER_ALLPASS)
-    filter= 1.0f - filter;
+    filter = 1.0f - filter;
 
   assert(filter >= 0.0f && filter <= 1.0f);
   return filter;
@@ -5230,15 +4732,14 @@ float Item_func_in::get_filtering_effect(table_map filter_for_table,
 
 bool Item_func_in::list_contains_null()
 {
-  Item **arg,**arg_end;
-  for (arg= args + 1, arg_end= args+arg_count; arg != arg_end ; arg++)
+  Item **arg, **arg_end;
+  for (arg = args + 1, arg_end = args + arg_count; arg != arg_end; arg++)
   {
     if ((*arg)->null_inside())
       return 1;
   }
   return 0;
 }
-
 
 /**
   Perform context analysis of an IN item tree.
@@ -5278,18 +4779,15 @@ bool Item_func_in::fix_fields(THD *thd, Item **ref)
     return false;
 
   // not_null_tables_cache = union(T1(e),intersection(T1(ei)))
-  not_null_tables_cache= ~(table_map) 0;
-  Item **arg_end= args + arg_count;
-  for (Item **arg= args + 1; arg != arg_end; arg++)
-    not_null_tables_cache&= (*arg)->not_null_tables();
-  not_null_tables_cache|= (*args)->not_null_tables();
+  not_null_tables_cache = ~(table_map)0;
+  Item **arg_end = args + arg_count;
+  for (Item **arg = args + 1; arg != arg_end; arg++) not_null_tables_cache &= (*arg)->not_null_tables();
+  not_null_tables_cache |= (*args)->not_null_tables();
 
   return false;
 }
 
-
-void Item_func_in::fix_after_pullout(st_select_lex *parent_select,
-                                     st_select_lex *removed_select)
+void Item_func_in::fix_after_pullout(st_select_lex *parent_select, st_select_lex *removed_select)
 {
   Item_func_opt_neg::fix_after_pullout(parent_select, removed_select);
 
@@ -5298,54 +4796,49 @@ void Item_func_in::fix_after_pullout(st_select_lex *parent_select,
     return;
 
   // not_null_tables_cache = union(T1(e),intersection(T1(ei)))
-  not_null_tables_cache= ~(table_map) 0;
-  Item **arg_end= args + arg_count;
-  for (Item **arg= args + 1; arg != arg_end; arg++)
-    not_null_tables_cache&= (*arg)->not_null_tables();
-  not_null_tables_cache|= (*args)->not_null_tables();
+  not_null_tables_cache = ~(table_map)0;
+  Item **arg_end = args + arg_count;
+  for (Item **arg = args + 1; arg != arg_end; arg++) not_null_tables_cache &= (*arg)->not_null_tables();
+  not_null_tables_cache |= (*args)->not_null_tables();
 }
 
-
-static int srtcmp_in(CHARSET_INFO *cs, const String *x,const String *y)
+static int srtcmp_in(CHARSET_INFO *cs, const String *x, const String *y)
 {
-  return cs->coll->strnncollsp(cs,
-                               (uchar *) x->ptr(),x->length(),
-                               (uchar *) y->ptr(),y->length(), 0);
+  return cs->coll->strnncollsp(cs, (uchar *)x->ptr(), x->length(), (uchar *)y->ptr(), y->length(), 0);
 }
-
 
 void Item_func_in::fix_length_and_dec()
 {
   Item **arg, **arg_end;
-  bool const_itm= 1;
-  THD *thd= current_thd;
-  bool datetime_found= FALSE;
+  bool const_itm = 1;
+  THD *thd = current_thd;
+  bool datetime_found = FALSE;
   /* TRUE <=> arguments values will be compared as DATETIMEs. */
-  bool compare_as_datetime= FALSE;
-  Item *date_arg= 0;
-  uint found_types= 0;
-  uint type_cnt= 0, i;
-  Item_result cmp_type= STRING_RESULT;
-  left_result_type= args[0]->result_type();
-  if (!(found_types= collect_cmp_types(args, arg_count, true)))
+  bool compare_as_datetime = FALSE;
+  Item *date_arg = 0;
+  uint found_types = 0;
+  uint type_cnt = 0, i;
+  Item_result cmp_type = STRING_RESULT;
+  left_result_type = args[0]->result_type();
+  if (!(found_types = collect_cmp_types(args, arg_count, true)))
     return;
-  
-  for (arg= args + 1, arg_end= args + arg_count; arg != arg_end ; arg++)
+
+  for (arg = args + 1, arg_end = args + arg_count; arg != arg_end; arg++)
   {
     if (!arg[0]->const_item())
     {
-      const_itm= 0;
+      const_itm = 0;
       if (arg[0]->real_item()->type() == Item::SUBSELECT_ITEM)
-        dep_subq_in_list= true;
+        dep_subq_in_list = true;
       break;
     }
   }
-  for (i= 0; i <= (uint)DECIMAL_RESULT; i++)
+  for (i = 0; i <= (uint)DECIMAL_RESULT; i++)
   {
     if (found_types & (1U << i))
     {
       (type_cnt)++;
-      cmp_type= (Item_result) i;
+      cmp_type = (Item_result)i;
     }
   }
 
@@ -5354,9 +4847,8 @@ void Item_func_in::fix_length_and_dec()
      1. All types are similar, and
      2. All expressions in <in value list> are const
   */
-  bool bisection_possible=
-    type_cnt == 1 &&                                   // 1
-    const_itm;                                         // 2
+  bool bisection_possible = type_cnt == 1 &&  // 1
+                            const_itm;        // 2
   if (bisection_possible)
   {
     /*
@@ -5369,10 +4861,9 @@ void Item_func_in::fix_length_and_dec()
         4. Neither left expression nor <in value list> contain any NULL value
       */
 
-    if (cmp_type == ROW_RESULT &&
-        !((is_top_level_item() && !negated) ||              // 3
-          (!list_contains_null() && !args[0]->maybe_null))) // 4
-      bisection_possible= false;
+    if (cmp_type == ROW_RESULT && !((is_top_level_item() && !negated) ||               // 3
+                                    (!list_contains_null() && !args[0]->maybe_null)))  // 4
+      bisection_possible = false;
   }
 
   /*
@@ -5382,13 +4873,11 @@ void Item_func_in::fix_length_and_dec()
     to x = y, though, and then the JSON comparator will be used if one
     of the arguments is JSON.)
   */
-  unsupported_json_comparison(arg_count, args,
-                              "comparison of JSON in the IN operator");
+  unsupported_json_comparison(arg_count, args, "comparison of JSON in the IN operator");
 
   if (type_cnt == 1)
   {
-    if (cmp_type == STRING_RESULT && 
-        agg_arg_charsets_for_comparison(cmp_collation, args, arg_count))
+    if (cmp_type == STRING_RESULT && agg_arg_charsets_for_comparison(cmp_collation, args, arg_count))
       return;
     /*
       When comparing rows create the row comparator object beforehand to ease
@@ -5396,54 +4885,53 @@ void Item_func_in::fix_length_and_dec()
     */
     if (cmp_type == ROW_RESULT)
     {
-      cmp_item_row *cmp= 0;
+      cmp_item_row *cmp = 0;
       if (bisection_possible)
       {
-        array= new in_row(thd, arg_count-1, 0);
-        cmp= &((in_row*)array)->tmp;
+        array = new in_row(thd, arg_count - 1, 0);
+        cmp = &((in_row *)array)->tmp;
       }
       else
       {
-        if (!(cmp= new cmp_item_row))
+        if (!(cmp = new cmp_item_row))
           return;
-        cmp_items[ROW_RESULT]= cmp;
+        cmp_items[ROW_RESULT] = cmp;
       }
-      cmp->n= args[0]->cols();
+      cmp->n = args[0]->cols();
       cmp->alloc_comparators(args[0]);
     }
     /* All DATE/DATETIME fields/functions has the STRING result type. */
     if (cmp_type == STRING_RESULT || cmp_type == ROW_RESULT)
     {
-      uint col, cols= args[0]->cols();
+      uint col, cols = args[0]->cols();
 
-      for (col= 0; col < cols; col++)
+      for (col = 0; col < cols; col++)
       {
-        bool skip_column= FALSE;
+        bool skip_column = FALSE;
         /*
           Check that all items to be compared has the STRING result type and at
           least one of them is a DATE/DATETIME item.
         */
-        for (arg= args, arg_end= args + arg_count; arg != arg_end ; arg++)
+        for (arg = args, arg_end = args + arg_count; arg != arg_end; arg++)
         {
-          Item *itm= ((cmp_type == STRING_RESULT) ? arg[0] :
-                      arg[0]->element_index(col));
+          Item *itm = ((cmp_type == STRING_RESULT) ? arg[0] : arg[0]->element_index(col));
           if (itm->result_type() != STRING_RESULT)
           {
-            skip_column= TRUE;
+            skip_column = TRUE;
             break;
           }
           else if (itm->is_temporal_with_date())
           {
-            datetime_found= TRUE;
+            datetime_found = TRUE;
             /*
               Internally all DATE/DATETIME values are converted to the DATETIME
               type. So try to find a DATETIME item to issue correct warnings.
             */
             if (!date_arg)
-              date_arg= itm;
+              date_arg = itm;
             else if (itm->field_type() == MYSQL_TYPE_DATETIME)
             {
-              date_arg= itm;
+              date_arg = itm;
               /* All arguments are already checked to have the STRING result. */
               if (cmp_type == STRING_RESULT)
                 break;
@@ -5456,18 +4944,18 @@ void Item_func_in::fix_length_and_dec()
         {
           if (cmp_type == ROW_RESULT)
           {
-            cmp_item **cmp= 0;
+            cmp_item **cmp = 0;
             if (array)
-              cmp= ((in_row*)array)->tmp.comparators + col;
+              cmp = ((in_row *)array)->tmp.comparators + col;
             else
-              cmp= ((cmp_item_row*)cmp_items[ROW_RESULT])->comparators + col;
-            *cmp= new cmp_item_datetime(date_arg);
+              cmp = ((cmp_item_row *)cmp_items[ROW_RESULT])->comparators + col;
+            *cmp = new cmp_item_datetime(date_arg);
             /* Reset variables for the next column. */
-            date_arg= 0;
-            datetime_found= FALSE;
+            date_arg = 0;
+            datetime_found = FALSE;
           }
           else
-            compare_as_datetime= TRUE;
+            compare_as_datetime = TRUE;
         }
       }
     }
@@ -5476,84 +4964,81 @@ void Item_func_in::fix_length_and_dec()
   if (bisection_possible)
   {
     if (compare_as_datetime)
-      array= new in_datetime(thd, date_arg, arg_count - 1);
+      array = new in_datetime(thd, date_arg, arg_count - 1);
     else
     {
       /*
         IN must compare INT columns and constants as int values (the same
         way as equality does).
-        So we must check here if the column on the left and all the constant 
-        values on the right can be compared as integers and adjust the 
+        So we must check here if the column on the left and all the constant
+        values on the right can be compared as integers and adjust the
         comparison type accordingly.
       */
-      bool datetime_as_longlong= false;
-      if (args[0]->real_item()->type() == FIELD_ITEM &&
-          thd->lex->sql_command != SQLCOM_CREATE_VIEW &&
-          thd->lex->sql_command != SQLCOM_SHOW_CREATE &&
-          cmp_type != INT_RESULT)
+      bool datetime_as_longlong = false;
+      if (args[0]->real_item()->type() == FIELD_ITEM && thd->lex->sql_command != SQLCOM_CREATE_VIEW &&
+          thd->lex->sql_command != SQLCOM_SHOW_CREATE && cmp_type != INT_RESULT)
       {
-        Item_field *field_item= (Item_field*) (args[0]->real_item());
+        Item_field *field_item = (Item_field *)(args[0]->real_item());
         if (field_item->field->can_be_compared_as_longlong())
         {
-          bool all_converted= true;
-          for (arg=args + 1, arg_end= args + arg_count; arg != arg_end ; arg++)
+          bool all_converted = true;
+          for (arg = args + 1, arg_end = args + arg_count; arg != arg_end; arg++)
           {
-            if (!convert_constant_item (thd, field_item, &arg[0]))
-              all_converted= false;
+            if (!convert_constant_item(thd, field_item, &arg[0]))
+              all_converted = false;
           }
           if (all_converted)
           {
-            cmp_type= INT_RESULT;
-            datetime_as_longlong= field_item->is_temporal();
+            cmp_type = INT_RESULT;
+            datetime_as_longlong = field_item->is_temporal();
           }
         }
       }
-      switch (cmp_type) {
-      case STRING_RESULT:
-        array=new in_string(thd, arg_count-1, (qsort2_cmp) srtcmp_in, 
-                            cmp_collation.collation);
-        break;
-      case INT_RESULT:
-        array= datetime_as_longlong ?
-               args[0]->field_type() == MYSQL_TYPE_TIME ?
-          (in_vector*) new in_time_as_longlong(thd, arg_count - 1) :
-          (in_vector*) new in_datetime_as_longlong(thd, arg_count - 1) :
-          (in_vector*) new in_longlong(thd, arg_count - 1);
-        break;
-      case REAL_RESULT:
-        array= new in_double(thd, arg_count-1);
-        break;
-      case ROW_RESULT:
-        /*
-          The row comparator was created at the beginning.
-        */
-        break;
-      case DECIMAL_RESULT:
-        array= new in_decimal(thd, arg_count - 1);
-        break;
-      default:
-        assert(0);
-        return;
+      switch (cmp_type)
+      {
+        case STRING_RESULT:
+          array = new in_string(thd, arg_count - 1, (qsort2_cmp)srtcmp_in, cmp_collation.collation);
+          break;
+        case INT_RESULT:
+          array = datetime_as_longlong ? args[0]->field_type() == MYSQL_TYPE_TIME
+                                             ? (in_vector *)new in_time_as_longlong(thd, arg_count - 1)
+                                             : (in_vector *)new in_datetime_as_longlong(thd, arg_count - 1)
+                                       : (in_vector *)new in_longlong(thd, arg_count - 1);
+          break;
+        case REAL_RESULT:
+          array = new in_double(thd, arg_count - 1);
+          break;
+        case ROW_RESULT:
+          /*
+            The row comparator was created at the beginning.
+          */
+          break;
+        case DECIMAL_RESULT:
+          array = new in_decimal(thd, arg_count - 1);
+          break;
+        default:
+          assert(0);
+          return;
       }
     }
-    if (!array || thd->is_fatal_error)		// OOM
+    if (!array || thd->is_fatal_error)  // OOM
       return;
-    uint j=0;
-    for (uint i=1 ; i < arg_count ; i++)
+    uint j = 0;
+    for (uint i = 1; i < arg_count; i++)
     {
-      array->set(j,args[i]);
+      array->set(j, args[i]);
       if (!args[i]->null_value)
-        j++; // include this cell in the array.
+        j++;  // include this cell in the array.
       else
       {
         /*
           We don't put NULL values in array, to avoid erronous matches in
           bisection.
         */
-        have_null= 1;
+        have_null = 1;
       }
     }
-    array->used_count= j;
+    array->used_count = j;
     assert(array->used_count <= array->count);
     if (array->used_count < array->count)
       array->shrink_array(j);
@@ -5564,39 +5049,35 @@ void Item_func_in::fix_length_and_dec()
   else
   {
     if (compare_as_datetime)
-      cmp_items[STRING_RESULT]= new cmp_item_datetime(date_arg);
+      cmp_items[STRING_RESULT] = new cmp_item_datetime(date_arg);
     else
     {
-      for (i= 0; i <= (uint) DECIMAL_RESULT; i++)
+      for (i = 0; i <= (uint)DECIMAL_RESULT; i++)
       {
         if (found_types & (1U << i) && !cmp_items[i])
         {
-          if ((Item_result)i == STRING_RESULT &&
-              agg_arg_charsets_for_comparison(cmp_collation, args, arg_count))
+          if ((Item_result)i == STRING_RESULT && agg_arg_charsets_for_comparison(cmp_collation, args, arg_count))
             return;
-          if (!cmp_items[i] && !(cmp_items[i]=
-              cmp_item::get_comparator((Item_result)i, args[0],
-                                       cmp_collation.collation)))
+          if (!cmp_items[i] &&
+              !(cmp_items[i] = cmp_item::get_comparator((Item_result)i, args[0], cmp_collation.collation)))
             return;
         }
       }
     }
   }
-  Opt_trace_object(&thd->opt_trace).add("IN_uses_bisection",
-                                        bisection_possible);
+  Opt_trace_object(&thd->opt_trace).add("IN_uses_bisection", bisection_possible);
   /*
     Set cmp_context of all arguments. This prevents
     Item_field::equal_fields_propagator() from transforming a zerofill integer
     argument into a string constant. Such a change would require rebuilding
     cmp_itmes.
    */
-  for (arg= args + 1, arg_end= args + arg_count; arg != arg_end ; arg++)
+  for (arg = args + 1, arg_end = args + arg_count; arg != arg_end; arg++)
   {
-    arg[0]->cmp_context= item_cmp_type(left_result_type, arg[0]->result_type());
+    arg[0]->cmp_context = item_cmp_type(left_result_type, arg[0]->result_type());
   }
-  max_length= 1;
+  max_length = 1;
 }
-
 
 void Item_func_in::print(String *str, enum_query_type query_type)
 {
@@ -5608,7 +5089,6 @@ void Item_func_in::print(String *str, enum_query_type query_type)
   print_args(str, 1, query_type);
   str->append(STRING_WITH_LEN("))"));
 }
-
 
 /*
   Evaluate the function and return its value.
@@ -5639,10 +5119,10 @@ longlong Item_func_in::val_int()
 {
   cmp_item *in_item;
   assert(fixed == 1);
-  uint value_added_map= 0;
+  uint value_added_map = 0;
   if (array)
   {
-    bool tmp=array->find_item(args[0]);
+    bool tmp = array->find_item(args[0]);
     /*
       NULL on left -> UNKNOWN.
       Found no match, and NULL on right -> UNKNOWN.
@@ -5650,39 +5130,38 @@ longlong Item_func_in::val_int()
       array.
       See also the 'bisection_possible' variable in fix_length_and_dec().
     */
-    null_value=args[0]->null_value || (!tmp && have_null);
-    return (longlong) (!null_value && tmp != negated);
+    null_value = args[0]->null_value || (!tmp && have_null);
+    return (longlong)(!null_value && tmp != negated);
   }
 
-  if ((null_value= args[0]->real_item()->type() == NULL_ITEM))
+  if ((null_value = args[0]->real_item()->type() == NULL_ITEM))
     return 0;
 
-  have_null= 0;
-  for (uint i= 1 ; i < arg_count ; i++)
+  have_null = 0;
+  for (uint i = 1; i < arg_count; i++)
   {
     if (args[i]->real_item()->type() == NULL_ITEM)
     {
-      have_null= TRUE;
+      have_null = TRUE;
       continue;
     }
-    Item_result cmp_type= item_cmp_type(left_result_type, args[i]->result_type());
-    in_item= cmp_items[(uint)cmp_type];
+    Item_result cmp_type = item_cmp_type(left_result_type, args[i]->result_type());
+    in_item = cmp_items[(uint)cmp_type];
     assert(in_item);
     if (!(value_added_map & (1U << (uint)cmp_type)))
     {
       in_item->store_value(args[0]);
-      value_added_map|= 1U << (uint)cmp_type;
+      value_added_map |= 1U << (uint)cmp_type;
     }
-    const int rc= in_item->cmp(args[i]);
+    const int rc = in_item->cmp(args[i]);
     if (rc == FALSE)
-      return (longlong) (!negated);
-    have_null|= (rc == UNKNOWN);
+      return (longlong)(!negated);
+    have_null |= (rc == UNKNOWN);
   }
 
-  null_value= have_null;
-  return (longlong) (!null_value && negated);
+  null_value = have_null;
+  return (longlong)(!null_value && negated);
 }
-
 
 void Item::check_deprecated_bin_op(const Item *a, const Item *b)
 {
@@ -5696,18 +5175,12 @@ void Item::check_deprecated_bin_op(const Item *a, const Item *b)
      2. If there are two arguments, both should be [VAR]BINARY (3) and at least
      one of them should be different from the hex/bit/NULL literal (4)
   */
-  if (a->result_type() == STRING_RESULT &&
-      a->collation.collation == &my_charset_bin &&         // (1), (3)
-      (!b ||
-       (b->result_type() == STRING_RESULT &&
-        b->collation.collation == &my_charset_bin)) &&     // (3)
-      ((a->type() != Item::VARBIN_ITEM &&
-        a->type() != Item::NULL_ITEM) ||                   // (2), (4)
-        (b && b->type() != Item::VARBIN_ITEM &&
-          b->type() != Item::NULL_ITEM)))                  // (4)
+  if (a->result_type() == STRING_RESULT && a->collation.collation == &my_charset_bin &&            // (1), (3)
+      (!b || (b->result_type() == STRING_RESULT && b->collation.collation == &my_charset_bin)) &&  // (3)
+      ((a->type() != Item::VARBIN_ITEM && a->type() != Item::NULL_ITEM) ||                         // (2), (4)
+       (b && b->type() != Item::VARBIN_ITEM && b->type() != Item::NULL_ITEM)))                     // (4)
   {
-    push_warning_printf(current_thd, Sql_condition::SL_WARNING,
-                        ER_WARN_DEPRECATED_SYNTAX,
+    push_warning_printf(current_thd, Sql_condition::SL_WARNING, ER_WARN_DEPRECATED_SYNTAX,
                         "Bitwise operations on BINARY will change behavior"
                         " in a future version, check the 'Bit functions'"
                         " section in the manual.");
@@ -5717,45 +5190,42 @@ void Item::check_deprecated_bin_op(const Item *a, const Item *b)
 longlong Item_func_bit_or::val_int()
 {
   assert(fixed == 1);
-  ulonglong arg1= (ulonglong) args[0]->val_int();
+  ulonglong arg1 = (ulonglong)args[0]->val_int();
   if (args[0]->null_value)
   {
-    null_value=1; /* purecov: inspected */
-    return 0; /* purecov: inspected */
+    null_value = 1; /* purecov: inspected */
+    return 0;       /* purecov: inspected */
   }
-  ulonglong arg2= (ulonglong) args[1]->val_int();
+  ulonglong arg2 = (ulonglong)args[1]->val_int();
   if (args[1]->null_value)
   {
-    null_value=1;
+    null_value = 1;
     return 0;
   }
-  null_value=0;
-  return (longlong) (arg1 | arg2);
+  null_value = 0;
+  return (longlong)(arg1 | arg2);
 }
-
 
 longlong Item_func_bit_and::val_int()
 {
   assert(fixed == 1);
-  ulonglong arg1= (ulonglong) args[0]->val_int();
+  ulonglong arg1 = (ulonglong)args[0]->val_int();
   if (args[0]->null_value)
   {
-    null_value=1; /* purecov: inspected */
-    return 0; /* purecov: inspected */
+    null_value = 1; /* purecov: inspected */
+    return 0;       /* purecov: inspected */
   }
-  ulonglong arg2= (ulonglong) args[1]->val_int();
+  ulonglong arg2 = (ulonglong)args[1]->val_int();
   if (args[1]->null_value)
   {
-    null_value=1; /* purecov: inspected */
-    return 0; /* purecov: inspected */
+    null_value = 1; /* purecov: inspected */
+    return 0;       /* purecov: inspected */
   }
-  null_value=0;
-  return (longlong) (arg1 & arg2);
+  null_value = 0;
+  return (longlong)(arg1 & arg2);
 }
 
-Item_cond::Item_cond(THD *thd, Item_cond *item)
-  :Item_bool_func(thd, item),
-   abort_on_null(item->abort_on_null)
+Item_cond::Item_cond(THD *thd, Item_cond *item) : Item_bool_func(thd, item), abort_on_null(item->abort_on_null)
 {
   /*
     item->list will be copied by copy_andor_arguments() call
@@ -5778,9 +5248,9 @@ bool Item_cond::itemize(Parse_context *pc, Item **res)
   if (super::itemize(pc, res))
     return true;
 
-  List_iterator<Item> li(list);
+  List_iterator< Item > li(list);
   Item *item;
-  while ((item= li++))
+  while ((item = li++))
   {
     if (item->itemize(pc, &item))
       return true;
@@ -5789,43 +5259,39 @@ bool Item_cond::itemize(Parse_context *pc, Item **res)
   return false;
 }
 
-
 void Item_cond::copy_andor_arguments(THD *thd, Item_cond *item)
 {
-  List_iterator_fast<Item> li(item->list);
-  while (Item *it= li++)
+  List_iterator_fast< Item > li(item->list);
+  while (Item *it = li++)
   {
-    assert(it->real_item()); // Sanity check (no dangling 'ref')
+    assert(it->real_item());  // Sanity check (no dangling 'ref')
     list.push_back(it->copy_andor_structure(thd));
   }
 }
 
-
-bool
-Item_cond::fix_fields(THD *thd, Item **ref)
+bool Item_cond::fix_fields(THD *thd, Item **ref)
 {
   assert(fixed == 0);
-  List_iterator<Item> li(list);
+  List_iterator< Item > li(list);
   Item *item;
 
   /*
     Semi-join flattening should only be performed for predicates on
     the AND-top-level. Disable it if this condition is not an AND.
   */
-  Disable_semijoin_flattening DSF(thd->lex->current_select(),
-                                  functype() != COND_AND_FUNC);
+  Disable_semijoin_flattening DSF(thd->lex->current_select(), functype() != COND_AND_FUNC);
 
-  uchar buff[sizeof(char*)];			// Max local vars in function
-  used_tables_cache= 0;
-  const_item_cache= true;
+  uchar buff[sizeof(char *)];  // Max local vars in function
+  used_tables_cache = 0;
+  const_item_cache = true;
 
   if (functype() == COND_AND_FUNC && abort_on_null)
-    not_null_tables_cache= 0;
+    not_null_tables_cache = 0;
   else
-    not_null_tables_cache= ~(table_map) 0;
+    not_null_tables_cache = ~(table_map)0;
 
   if (check_stack_overrun(thd, STACK_MIN_SIZE, buff))
-    return TRUE;				// Fatal error flag is set!
+    return TRUE;  // Fatal error flag is set!
   /*
     The following optimization reduces the depth of an AND-OR tree.
     E.g. a WHERE clause like
@@ -5841,69 +5307,63 @@ Item_cond::fix_fields(THD *thd, Item **ref)
     friendly as it doesn't allocate any memory and its effects are durable
     (i.e. do not depend on PS/SP arguments).
   */
-  while ((item=li++))
+  while ((item = li++))
   {
-    while (item->type() == Item::COND_ITEM &&
-	   ((Item_cond*) item)->functype() == functype() &&
-           !((Item_cond*) item)->list.is_empty())
-    {						// Identical function
-      li.replace(((Item_cond*) item)->list);
-      ((Item_cond*) item)->list.empty();
-      item= *li.ref();				// new current item
+    while (item->type() == Item::COND_ITEM && ((Item_cond *)item)->functype() == functype() &&
+           !((Item_cond *)item)->list.is_empty())
+    {  // Identical function
+      li.replace(((Item_cond *)item)->list);
+      ((Item_cond *)item)->list.empty();
+      item = *li.ref();  // new current item
     }
     if (abort_on_null)
       item->top_level_item();
 
     // item can be substituted in fix_fields
-    if ((!item->fixed &&
-	 item->fix_fields(thd, li.ref())) ||
-	(item= *li.ref())->check_cols(1))
+    if ((!item->fixed && item->fix_fields(thd, li.ref())) || (item = *li.ref())->check_cols(1))
       return TRUE; /* purecov: inspected */
-    used_tables_cache|= item->used_tables();
-    const_item_cache&=  item->const_item();
+    used_tables_cache |= item->used_tables();
+    const_item_cache &= item->const_item();
 
     if (functype() == COND_AND_FUNC && abort_on_null)
-      not_null_tables_cache|= item->not_null_tables();
+      not_null_tables_cache |= item->not_null_tables();
     else
-      not_null_tables_cache&= item->not_null_tables();
-    with_sum_func|=  item->with_sum_func;
-    with_subselect|= item->has_subquery();
-    with_stored_program|= item->has_stored_program();
-    maybe_null|= item->maybe_null;
+      not_null_tables_cache &= item->not_null_tables();
+    with_sum_func |= item->with_sum_func;
+    with_subselect |= item->has_subquery();
+    with_stored_program |= item->has_stored_program();
+    maybe_null |= item->maybe_null;
   }
-  thd->lex->current_select()->cond_count+= list.elements;
+  thd->lex->current_select()->cond_count += list.elements;
   fix_length_and_dec();
-  fixed= true;
+  fixed = true;
   return false;
 }
 
-
-void Item_cond::fix_after_pullout(st_select_lex *parent_select,
-                                  st_select_lex *removed_select)
+void Item_cond::fix_after_pullout(st_select_lex *parent_select, st_select_lex *removed_select)
 {
-  List_iterator<Item> li(list);
+  List_iterator< Item > li(list);
   Item *item;
 
-  used_tables_cache= get_initial_pseudo_tables();
-  const_item_cache= true;
+  used_tables_cache = get_initial_pseudo_tables();
+  const_item_cache = true;
 
   if (functype() == COND_AND_FUNC && abort_on_null)
-    not_null_tables_cache= 0;
+    not_null_tables_cache = 0;
   else
-    not_null_tables_cache= ~(table_map) 0;
+    not_null_tables_cache = ~(table_map)0;
 
-  while ((item=li++))
+  while ((item = li++))
   {
     item->fix_after_pullout(parent_select, removed_select);
-    used_tables_cache|= item->used_tables();
-    const_item_cache&= item->const_item();
+    used_tables_cache |= item->used_tables();
+    const_item_cache &= item->const_item();
     if (functype() == COND_AND_FUNC && abort_on_null)
-      not_null_tables_cache|= item->not_null_tables();
+      not_null_tables_cache |= item->not_null_tables();
     else
-      not_null_tables_cache&= item->not_null_tables();
+      not_null_tables_cache &= item->not_null_tables();
   }
 }
-
 
 bool Item_cond::eq(const Item *item, bool binary_cmp) const
 {
@@ -5911,31 +5371,29 @@ bool Item_cond::eq(const Item *item, bool binary_cmp) const
     return true;
   if (item->type() != COND_ITEM)
     return false;
-  const Item_cond *item_cond= down_cast<const Item_cond *>(item);
-  if (functype() != item_cond->functype() ||
-      list.elements != item_cond->list.elements ||
+  const Item_cond *item_cond = down_cast< const Item_cond * >(item);
+  if (functype() != item_cond->functype() || list.elements != item_cond->list.elements ||
       func_name() != item_cond->func_name())
     return false;
   // Item_cond never uses "args". Inspect "list" instead.
   assert(arg_count == 0 && item_cond->arg_count == 0);
-  List_iterator_fast<Item> it1(const_cast<Item_cond *>(this)->list);
-  List_iterator_fast<Item> it2(const_cast<Item_cond *>(item_cond)->list);
+  List_iterator_fast< Item > it1(const_cast< Item_cond * >(this)->list);
+  List_iterator_fast< Item > it2(const_cast< Item_cond * >(item_cond)->list);
   Item *i;
-  while ((i= it1++))
+  while ((i = it1++))
     if (!i->eq(it2++, binary_cmp))
       return false;
   return true;
 }
-
 
 bool Item_cond::walk(Item_processor processor, enum_walk walk, uchar *arg)
 {
   if ((walk & WALK_PREFIX) && (this->*processor)(arg))
     return true;
 
-  List_iterator_fast<Item> li(list);
+  List_iterator_fast< Item > li(list);
   Item *item;
-  while ((item= li++))
+  while ((item = li++))
   {
     if (item->walk(processor, walk, arg))
       return true;
@@ -5943,34 +5401,33 @@ bool Item_cond::walk(Item_processor processor, enum_walk walk, uchar *arg)
   return (walk & WALK_POSTFIX) && (this->*processor)(arg);
 }
 
-
 /**
   Transform an Item_cond object with a transformer callback function.
-  
+
     The function recursively applies the transform method to each
      member item of the condition list.
     If the call of the method for a member item returns a new item
     the old item is substituted for a new one.
     After this the transformer is applied to the root node
-    of the Item_cond object. 
-     
+    of the Item_cond object.
+
   @param transformer   the transformer callback function to be applied to
                        the nodes of the tree of the object
   @param arg           parameter to be passed to the transformer
 
   @return
-    Item returned as the result of transformation of the root node 
+    Item returned as the result of transformation of the root node
 */
 
 Item *Item_cond::transform(Item_transformer transformer, uchar *arg)
 {
   assert(!current_thd->stmt_arena->is_stmt_prepare());
 
-  List_iterator<Item> li(list);
+  List_iterator< Item > li(list);
   Item *item;
-  while ((item= li++))
+  while ((item = li++))
   {
-    Item *new_item= item->transform(transformer, arg);
+    Item *new_item = item->transform(transformer, arg);
     if (!new_item)
       return 0;
 
@@ -5986,11 +5443,10 @@ Item *Item_cond::transform(Item_transformer transformer, uchar *arg)
   return Item_func::transform(transformer, arg);
 }
 
-
 /**
   Compile Item_cond object with a processor and a transformer
   callback functions.
-  
+
     First the function applies the analyzer to the root node of
     the Item_func object. Then if the analyzer succeeeds (returns TRUE)
     the function recursively applies the compile method to member
@@ -5998,8 +5454,8 @@ Item *Item_cond::transform(Item_transformer transformer, uchar *arg)
     If the call of the method for a member item returns a new item
     the old item is substituted for a new one.
     After this the transformer is applied to the root node
-    of the Item_cond object. 
-     
+    of the Item_cond object.
+
   @param analyzer      the analyzer callback function to be applied to the
                        nodes of the tree of the object
   @param[in,out] arg_p parameter to be passed to the analyzer
@@ -6012,22 +5468,21 @@ Item *Item_cond::transform(Item_transformer transformer, uchar *arg)
                        transformation caused an error.
 */
 
-Item *Item_cond::compile(Item_analyzer analyzer, uchar **arg_p,
-                         Item_transformer transformer, uchar *arg_t)
+Item *Item_cond::compile(Item_analyzer analyzer, uchar **arg_p, Item_transformer transformer, uchar *arg_t)
 {
   if (!(this->*analyzer)(arg_p))
     return this;
-  
-  List_iterator<Item> li(list);
+
+  List_iterator< Item > li(list);
   Item *item;
-  while ((item= li++))
+  while ((item = li++))
   {
-    /* 
+    /*
       The same parameter value of arg_p must be passed
       to analyze any argument of the condition formula.
-    */   
-    uchar *arg_v= *arg_p;
-    Item *new_item= item->compile(analyzer, &arg_v, transformer, arg_t);
+    */
+    uchar *arg_v = *arg_p;
+    Item *new_item = item->compile(analyzer, &arg_v, transformer, arg_t);
     if (new_item == NULL)
       return NULL;
     if (new_item != item)
@@ -6038,27 +5493,27 @@ Item *Item_cond::compile(Item_analyzer analyzer, uchar **arg_p,
   return Item_func::transform(transformer, arg_t);
 }
 
-void Item_cond::traverse_cond(Cond_traverser traverser,
-                              void *arg, traverse_order order)
+void Item_cond::traverse_cond(Cond_traverser traverser, void *arg, traverse_order order)
 {
-  List_iterator<Item> li(list);
+  List_iterator< Item > li(list);
   Item *item;
 
-  switch(order) {
-  case(PREFIX):
-    (*traverser)(this, arg);
-    while ((item= li++))
-    {
-      item->traverse_cond(traverser, arg, order);
-    }
-    (*traverser)(NULL, arg);
-    break;
-  case(POSTFIX):
-    while ((item= li++))
-    {
-      item->traverse_cond(traverser, arg, order);
-    }
-    (*traverser)(this, arg);
+  switch (order)
+  {
+    case (PREFIX):
+      (*traverser)(this, arg);
+      while ((item = li++))
+      {
+        item->traverse_cond(traverser, arg, order);
+      }
+      (*traverser)(NULL, arg);
+      break;
+    case (POSTFIX):
+      while ((item = li++))
+      {
+        item->traverse_cond(traverser, arg, order);
+      }
+      (*traverser)(this, arg);
   }
 }
 
@@ -6079,44 +5534,40 @@ void Item_cond::traverse_cond(Cond_traverser traverser,
     that have or refer (HAVING) to a SUM expression.
 */
 
-void Item_cond::split_sum_func(THD *thd, Ref_ptr_array ref_pointer_array,
-                               List<Item> &fields)
+void Item_cond::split_sum_func(THD *thd, Ref_ptr_array ref_pointer_array, List< Item > &fields)
 {
-  List_iterator<Item> li(list);
+  List_iterator< Item > li(list);
   Item *item;
-  while ((item= li++))
-    item->split_sum_func2(thd, ref_pointer_array, fields, li.ref(), TRUE);
+  while ((item = li++)) item->split_sum_func2(thd, ref_pointer_array, fields, li.ref(), TRUE);
 }
-
 
 void Item_cond::update_used_tables()
 {
-  List_iterator_fast<Item> li(list);
+  List_iterator_fast< Item > li(list);
   Item *item;
 
-  used_tables_cache=0;
-  const_item_cache=1;
-  with_subselect= false;
-  with_stored_program= false;
-  while ((item=li++))
+  used_tables_cache = 0;
+  const_item_cache = 1;
+  with_subselect = false;
+  with_stored_program = false;
+  while ((item = li++))
   {
     item->update_used_tables();
-    used_tables_cache|= item->used_tables();
-    const_item_cache&= item->const_item();
-    with_subselect|= item->has_subquery();
-    with_stored_program|= item->has_stored_program();
+    used_tables_cache |= item->used_tables();
+    const_item_cache &= item->const_item();
+    with_subselect |= item->has_subquery();
+    with_stored_program |= item->has_stored_program();
   }
 }
-
 
 void Item_cond::print(String *str, enum_query_type query_type)
 {
   str->append('(');
-  List_iterator_fast<Item> li(list);
+  List_iterator_fast< Item > li(list);
   Item *item;
-  if ((item=li++))
+  if ((item = li++))
     item->print(str, query_type);
-  while ((item=li++))
+  while ((item = li++))
   {
     str->append(' ');
     str->append(func_name());
@@ -6126,45 +5577,38 @@ void Item_cond::print(String *str, enum_query_type query_type)
   str->append(')');
 }
 
-
 void Item_cond::neg_arguments(THD *thd)
 {
-  List_iterator<Item> li(list);
+  List_iterator< Item > li(list);
   Item *item;
-  while ((item= li++))		/* Apply not transformation to the arguments */
+  while ((item = li++)) /* Apply not transformation to the arguments */
   {
-    Item *new_item= item->neg_transformer(thd);
+    Item *new_item = item->neg_transformer(thd);
     if (!new_item)
     {
-      if (!(new_item= new Item_func_not(item)))
-	return;					// Fatal OEM error
+      if (!(new_item = new Item_func_not(item)))
+        return;  // Fatal OEM error
     }
-    (void) li.replace(new_item);
+    (void)li.replace(new_item);
   }
 }
 
-
-float Item_cond_and::get_filtering_effect(table_map filter_for_table,
-                                          table_map read_tables,
-                                          const MY_BITMAP *fields_to_ignore,
-                                          double rows_in_table)
+float Item_cond_and::get_filtering_effect(table_map filter_for_table, table_map read_tables,
+                                          const MY_BITMAP *fields_to_ignore, double rows_in_table)
 {
   if (!(used_tables() & filter_for_table))
-    return COND_FILTER_ALLPASS; // No conditions below this apply to the table
+    return COND_FILTER_ALLPASS;  // No conditions below this apply to the table
 
-  float filter= COND_FILTER_ALLPASS;
-  List_iterator<Item> it(list);
+  float filter = COND_FILTER_ALLPASS;
+  List_iterator< Item > it(list);
   Item *item;
 
   /*
     Calculated as "Conjunction of independent events":
        P(A and B ...) = P(A) * P(B) * ...
   */
-  while ((item= it++))
-    filter*= item->get_filtering_effect(filter_for_table,
-                                        read_tables,
-                                        fields_to_ignore,
-                                        rows_in_table);
+  while ((item = it++))
+    filter *= item->get_filtering_effect(filter_for_table, read_tables, fields_to_ignore, rows_in_table);
   return filter;
 }
 
@@ -6187,41 +5631,35 @@ float Item_cond_and::get_filtering_effect(table_map filter_for_table,
     NULL if all expression are either 1 or NULL
 */
 
-
 longlong Item_cond_and::val_int()
 {
   assert(fixed == 1);
-  List_iterator_fast<Item> li(list);
+  List_iterator_fast< Item > li(list);
   Item *item;
-  null_value= 0;
-  while ((item=li++))
+  null_value = 0;
+  while ((item = li++))
   {
     if (!item->val_bool())
     {
-      if (abort_on_null || !(null_value= item->null_value))
-	return 0;				// return FALSE
+      if (abort_on_null || !(null_value = item->null_value))
+        return 0;  // return FALSE
     }
   }
   return null_value ? 0 : 1;
 }
 
-
-float Item_cond_or::get_filtering_effect(table_map filter_for_table,
-                                         table_map read_tables,
-                                         const MY_BITMAP *fields_to_ignore,
-                                         double rows_in_table)
+float Item_cond_or::get_filtering_effect(table_map filter_for_table, table_map read_tables,
+                                         const MY_BITMAP *fields_to_ignore, double rows_in_table)
 {
   if (!(used_tables() & filter_for_table))
-    return COND_FILTER_ALLPASS; // No conditions below this apply to the table
+    return COND_FILTER_ALLPASS;  // No conditions below this apply to the table
 
-  float filter= 0.0f;
-  List_iterator<Item> it(list);
+  float filter = 0.0f;
+  List_iterator< Item > it(list);
   Item *item;
-  while ((item= it++))
+  while ((item = it++))
   {
-    const float cur_filter=
-      item->get_filtering_effect(filter_for_table, read_tables,
-                                 fields_to_ignore, rows_in_table);
+    const float cur_filter = item->get_filtering_effect(filter_for_table, read_tables, fields_to_ignore, rows_in_table);
     /*
       Calculated as "Disjunction of independent events":
       P(A or B)  = P(A) + P(B) - P(A) * P(B)
@@ -6233,7 +5671,7 @@ float Item_cond_or::get_filtering_effect(table_map filter_for_table,
       effect is unknown. In both cases, the only meaningful result is
       for OR to produce COND_FILTER_ALLPASS.
     */
-    filter= filter + cur_filter - (filter * cur_filter);
+    filter = filter + cur_filter - (filter * cur_filter);
   }
   return filter;
 }
@@ -6241,18 +5679,18 @@ float Item_cond_or::get_filtering_effect(table_map filter_for_table,
 longlong Item_cond_or::val_int()
 {
   assert(fixed == 1);
-  List_iterator_fast<Item> li(list);
+  List_iterator_fast< Item > li(list);
   Item *item;
-  null_value=0;
-  while ((item=li++))
+  null_value = 0;
+  while ((item = li++))
   {
     if (item->val_bool())
     {
-      null_value=0;
+      null_value = 0;
       return 1;
     }
     if (item->null_value)
-      null_value=1;
+      null_value = 1;
   }
   return 0;
 }
@@ -6280,37 +5718,32 @@ longlong Item_cond_or::val_int()
 Item *and_expressions(Item *a, Item *b, Item **org_item)
 {
   if (!a)
-    return (*org_item= b);
+    return (*org_item = b);
   if (a == *org_item)
   {
     Item_cond *res;
-    if ((res= new Item_cond_and(a, b)))
+    if ((res = new Item_cond_and(a, b)))
     {
       res->set_used_tables(a->used_tables() | b->used_tables());
       res->set_not_null_tables(a->not_null_tables() | b->not_null_tables());
     }
     return res;
   }
-  if (((Item_cond_and*) a)->add(b))
+  if (((Item_cond_and *)a)->add(b))
     return 0;
-  ((Item_cond_and*) a)->set_used_tables(a->used_tables() | b->used_tables());
-  ((Item_cond_and*) a)->set_not_null_tables(a->not_null_tables() |
-                                            b->not_null_tables());
+  ((Item_cond_and *)a)->set_used_tables(a->used_tables() | b->used_tables());
+  ((Item_cond_and *)a)->set_not_null_tables(a->not_null_tables() | b->not_null_tables());
   return a;
 }
 
-float Item_func_isnull::get_filtering_effect(table_map filter_for_table,
-                                             table_map read_tables,
-                                             const MY_BITMAP *fields_to_ignore,
-                                             double rows_in_table)
+float Item_func_isnull::get_filtering_effect(table_map filter_for_table, table_map read_tables,
+                                             const MY_BITMAP *fields_to_ignore, double rows_in_table)
 {
-  const Item_field* fld= 
-    contributes_to_filter(read_tables, filter_for_table, fields_to_ignore);
+  const Item_field *fld = contributes_to_filter(read_tables, filter_for_table, fields_to_ignore);
   if (!fld)
     return COND_FILTER_ALLPASS;
 
-  return fld->get_cond_filter_default_probability(rows_in_table,
-                                                  COND_FILTER_EQUALITY);
+  return fld->get_cond_filter_default_probability(rows_in_table, COND_FILTER_EQUALITY);
 }
 
 longlong Item_func_isnull::val_int()
@@ -6322,7 +5755,7 @@ longlong Item_func_isnull::val_int()
   */
   if (const_item_cache)
     return cached_value;
-  return args[0]->is_null() ? 1: 0;
+  return args[0]->is_null() ? 1 : 0;
 }
 
 longlong Item_is_not_null_test::val_int()
@@ -6336,14 +5769,14 @@ longlong Item_is_not_null_test::val_int()
      is never equal to 0 --  it always contains RAND_TABLE_BIT,
      see get_initial_pseudo_tables().
     */
-    owner->was_null|= (!cached_value);
-    DBUG_PRINT("info", ("cached: %ld", (long) cached_value));
+    owner->was_null |= (!cached_value);
+    DBUG_PRINT("info", ("cached: %ld", (long)cached_value));
     DBUG_RETURN(cached_value);
   }
   if (args[0]->is_null())
   {
     DBUG_PRINT("info", ("null"));
-    owner->was_null|= 1;
+    owner->was_null |= 1;
     DBUG_RETURN(0);
   }
   else
@@ -6355,36 +5788,30 @@ longlong Item_is_not_null_test::val_int()
 */
 void Item_is_not_null_test::update_used_tables()
 {
-  const table_map initial_pseudo_tables= get_initial_pseudo_tables();
-  used_tables_cache= initial_pseudo_tables;
+  const table_map initial_pseudo_tables = get_initial_pseudo_tables();
+  used_tables_cache = initial_pseudo_tables;
   if (!args[0]->maybe_null)
   {
-    cached_value= 1;
+    cached_value = 1;
     return;
   }
   args[0]->update_used_tables();
-  with_subselect= args[0]->has_subquery();
-  with_stored_program= args[0]->has_stored_program();
-  used_tables_cache|= args[0]->used_tables();
-  if (used_tables_cache == initial_pseudo_tables && !with_subselect &&
-      !with_stored_program)
+  with_subselect = args[0]->has_subquery();
+  with_stored_program = args[0]->has_stored_program();
+  used_tables_cache |= args[0]->used_tables();
+  if (used_tables_cache == initial_pseudo_tables && !with_subselect && !with_stored_program)
     /* Remember if the value is always NULL or never NULL */
-    cached_value= !args[0]->is_null();
+    cached_value = !args[0]->is_null();
 }
 
-float
-Item_func_isnotnull::get_filtering_effect(table_map filter_for_table,
-                                          table_map read_tables,
-                                          const MY_BITMAP *fields_to_ignore,
-                                          double rows_in_table)
+float Item_func_isnotnull::get_filtering_effect(table_map filter_for_table, table_map read_tables,
+                                                const MY_BITMAP *fields_to_ignore, double rows_in_table)
 {
-  const Item_field* fld= 
-    contributes_to_filter(read_tables, filter_for_table, fields_to_ignore);
+  const Item_field *fld = contributes_to_filter(read_tables, filter_for_table, fields_to_ignore);
   if (!fld)
     return COND_FILTER_ALLPASS;
 
-  return 1.0f - fld->get_cond_filter_default_probability(rows_in_table,
-                                                         COND_FILTER_EQUALITY);
+  return 1.0f - fld->get_cond_filter_default_probability(rows_in_table, COND_FILTER_EQUALITY);
 }
 
 longlong Item_func_isnotnull::val_int()
@@ -6393,7 +5820,6 @@ longlong Item_func_isnotnull::val_int()
   return args[0]->is_null() ? 0 : 1;
 }
 
-
 void Item_func_isnotnull::print(String *str, enum_query_type query_type)
 {
   str->append('(');
@@ -6401,14 +5827,10 @@ void Item_func_isnotnull::print(String *str, enum_query_type query_type)
   str->append(STRING_WITH_LEN(" is not null)"));
 }
 
-
-float Item_func_like::get_filtering_effect(table_map filter_for_table,
-                                           table_map read_tables,
-                                           const MY_BITMAP *fields_to_ignore,
-                                           double rows_in_table)
+float Item_func_like::get_filtering_effect(table_map filter_for_table, table_map read_tables,
+                                           const MY_BITMAP *fields_to_ignore, double rows_in_table)
 {
-  const Item_field* fld= 
-    contributes_to_filter(read_tables, filter_for_table, fields_to_ignore);
+  const Item_field *fld = contributes_to_filter(read_tables, filter_for_table, fields_to_ignore);
   if (!fld)
     return COND_FILTER_ALLPASS;
 
@@ -6418,7 +5840,7 @@ float Item_func_like::get_filtering_effect(table_map filter_for_table,
     * "col like abc%" is similar to
       "col between abc and abd"
       The same applies for 'abc_'
-    * "col like %abc" can be seen as 
+    * "col like %abc" can be seen as
       "reverse(col) like cba%"" (see above)
     * "col like "abc%def%..." is also similar
 
@@ -6427,30 +5849,25 @@ float Item_func_like::get_filtering_effect(table_map filter_for_table,
     look through the whole string searching for wildcards and since
     LIKE is mostly used for wildcards this isn't checked.
   */
-  return fld->get_cond_filter_default_probability(rows_in_table,
-                                                  COND_FILTER_BETWEEN);
+  return fld->get_cond_filter_default_probability(rows_in_table, COND_FILTER_BETWEEN);
 }
-
 
 bool Item_func_like::itemize(Parse_context *pc, Item **res)
 {
   if (skip_itemize(res))
     return false;
-  if (super::itemize(pc, res) ||
-      (escape_item != NULL && escape_item->itemize(pc, &escape_item)))
+  if (super::itemize(pc, res) || (escape_item != NULL && escape_item->itemize(pc, &escape_item)))
     return true;
 
   if (escape_item == NULL)
   {
-    THD *thd= pc->thd;
-    escape_item=
-      ((thd->variables.sql_mode & MODE_NO_BACKSLASH_ESCAPES) ?
-       new (pc->mem_root) Item_string("", 0, &my_charset_latin1) :
-       new (pc->mem_root) Item_string("\\", 1, &my_charset_latin1));
+    THD *thd = pc->thd;
+    escape_item = ((thd->variables.sql_mode & MODE_NO_BACKSLASH_ESCAPES)
+                       ? new (pc->mem_root) Item_string("", 0, &my_charset_latin1)
+                       : new (pc->mem_root) Item_string("\\", 1, &my_charset_latin1));
   }
   return escape_item == NULL;
 }
-
 
 longlong Item_func_like::val_int()
 {
@@ -6459,27 +5876,26 @@ longlong Item_func_like::val_int()
   if (!escape_evaluated && eval_escape_clause(current_thd))
     return error_int();
 
-  String* res = args[0]->val_str(&cmp.value1);
+  String *res = args[0]->val_str(&cmp.value1);
   if (args[0]->null_value)
   {
-    null_value=1;
+    null_value = 1;
     return 0;
   }
-  String* res2 = args[1]->val_str(&cmp.value2);
+  String *res2 = args[1]->val_str(&cmp.value2);
   if (args[1]->null_value)
   {
-    null_value=1;
+    null_value = 1;
     return 0;
   }
-  null_value=0;
+  null_value = 0;
   if (can_do_bm)
     return bm_matches(res->ptr(), res->length()) ? 1 : 0;
-  return my_wildcmp(cmp.cmp_collation.collation,
-		    res->ptr(),res->ptr()+res->length(),
-		    res2->ptr(),res2->ptr()+res2->length(),
-		    escape,wild_one,wild_many) ? 0 : 1;
+  return my_wildcmp(cmp.cmp_collation.collation, res->ptr(), res->ptr() + res->length(), res2->ptr(),
+                    res2->ptr() + res2->length(), escape, wild_one, wild_many)
+             ? 0
+             : 1;
 }
-
 
 /**
   We can optimize a where if first character isn't a wildcard
@@ -6490,19 +5906,17 @@ Item_func::optimize_type Item_func_like::select_optimize() const
   if (!args[1]->const_item())
     return OPTIMIZE_NONE;
 
-  String* res2= args[1]->val_str((String *)&cmp.value2);
+  String *res2 = args[1]->val_str((String *)&cmp.value2);
   if (!res2)
     return OPTIMIZE_NONE;
 
-  if (!res2->length()) // Can optimize empty wildcard: column LIKE ''
+  if (!res2->length())  // Can optimize empty wildcard: column LIKE ''
     return OPTIMIZE_OP;
 
   assert(res2->ptr());
-  char first= res2->ptr()[0];
-  return (first == wild_many || first == wild_one) ?
-    OPTIMIZE_NONE : OPTIMIZE_OP;
+  char first = res2->ptr()[0];
+  return (first == wild_many || first == wild_one) ? OPTIMIZE_NONE : OPTIMIZE_OP;
 }
-
 
 bool Item_func_like::fix_fields(THD *thd, Item **ref)
 {
@@ -6510,17 +5924,15 @@ bool Item_func_like::fix_fields(THD *thd, Item **ref)
 
   Disable_semijoin_flattening DSF(thd->lex->current_select(), true);
 
-  if (Item_bool_func2::fix_fields(thd, ref) ||
-      escape_item->fix_fields(thd, &escape_item) ||
-      escape_item->check_cols(1))
+  if (Item_bool_func2::fix_fields(thd, ref) || escape_item->fix_fields(thd, &escape_item) || escape_item->check_cols(1))
     return true;
 
   if (!escape_item->const_during_execution())
   {
-    my_error(ER_WRONG_ARGUMENTS,MYF(0),"ESCAPE");
+    my_error(ER_WRONG_ARGUMENTS, MYF(0), "ESCAPE");
     return true;
   }
-  
+
   if (escape_item->const_item())
   {
     /*
@@ -6534,18 +5946,17 @@ bool Item_func_like::fix_fields(THD *thd, Item **ref)
       We could also do boyer-more for non-const items, but as we would have to
       recompute the tables for each row it's not worth it.
     */
-    if (args[1]->const_item() && !use_strnxfrm(collation.collation) &&
-       !(specialflag & SPECIAL_NO_NEW_FUNC))
+    if (args[1]->const_item() && !use_strnxfrm(collation.collation) && !(specialflag & SPECIAL_NO_NEW_FUNC))
     {
-      String* res2 = args[1]->val_str(&cmp.value2);
+      String *res2 = args[1]->val_str(&cmp.value2);
       if (thd->is_error())
         return true;
       if (!res2)
-        return false;				// Null argument
+        return false;  // Null argument
 
-      const size_t len   = res2->length();
-      const char*  first = res2->ptr();
-      const char*  last  = first + len - 1;
+      const size_t len = res2->length();
+      const char *first = res2->ptr();
+      const char *last = first + len - 1;
 
       /*
         Minimum length pattern before Boyer-Moore is used
@@ -6553,29 +5964,26 @@ bool Item_func_like::fix_fields(THD *thd, Item **ref)
         wildcards in class Item_func_like.
       */
 
-      const size_t min_bm_pattern_len= 5;
+      const size_t min_bm_pattern_len = 5;
 
-      if (len > min_bm_pattern_len &&
-          *first == wild_many &&
-          *last  == wild_many)
+      if (len > min_bm_pattern_len && *first == wild_many && *last == wild_many)
       {
-        const char* tmp = first + 1;
-        for (; *tmp != wild_many && *tmp != wild_one && *tmp != escape; tmp++) ;
-        can_do_bm= (tmp == last) && !use_mb(args[0]->collation.collation);
+        const char *tmp = first + 1;
+        for (; *tmp != wild_many && *tmp != wild_one && *tmp != escape; tmp++)
+          ;
+        can_do_bm = (tmp == last) && !use_mb(args[0]->collation.collation);
       }
       if (can_do_bm)
       {
-        pattern_len = (int) len - 2;
-        pattern     = thd->strmake(first + 1, pattern_len);
+        pattern_len = (int)len - 2;
+        pattern = thd->strmake(first + 1, pattern_len);
         DBUG_PRINT("info", ("Initializing pattern: '%s'", first));
-        int *suff = (int*) thd->alloc((int) (sizeof(int)*
-                                      ((pattern_len + 1)*2+
-                                      alphabet_size)));
-        bmGs      = suff + pattern_len + 1;
-        bmBc      = bmGs + pattern_len + 1;
+        int *suff = (int *)thd->alloc((int)(sizeof(int) * ((pattern_len + 1) * 2 + alphabet_size)));
+        bmGs = suff + pattern_len + 1;
+        bmBc = bmGs + pattern_len + 1;
         bm_compute_good_suffix_shifts(suff);
         bm_compute_bad_character_shifts();
-        DBUG_PRINT("info",("done"));
+        DBUG_PRINT("info", ("done"));
       }
     }
   }
@@ -6584,8 +5992,8 @@ bool Item_func_like::fix_fields(THD *thd, Item **ref)
 
 void Item_func_like::cleanup()
 {
-  can_do_bm= false;
-  escape_evaluated= false;
+  can_do_bm = false;
+  escape_evaluated = false;
   Item_bool_func2::cleanup();
 }
 
@@ -6600,28 +6008,25 @@ bool Item_func_like::eval_escape_clause(THD *thd)
   assert(!escape_evaluated);
 
   String buf;
-  String *escape_str= escape_item->val_str(&buf);
+  String *escape_str = escape_item->val_str(&buf);
   if (escape_str)
   {
-    const char *escape_str_ptr= escape_str->ptr();
-    if (escape_used_in_parsing && (
-           (((thd->variables.sql_mode & MODE_NO_BACKSLASH_ESCAPES) &&
-              escape_str->numchars() != 1) ||
-             escape_str->numchars() > 1)))
+    const char *escape_str_ptr = escape_str->ptr();
+    if (escape_used_in_parsing &&
+        ((((thd->variables.sql_mode & MODE_NO_BACKSLASH_ESCAPES) && escape_str->numchars() != 1) ||
+          escape_str->numchars() > 1)))
     {
-      my_error(ER_WRONG_ARGUMENTS,MYF(0),"ESCAPE");
+      my_error(ER_WRONG_ARGUMENTS, MYF(0), "ESCAPE");
       return true;
     }
 
     if (use_mb(cmp.cmp_collation.collation))
     {
-      const CHARSET_INFO *cs= escape_str->charset();
+      const CHARSET_INFO *cs = escape_str->charset();
       my_wc_t wc;
-      int rc= cs->cset->mb_wc(cs, &wc,
-                              (const uchar*) escape_str_ptr,
-                              (const uchar*) escape_str_ptr +
-                              escape_str->length());
-      escape= (int) (rc > 0 ? wc : '\\');
+      int rc =
+          cs->cset->mb_wc(cs, &wc, (const uchar *)escape_str_ptr, (const uchar *)escape_str_ptr + escape_str->length());
+      escape = (int)(rc > 0 ? wc : '\\');
     }
     else
     {
@@ -6630,26 +6035,24 @@ bool Item_func_like::eval_escape_clause(THD *thd)
         code instead of Unicode code as "escape" argument.
         Convert to "cs" if charset of escape differs.
       */
-      const CHARSET_INFO *cs= cmp.cmp_collation.collation;
+      const CHARSET_INFO *cs = cmp.cmp_collation.collation;
       size_t unused;
-      if (escape_str->needs_conversion(escape_str->length(),
-                                       escape_str->charset(), cs, &unused))
+      if (escape_str->needs_conversion(escape_str->length(), escape_str->charset(), cs, &unused))
       {
         char ch;
         uint errors;
-        size_t cnvlen= copy_and_convert(&ch, 1, cs, escape_str_ptr,
-                                        escape_str->length(),
-                                        escape_str->charset(), &errors);
-        escape= cnvlen ? ch : '\\';
+        size_t cnvlen =
+            copy_and_convert(&ch, 1, cs, escape_str_ptr, escape_str->length(), escape_str->charset(), &errors);
+        escape = cnvlen ? ch : '\\';
       }
       else
-        escape= escape_str_ptr ? *escape_str_ptr : '\\';
+        escape = escape_str_ptr ? *escape_str_ptr : '\\';
     }
   }
   else
-    escape= '\\';
+    escape = '\\';
 
-  escape_evaluated= true;
+  escape_evaluated = true;
 
   return false;
 }
@@ -6659,7 +6062,7 @@ bool Item_func_like::eval_escape_clause(THD *thd)
 
   @param[in]    send_error     send error message if any.
 
-  @details Make necessary character set conversion then 
+  @details Make necessary character set conversion then
   compile regular expression passed in the args[1].
 
   @retval    0     success.
@@ -6670,8 +6073,8 @@ bool Item_func_like::eval_escape_clause(THD *thd)
 int Item_func_regex::regcomp(bool send_error)
 {
   char buff[MAX_FIELD_WIDTH];
-  String tmp(buff,sizeof(buff),&my_charset_bin);
-  String *res= args[1]->val_str(&tmp);
+  String tmp(buff, sizeof(buff), &my_charset_bin);
+  String *res = args[1]->val_str(&tmp);
   int error;
 
   if (args[1]->null_value)
@@ -6683,119 +6086,104 @@ int Item_func_regex::regcomp(bool send_error)
       return 0;
     prev_regexp.copy(*res);
     my_regfree(&preg);
-    regex_compiled= 0;
+    regex_compiled = 0;
   }
 
   if (cmp_collation.collation != regex_lib_charset)
   {
     /* Convert UCS2 strings to UTF8 */
     uint dummy_errors;
-    if (conv.copy(res->ptr(), res->length(), res->charset(),
-                  regex_lib_charset, &dummy_errors))
+    if (conv.copy(res->ptr(), res->length(), res->charset(), regex_lib_charset, &dummy_errors))
       return 1;
-    res= &conv;
+    res = &conv;
   }
 
-  if ((error= my_regcomp(&preg, res->c_ptr_safe(),
-                         regex_lib_flags, regex_lib_charset)))
+  if ((error = my_regcomp(&preg, res->c_ptr_safe(), regex_lib_flags, regex_lib_charset)))
   {
     if (send_error)
     {
-      (void) my_regerror(error, &preg, buff, sizeof(buff));
+      (void)my_regerror(error, &preg, buff, sizeof(buff));
       my_error(ER_REGEXP_ERROR, MYF(0), buff);
     }
     return 1;
   }
-  regex_compiled= 1;
+  regex_compiled = 1;
   return 0;
 }
 
-
-bool
-Item_func_regex::fix_fields(THD *thd, Item **ref)
+bool Item_func_regex::fix_fields(THD *thd, Item **ref)
 {
   assert(fixed == 0);
 
   Disable_semijoin_flattening DSF(thd->lex->current_select(), true);
 
-  if ((!args[0]->fixed &&
-       args[0]->fix_fields(thd, args)) || args[0]->check_cols(1) ||
-      (!args[1]->fixed &&
-       args[1]->fix_fields(thd, args + 1)) || args[1]->check_cols(1))
-    return TRUE;				/* purecov: inspected */
-  with_sum_func=args[0]->with_sum_func || args[1]->with_sum_func;
-  with_subselect= args[0]->has_subquery() || args[1]->has_subquery();
-  with_stored_program= args[0]->has_stored_program() ||
-                       args[1]->has_stored_program();
-  max_length= 1;
-  decimals= 0;
+  if ((!args[0]->fixed && args[0]->fix_fields(thd, args)) || args[0]->check_cols(1) ||
+      (!args[1]->fixed && args[1]->fix_fields(thd, args + 1)) || args[1]->check_cols(1))
+    return TRUE; /* purecov: inspected */
+  with_sum_func = args[0]->with_sum_func || args[1]->with_sum_func;
+  with_subselect = args[0]->has_subquery() || args[1]->has_subquery();
+  with_stored_program = args[0]->has_stored_program() || args[1]->has_stored_program();
+  max_length = 1;
+  decimals = 0;
 
   if (agg_arg_charsets_for_comparison(cmp_collation, args, 2))
     return TRUE;
 
-  regex_lib_flags= (cmp_collation.collation->state &
-                    (MY_CS_BINSORT | MY_CS_CSSORT)) ?
-                   MY_REG_EXTENDED | MY_REG_NOSUB :
-                   MY_REG_EXTENDED | MY_REG_NOSUB | MY_REG_ICASE;
+  regex_lib_flags = (cmp_collation.collation->state & (MY_CS_BINSORT | MY_CS_CSSORT))
+                        ? MY_REG_EXTENDED | MY_REG_NOSUB
+                        : MY_REG_EXTENDED | MY_REG_NOSUB | MY_REG_ICASE;
   /*
     If the case of UCS2 and other non-ASCII character sets,
     we will convert patterns and strings to UTF8.
   */
-  regex_lib_charset= (cmp_collation.collation->mbminlen > 1) ?
-                     &my_charset_utf8_general_ci :
-                     cmp_collation.collation;
+  regex_lib_charset = (cmp_collation.collation->mbminlen > 1) ? &my_charset_utf8_general_ci : cmp_collation.collation;
 
-  used_tables_cache=args[0]->used_tables() | args[1]->used_tables();
-  not_null_tables_cache= (args[0]->not_null_tables() |
-			  args[1]->not_null_tables());
-  const_item_cache=args[0]->const_item() && args[1]->const_item();
+  used_tables_cache = args[0]->used_tables() | args[1]->used_tables();
+  not_null_tables_cache = (args[0]->not_null_tables() | args[1]->not_null_tables());
+  const_item_cache = args[0]->const_item() && args[1]->const_item();
   if (!regex_compiled && args[1]->const_item())
   {
-    int comp_res= regcomp(TRUE);
+    int comp_res = regcomp(TRUE);
     if (comp_res == -1)
-    {						// Will always return NULL
-      maybe_null=1;
-      fixed= 1;
+    {  // Will always return NULL
+      maybe_null = 1;
+      fixed = 1;
       return FALSE;
     }
     else if (comp_res)
       return TRUE;
-    regex_is_const= 1;
-    maybe_null= args[0]->maybe_null;
+    regex_is_const = 1;
+    maybe_null = args[0]->maybe_null;
   }
   else
-    maybe_null=1;
-  fixed= 1;
+    maybe_null = 1;
+  fixed = 1;
   return FALSE;
 }
-
 
 longlong Item_func_regex::val_int()
 {
   assert(fixed == 1);
   char buff[MAX_FIELD_WIDTH];
-  String tmp(buff,sizeof(buff),&my_charset_bin);
-  String *res= args[0]->val_str(&tmp);
+  String tmp(buff, sizeof(buff), &my_charset_bin);
+  String *res = args[0]->val_str(&tmp);
 
-  if ((null_value= (args[0]->null_value ||
-                    (!regex_is_const && regcomp(FALSE)))))
+  if ((null_value = (args[0]->null_value || (!regex_is_const && regcomp(FALSE)))))
     return 0;
 
   if (cmp_collation.collation != regex_lib_charset)
   {
     /* Convert UCS2 strings to UTF8 */
     uint dummy_errors;
-    if (conv.copy(res->ptr(), res->length(), res->charset(),
-                  regex_lib_charset, &dummy_errors))
+    if (conv.copy(res->ptr(), res->length(), res->charset(), regex_lib_charset, &dummy_errors))
     {
-      null_value= 1;
+      null_value = 1;
       return 0;
     }
-    res= &conv;
+    res = &conv;
   }
-  return my_regexec(&preg,res->c_ptr_safe(),0,(my_regmatch_t*) 0,0) ? 0 : 1;
+  return my_regexec(&preg, res->c_ptr_safe(), 0, (my_regmatch_t *)0, 0) ? 0 : 1;
 }
-
 
 void Item_func_regex::cleanup()
 {
@@ -6804,15 +6192,13 @@ void Item_func_regex::cleanup()
   if (regex_compiled)
   {
     my_regfree(&preg);
-    regex_compiled=0;
+    regex_compiled = 0;
     prev_regexp.length(0);
   }
   DBUG_VOID_RETURN;
 }
 
-
-#define likeconv(cs,A) (uchar) (cs)->sort_order[(uchar) (A)]
-
+#define likeconv(cs, A) (uchar)(cs)->sort_order[(uchar)(A)]
 
 /**
   Precomputation dependent only on pattern_len.
@@ -6820,11 +6206,11 @@ void Item_func_regex::cleanup()
 
 void Item_func_like::bm_compute_suffixes(int *suff)
 {
-  const int   plm1 = pattern_len - 1;
-  int            f = 0;
-  int            g = plm1;
+  const int plm1 = pattern_len - 1;
+  int f = 0;
+  int g = plm1;
   int *const splm1 = suff + plm1;
-  const CHARSET_INFO	*cs= cmp.cmp_collation.collation;
+  const CHARSET_INFO *cs = cmp.cmp_collation.collation;
 
   *splm1 = pattern_len;
 
@@ -6835,15 +6221,14 @@ void Item_func_like::bm_compute_suffixes(int *suff)
     {
       int tmp = *(splm1 + i - f);
       if (g < i && tmp < i - g)
-	suff[i] = tmp;
+        suff[i] = tmp;
       else
       {
-	if (i < g)
-	  g = i; // g = min(i, g)
-	f = i;
-	while (g >= 0 && pattern[g] == pattern[g + plm1 - f])
-	  g--;
-	suff[i] = f - g;
+        if (i < g)
+          g = i;  // g = min(i, g)
+        f = i;
+        while (g >= 0 && pattern[g] == pattern[g + plm1 - f]) g--;
+        suff[i] = f - g;
       }
     }
   }
@@ -6854,21 +6239,18 @@ void Item_func_like::bm_compute_suffixes(int *suff)
     {
       int tmp = *(splm1 + i - f);
       if (g < i && tmp < i - g)
-	suff[i] = tmp;
+        suff[i] = tmp;
       else
       {
-	if (i < g)
-	  g = i; // g = min(i, g)
-	f = i;
-	while (g >= 0 &&
-	       likeconv(cs, pattern[g]) == likeconv(cs, pattern[g + plm1 - f]))
-	  g--;
-	suff[i] = f - g;
+        if (i < g)
+          g = i;  // g = min(i, g)
+        f = i;
+        while (g >= 0 && likeconv(cs, pattern[g]) == likeconv(cs, pattern[g + plm1 - f])) g--;
+        suff[i] = f - g;
       }
     }
   }
 }
-
 
 /**
   Precomputation dependent only on pattern_len.
@@ -6880,12 +6262,11 @@ void Item_func_like::bm_compute_good_suffix_shifts(int *suff)
 
   int *end = bmGs + pattern_len;
   int *k;
-  for (k = bmGs; k < end; k++)
-    *k = pattern_len;
+  for (k = bmGs; k < end; k++) *k = pattern_len;
 
   int tmp;
   int i;
-  int j          = 0;
+  int j = 0;
   const int plm1 = pattern_len - 1;
   for (i = plm1; i > -1; i--)
   {
@@ -6893,9 +6274,9 @@ void Item_func_like::bm_compute_good_suffix_shifts(int *suff)
     {
       for (tmp = plm1 - i; j < tmp; j++)
       {
-	int *tmp2 = bmGs + j;
-	if (*tmp2 == pattern_len)
-	  *tmp2 = tmp;
+        int *tmp2 = bmGs + j;
+        if (*tmp2 == pattern_len)
+          *tmp2 = tmp;
       }
     }
   }
@@ -6909,10 +6290,8 @@ void Item_func_like::bm_compute_good_suffix_shifts(int *suff)
   }
 
   tmp2 = bmGs + plm1;
-  for (i = 0; i <= pattern_len - 2; i++)
-    *(tmp2 - suff[i]) = plm1 - i;
+  for (i = 0; i <= pattern_len - 2; i++) *(tmp2 - suff[i]) = plm1 - i;
 }
-
 
 /**
    Precomputation dependent on pattern_len.
@@ -6924,23 +6303,19 @@ void Item_func_like::bm_compute_bad_character_shifts()
   int *end = bmBc + alphabet_size;
   int j;
   const int plm1 = pattern_len - 1;
-  const CHARSET_INFO	*cs= cmp.cmp_collation.collation;
+  const CHARSET_INFO *cs = cmp.cmp_collation.collation;
 
-  for (i = bmBc; i < end; i++)
-    *i = pattern_len;
+  for (i = bmBc; i < end; i++) *i = pattern_len;
 
   if (!cs->sort_order)
   {
-    for (j = 0; j < plm1; j++)
-      bmBc[(uchar) pattern[j]] = plm1 - j;
+    for (j = 0; j < plm1; j++) bmBc[(uchar)pattern[j]] = plm1 - j;
   }
   else
   {
-    for (j = 0; j < plm1; j++)
-      bmBc[likeconv(cs,pattern[j])] = plm1 - j;
+    for (j = 0; j < plm1; j++) bmBc[likeconv(cs, pattern[j])] = plm1 - j;
   }
 }
-
 
 /**
   Search for pattern in text.
@@ -6949,15 +6324,15 @@ void Item_func_like::bm_compute_bad_character_shifts()
     returns true/false for match/no match
 */
 
-bool Item_func_like::bm_matches(const char* text, size_t text_len) const
+bool Item_func_like::bm_matches(const char *text, size_t text_len) const
 {
   int bcShift;
   int shift = pattern_len;
-  int j     = 0;
-  const CHARSET_INFO	*cs= cmp.cmp_collation.collation;
+  int j = 0;
+  const CHARSET_INFO *cs = cmp.cmp_collation.collation;
 
-  const int plm1=  pattern_len - 1;
-  const int tlmpl= text_len - pattern_len;
+  const int plm1 = pattern_len - 1;
+  const int tlmpl = text_len - pattern_len;
 
   /* Searching */
   if (!cs->sort_order)
@@ -6966,16 +6341,18 @@ bool Item_func_like::bm_matches(const char* text, size_t text_len) const
     {
       int i;
 
-      for (i= plm1; (i >= 0) && (pattern[i] == text[i + j]) ;--i) {}
+      for (i = plm1; (i >= 0) && (pattern[i] == text[i + j]); --i)
+      {
+      }
 
       if (i < 0)
-	return true;
+        return true;
       else
       {
-        bcShift= bmBc[(uchar) text[i + j]] - plm1 + i;
-        shift= max(bcShift, bmGs[i]);
+        bcShift = bmBc[(uchar)text[i + j]] - plm1 + i;
+        shift = max(bcShift, bmGs[i]);
       }
-      j+= shift;
+      j += shift;
     }
     return false;
   }
@@ -6985,39 +6362,33 @@ bool Item_func_like::bm_matches(const char* text, size_t text_len) const
     {
       int i;
 
-      for (i= plm1;
-           (i >= 0) && likeconv(cs,pattern[i]) == likeconv(cs,text[i + j]);
-           --i) {}
+      for (i = plm1; (i >= 0) && likeconv(cs, pattern[i]) == likeconv(cs, text[i + j]); --i)
+      {
+      }
 
       if (i < 0)
-	return true;
+        return true;
       else
       {
-        bcShift= bmBc[likeconv(cs, text[i + j])] - plm1 + i;
-        shift= max(bcShift, bmGs[i]);
+        bcShift = bmBc[likeconv(cs, text[i + j])] - plm1 + i;
+        shift = max(bcShift, bmGs[i]);
       }
-      j+= shift;
+      j += shift;
     }
     return false;
   }
 }
 
-float Item_func_xor::get_filtering_effect(table_map filter_for_table,
-                                          table_map read_tables,
-                                          const MY_BITMAP *fields_to_ignore,
-                                          double rows_in_table)
+float Item_func_xor::get_filtering_effect(table_map filter_for_table, table_map read_tables,
+                                          const MY_BITMAP *fields_to_ignore, double rows_in_table)
 {
   assert(arg_count == 2);
 
-  const float filter0=
-    args[0]->get_filtering_effect(filter_for_table, read_tables,
-                                  fields_to_ignore, rows_in_table);
+  const float filter0 = args[0]->get_filtering_effect(filter_for_table, read_tables, fields_to_ignore, rows_in_table);
   if (filter0 == COND_FILTER_ALLPASS)
     return COND_FILTER_ALLPASS;
 
-  const float filter1=
-    args[1]->get_filtering_effect(filter_for_table, read_tables,
-                                  fields_to_ignore, rows_in_table);
+  const float filter1 = args[1]->get_filtering_effect(filter_for_table, read_tables, fields_to_ignore, rows_in_table);
 
   if (filter1 == COND_FILTER_ALLPASS)
     return COND_FILTER_ALLPASS;
@@ -7048,14 +6419,14 @@ float Item_func_xor::get_filtering_effect(table_map filter_for_table,
 longlong Item_func_xor::val_int()
 {
   assert(fixed == 1);
-  int result= 0;
-  null_value= false;
-  for (uint i= 0; i < arg_count; i++)
+  int result = 0;
+  null_value = false;
+  for (uint i = 0; i < arg_count; i++)
   {
-    result^= (args[i]->val_int() != 0);
+    result ^= (args[i]->val_int() != 0);
     if (args[i]->null_value)
     {
-      null_value= true;
+      null_value = true;
       return 0;
     }
   }
@@ -7088,15 +6459,11 @@ longlong Item_func_xor::val_int()
     NULL if we cannot apply NOT transformation (see Item::neg_transformer()).
 */
 
-Item *Item_func_not::neg_transformer(THD *thd)	/* NOT(x)  ->  x */
-{
-  return args[0];
-}
-
+Item *Item_func_not::neg_transformer(THD *thd) /* NOT(x)  ->  x */ { return args[0]; }
 
 Item *Item_bool_rowready_func2::neg_transformer(THD *thd)
 {
-  Item *item= negated_item();
+  Item *item = negated_item();
   return item;
 }
 
@@ -7113,115 +6480,87 @@ Item *Item_func_xor::neg_transformer(THD *thd)
 {
   Item *neg_operand;
   Item_func_xor *new_item;
-  if ((neg_operand= args[0]->neg_transformer(thd)))
+  if ((neg_operand = args[0]->neg_transformer(thd)))
     // args[0] has neg_tranformer
-    new_item= new(thd->mem_root) Item_func_xor(neg_operand, args[1]);
-  else if ((neg_operand= args[1]->neg_transformer(thd)))
+    new_item = new (thd->mem_root) Item_func_xor(neg_operand, args[1]);
+  else if ((neg_operand = args[1]->neg_transformer(thd)))
     // args[1] has neg_tranformer
-    new_item= new(thd->mem_root) Item_func_xor(args[0], neg_operand);
+    new_item = new (thd->mem_root) Item_func_xor(args[0], neg_operand);
   else
   {
-    neg_operand= new(thd->mem_root) Item_func_not(args[0]);
-    new_item= new(thd->mem_root) Item_func_xor(neg_operand, args[1]);
+    neg_operand = new (thd->mem_root) Item_func_not(args[0]);
+    new_item = new (thd->mem_root) Item_func_xor(neg_operand, args[1]);
   }
   return new_item;
 }
-
 
 /**
   a IS NULL  ->  a IS NOT NULL.
 */
 Item *Item_func_isnull::neg_transformer(THD *thd)
 {
-  Item *item= new Item_func_isnotnull(args[0]);
+  Item *item = new Item_func_isnotnull(args[0]);
   return item;
 }
-
 
 /**
   a IS NOT NULL  ->  a IS NULL.
 */
 Item *Item_func_isnotnull::neg_transformer(THD *thd)
 {
-  Item *item= new Item_func_isnull(args[0]);
+  Item *item = new Item_func_isnull(args[0]);
   return item;
 }
 
-
-Item *Item_cond_and::neg_transformer(THD *thd)	/* NOT(a AND b AND ...)  -> */
-					/* NOT a OR NOT b OR ... */
+Item *Item_cond_and::neg_transformer(THD *thd) /* NOT(a AND b AND ...)  -> */
+                                               /* NOT a OR NOT b OR ... */
 {
   neg_arguments(thd);
-  Item *item= new Item_cond_or(list);
+  Item *item = new Item_cond_or(list);
   return item;
 }
 
-
-Item *Item_cond_or::neg_transformer(THD *thd)	/* NOT(a OR b OR ...)  -> */
-					/* NOT a AND NOT b AND ... */
+Item *Item_cond_or::neg_transformer(THD *thd) /* NOT(a OR b OR ...)  -> */
+                                              /* NOT a AND NOT b AND ... */
 {
   neg_arguments(thd);
-  Item *item= new Item_cond_and(list);
+  Item *item = new Item_cond_and(list);
   return item;
 }
-
 
 Item *Item_func_nop_all::neg_transformer(THD *thd)
 {
   /* "NOT (e $cmp$ ANY (SELECT ...)) -> e $rev_cmp$" ALL (SELECT ...) */
-  Item_func_not_all *new_item= new Item_func_not_all(args[0]);
-  Item_allany_subselect *allany= (Item_allany_subselect*)args[0];
-  allany->func= allany->func_creator(FALSE);
-  allany->all= !allany->all;
-  allany->upper_item= new_item;
+  Item_func_not_all *new_item = new Item_func_not_all(args[0]);
+  Item_allany_subselect *allany = (Item_allany_subselect *)args[0];
+  allany->func = allany->func_creator(FALSE);
+  allany->all = !allany->all;
+  allany->upper_item = new_item;
   return new_item;
 }
 
 Item *Item_func_not_all::neg_transformer(THD *thd)
 {
   /* "NOT (e $cmp$ ALL (SELECT ...)) -> e $rev_cmp$" ANY (SELECT ...) */
-  Item_func_nop_all *new_item= new Item_func_nop_all(args[0]);
-  Item_allany_subselect *allany= (Item_allany_subselect*)args[0];
-  allany->all= !allany->all;
-  allany->func= allany->func_creator(TRUE);
-  allany->upper_item= new_item;
+  Item_func_nop_all *new_item = new Item_func_nop_all(args[0]);
+  Item_allany_subselect *allany = (Item_allany_subselect *)args[0];
+  allany->all = !allany->all;
+  allany->func = allany->func_creator(TRUE);
+  allany->upper_item = new_item;
   return new_item;
 }
 
-Item *Item_func_eq::negated_item()		/* a = b  ->  a != b */
-{
-  return new Item_func_ne(args[0], args[1]);
-}
+Item *Item_func_eq::negated_item() /* a = b  ->  a != b */ { return new Item_func_ne(args[0], args[1]); }
 
+Item *Item_func_ne::negated_item() /* a != b  ->  a = b */ { return new Item_func_eq(args[0], args[1]); }
 
-Item *Item_func_ne::negated_item()		/* a != b  ->  a = b */
-{
-  return new Item_func_eq(args[0], args[1]);
-}
+Item *Item_func_lt::negated_item() /* a < b  ->  a >= b */ { return new Item_func_ge(args[0], args[1]); }
 
+Item *Item_func_ge::negated_item() /* a >= b  ->  a < b */ { return new Item_func_lt(args[0], args[1]); }
 
-Item *Item_func_lt::negated_item()		/* a < b  ->  a >= b */
-{
-  return new Item_func_ge(args[0], args[1]);
-}
+Item *Item_func_gt::negated_item() /* a > b  ->  a <= b */ { return new Item_func_le(args[0], args[1]); }
 
-
-Item *Item_func_ge::negated_item()		/* a >= b  ->  a < b */
-{
-  return new Item_func_lt(args[0], args[1]);
-}
-
-
-Item *Item_func_gt::negated_item()		/* a > b  ->  a <= b */
-{
-  return new Item_func_le(args[0], args[1]);
-}
-
-
-Item *Item_func_le::negated_item()		/* a <= b  ->  a > b */
-{
-  return new Item_func_gt(args[0], args[1]);
-}
+Item *Item_func_le::negated_item() /* a <= b  ->  a > b */ { return new Item_func_gt(args[0], args[1]); }
 
 /**
   just fake method, should never be called.
@@ -7233,64 +6572,58 @@ Item *Item_bool_rowready_func2::negated_item()
 }
 
 Item_equal::Item_equal(Item_field *f1, Item_field *f2)
-  : Item_bool_func(), const_item(0), eval_item(0), cond_false(0),
-    compare_as_dates(FALSE)
+    : Item_bool_func(), const_item(0), eval_item(0), cond_false(0), compare_as_dates(FALSE)
 {
-  const_item_cache= 0;
+  const_item_cache = 0;
   fields.push_back(f1);
   fields.push_back(f2);
 }
 
-Item_equal::Item_equal(Item *c, Item_field *f)
-  : Item_bool_func(), eval_item(0), cond_false(0)
+Item_equal::Item_equal(Item *c, Item_field *f) : Item_bool_func(), eval_item(0), cond_false(0)
 {
-  const_item_cache= 0;
+  const_item_cache = 0;
   fields.push_back(f);
-  const_item= c;
-  compare_as_dates= f->is_temporal_with_date();
+  const_item = c;
+  compare_as_dates = f->is_temporal_with_date();
 }
 
-
-Item_equal::Item_equal(Item_equal *item_equal)
-  : Item_bool_func(), eval_item(0), cond_false(0)
+Item_equal::Item_equal(Item_equal *item_equal) : Item_bool_func(), eval_item(0), cond_false(0)
 {
-  const_item_cache= 0;
-  List_iterator_fast<Item_field> li(item_equal->fields);
+  const_item_cache = 0;
+  List_iterator_fast< Item_field > li(item_equal->fields);
   Item_field *item;
-  while ((item= li++))
+  while ((item = li++))
   {
     fields.push_back(item);
   }
-  const_item= item_equal->const_item;
-  compare_as_dates= item_equal->compare_as_dates;
-  cond_false= item_equal->cond_false;
+  const_item = item_equal->const_item;
+  compare_as_dates = item_equal->compare_as_dates;
+  cond_false = item_equal->cond_false;
 }
-
 
 bool Item_equal::compare_const(THD *thd, Item *c)
 {
   if (compare_as_dates)
   {
     cmp.set_datetime_cmp_func(this, &c, &const_item);
-    cond_false= cmp.compare();
+    cond_false = cmp.compare();
   }
   else
   {
-    Item_func_eq *func= new Item_func_eq(c, const_item);
+    Item_func_eq *func = new Item_func_eq(c, const_item);
     if (func == NULL)
       return true;
     if (func->set_cmp_func())
       return true;
     func->quick_fix_field();
-    cond_false= !func->val_int();
+    cond_false = !func->val_int();
   }
   if (thd->is_error())
     return true;
   if (cond_false)
-    const_item_cache= 1;
+    const_item_cache = 1;
   return false;
 }
-
 
 bool Item_equal::add(THD *thd, Item *c, Item_field *f)
 {
@@ -7299,13 +6632,12 @@ bool Item_equal::add(THD *thd, Item *c, Item_field *f)
   if (!const_item)
   {
     assert(f);
-    const_item= c;
-    compare_as_dates= f->is_temporal_with_date();
+    const_item = c;
+    compare_as_dates = f->is_temporal_with_date();
     return false;
   }
   return compare_const(thd, c);
 }
-
 
 bool Item_equal::add(THD *thd, Item *c)
 {
@@ -7313,22 +6645,15 @@ bool Item_equal::add(THD *thd, Item *c)
     return false;
   if (!const_item)
   {
-    const_item= c;
+    const_item = c;
     return false;
   }
   return compare_const(thd, c);
 }
 
-void Item_equal::add(Item_field *f)
-{
-  fields.push_back(f);
-}
+void Item_equal::add(Item_field *f) { fields.push_back(f); }
 
-uint Item_equal::members()
-{
-  return fields.elements;
-}
-
+uint Item_equal::members() { return fields.elements; }
 
 /**
   Check whether a field is referred in the multiple equality.
@@ -7340,25 +6665,24 @@ uint Item_equal::members()
   @retval
     1       if nultiple equality contains a reference to field
   @retval
-    0       otherwise    
+    0       otherwise
 */
 
 bool Item_equal::contains(Field *field)
 {
-  List_iterator_fast<Item_field> it(fields);
+  List_iterator_fast< Item_field > it(fields);
   Item_field *item;
-  while ((item= it++))
+  while ((item = it++))
   {
     if (field->eq(item->field))
-        return 1;
+      return 1;
   }
   return 0;
 }
 
-
 /**
   Join members of another Item_equal object.
-  
+
     The function actually merges two multiple equalities.
     After this operation the Item_equal object additionally contains
     the field items of another item of the type Item_equal.
@@ -7374,21 +6698,20 @@ bool Item_equal::contains(Field *field)
 bool Item_equal::merge(THD *thd, Item_equal *item)
 {
   fields.concat(&item->fields);
-  Item *c= item->const_item;
+  Item *c = item->const_item;
   if (c)
   {
-    /* 
-      The flag cond_false will be set to 1 after this, if 
-      the multiple equality already contains a constant and its 
+    /*
+      The flag cond_false will be set to 1 after this, if
+      the multiple equality already contains a constant and its
       value is  not equal to the value of c.
     */
     if (add(thd, c))
       return true;
   }
-  cond_false|= item->cond_false;
+  cond_false |= item->cond_false;
   return false;
-} 
-
+}
 
 /**
   Order field items in multiple equality according to a sorting criteria.
@@ -7407,11 +6730,7 @@ bool Item_equal::merge(THD *thd, Item_equal *item)
   @param arg          context extra parameter for the cmp function
 */
 
-void Item_equal::sort(Item_field_cmpfunc compare, void *arg)
-{
-  fields.sort((Node_cmp_func)compare, arg);
-}
-
+void Item_equal::sort(Item_field_cmpfunc compare, void *arg) { fields.sort((Node_cmp_func)compare, arg); }
 
 /**
   Check appearance of new constant items in the multiple equality object.
@@ -7429,9 +6748,9 @@ void Item_equal::sort(Item_field_cmpfunc compare, void *arg)
 
 bool Item_equal::update_const(THD *thd)
 {
-  List_iterator<Item_field> it(fields);
+  List_iterator< Item_field > it(fields);
   Item *item;
-  while ((item= it++))
+  while ((item = it++))
   {
     if (item->const_item() &&
         /*
@@ -7459,28 +6778,28 @@ bool Item_equal::update_const(THD *thd)
 
 bool Item_equal::fix_fields(THD *thd, Item **ref)
 {
-  List_iterator_fast<Item_field> li(fields);
+  List_iterator_fast< Item_field > li(fields);
   Item *item;
-  not_null_tables_cache= used_tables_cache= 0;
-  const_item_cache= 0;
-  while ((item= li++))
+  not_null_tables_cache = used_tables_cache = 0;
+  const_item_cache = 0;
+  while ((item = li++))
   {
-    used_tables_cache|= item->used_tables();
-    not_null_tables_cache|= item->not_null_tables();
-    maybe_null|= item->maybe_null;
+    used_tables_cache |= item->used_tables();
+    not_null_tables_cache |= item->not_null_tables();
+    maybe_null |= item->maybe_null;
   }
   fix_length_and_dec();
-  fixed= 1;
+  fixed = 1;
   return 0;
 }
 
 /**
-  Get filtering effect for multiple equalities, i.e. 
-  "tx.col = value_1 = ... = value_n" where value_i may be a 
+  Get filtering effect for multiple equalities, i.e.
+  "tx.col = value_1 = ... = value_n" where value_i may be a
   constant, a column etc.
 
   The multiple equality only contributes to the filtering effect for
-  'filter_for_table' if 
+  'filter_for_table' if
     a) A column in 'filter_for_table' is referred to
     b) at least one value_i is a constant or a column in a table
        already read
@@ -7489,27 +6808,25 @@ bool Item_equal::fix_fields(THD *thd, Item **ref)
   'filter_for_table', the predicates on all these fields will
   contribute to the filtering effect.
 */
-float Item_equal::get_filtering_effect(table_map filter_for_table,
-                                       table_map read_tables,
-                                       const MY_BITMAP *fields_to_ignore,
-                                       double rows_in_table)
+float Item_equal::get_filtering_effect(table_map filter_for_table, table_map read_tables,
+                                       const MY_BITMAP *fields_to_ignore, double rows_in_table)
 {
   // This predicate does not refer to a column in 'filter_for_table'
   if (!(used_tables() & filter_for_table))
     return COND_FILTER_ALLPASS;
 
-  float filter= COND_FILTER_ALLPASS;
+  float filter = COND_FILTER_ALLPASS;
   /*
     Keep track of whether or not a usable value that is either a
     constant or a column in an already read table has been found.
   */
-  bool found_comparable= false;
+  bool found_comparable = false;
 
   // Is there a constant that this multiple equality is equal to?
   if (const_item)
-    found_comparable= true;
+    found_comparable = true;
 
-  List_iterator<Item_field> it(fields);
+  List_iterator< Item_field > it(fields);
 
   Item_field *cur_field;
   /*
@@ -7517,12 +6834,12 @@ float Item_equal::get_filtering_effect(table_map filter_for_table,
     item has multiple fields from 'filter_for_table', each of these
     fields will contribute to the filtering effect.
   */
-  while ((cur_field= it++))
+  while ((cur_field = it++))
   {
     if (cur_field->used_tables() & read_tables)
     {
       // cur_field is a field in a table earlier in the join sequence.
-      found_comparable= true;
+      found_comparable = true;
     }
     else if (cur_field->used_tables() == filter_for_table)
     {
@@ -7534,7 +6851,7 @@ float Item_equal::get_filtering_effect(table_map filter_for_table,
           Its value can still be used as a constant if another column
           in the same table is referred to in this multiple equality.
         */
-        found_comparable= true;
+        found_comparable = true;
       }
       else
       {
@@ -7542,22 +6859,19 @@ float Item_equal::get_filtering_effect(table_map filter_for_table,
           cur_field is a field in 'filter_for_table', and it's not one
           of the fields that must be ignored
         */
-        float cur_filter=
-          cur_field->get_cond_filter_default_probability(rows_in_table,
-                                                         COND_FILTER_EQUALITY);
+        float cur_filter = cur_field->get_cond_filter_default_probability(rows_in_table, COND_FILTER_EQUALITY);
 
         // Use index statistics if available for this field
         if (!cur_field->field->key_start.is_clear_all())
-        { 
+        {
           // cur_field is indexed - there may be statistics for it.
-          const TABLE *tab= cur_field->field->table;
+          const TABLE *tab = cur_field->field->table;
 
-          for (uint j= 0; j < tab->s->keys; j++)
+          for (uint j = 0; j < tab->s->keys; j++)
           {
-            if (cur_field->field->key_start.is_set(j) &&
-                tab->key_info[j].has_records_per_key(0))
+            if (cur_field->field->key_start.is_set(j) && tab->key_info[j].has_records_per_key(0))
             {
-              cur_filter= static_cast<float>(tab->key_info[j].records_per_key(0) / rows_in_table);
+              cur_filter = static_cast< float >(tab->key_info[j].records_per_key(0) / rows_in_table);
               break;
             }
           }
@@ -7569,10 +6883,10 @@ float Item_equal::get_filtering_effect(table_map filter_for_table,
             cases.
           */
           if (cur_filter >= 1.0)
-            cur_filter= 1.0f;
+            cur_filter = 1.0f;
         }
 
-        filter*= cur_filter;
+        filter *= cur_filter;
       }
     }
   }
@@ -7581,22 +6895,22 @@ float Item_equal::get_filtering_effect(table_map filter_for_table,
 
 void Item_equal::update_used_tables()
 {
-  List_iterator_fast<Item_field> li(fields);
+  List_iterator_fast< Item_field > li(fields);
   Item *item;
-  not_null_tables_cache= used_tables_cache= 0;
-  if ((const_item_cache= cond_false))
+  not_null_tables_cache = used_tables_cache = 0;
+  if ((const_item_cache = cond_false))
     return;
-  with_subselect= false;
-  with_stored_program= false;
-  while ((item=li++))
+  with_subselect = false;
+  with_stored_program = false;
+  while ((item = li++))
   {
     item->update_used_tables();
-    used_tables_cache|= item->used_tables();
-    not_null_tables_cache|= item->not_null_tables();
+    used_tables_cache |= item->used_tables();
+    not_null_tables_cache |= item->not_null_tables();
     /* see commentary at Item_equal::update_const() */
-    const_item_cache&= item->const_item() && !item->is_outer_field();
-    with_subselect|= item->has_subquery();
-    with_stored_program|= item->has_stored_program();
+    const_item_cache &= item->const_item() && !item->is_outer_field();
+    with_subselect |= item->has_subquery();
+    with_stored_program |= item->has_stored_program();
   }
 }
 
@@ -7605,18 +6919,18 @@ longlong Item_equal::val_int()
   Item_field *item_field;
   if (cond_false)
     return 0;
-  List_iterator_fast<Item_field> it(fields);
-  Item *item= const_item ? const_item : it++;
+  List_iterator_fast< Item_field > it(fields);
+  Item *item = const_item ? const_item : it++;
   eval_item->store_value(item);
-  if ((null_value= item->null_value))
+  if ((null_value = item->null_value))
     return 0;
-  while ((item_field= it++))
+  while ((item_field = it++))
   {
     /* Skip fields of non-const tables. They haven't been read yet */
     if (item_field->field->table->const_table)
     {
-      const int rc= eval_item->cmp(item_field);
-      if ((rc == TRUE) || (null_value= (rc == UNKNOWN)))
+      const int rc = eval_item->cmp(item_field);
+      if ((rc == TRUE) || (null_value = (rc == UNKNOWN)))
         return 0;
     }
   }
@@ -7625,9 +6939,8 @@ longlong Item_equal::val_int()
 
 void Item_equal::fix_length_and_dec()
 {
-  Item *item= get_first();
-  eval_item= cmp_item::get_comparator(item->result_type(), item,
-                                      item->collation.collation);
+  Item *item = get_first();
+  eval_item = cmp_item::get_comparator(item->result_type(), item, item->collation.collation);
 }
 
 bool Item_equal::walk(Item_processor processor, enum_walk walk, uchar *arg)
@@ -7635,9 +6948,9 @@ bool Item_equal::walk(Item_processor processor, enum_walk walk, uchar *arg)
   if ((walk & WALK_PREFIX) && (this->*processor)(arg))
     return true;
 
-  List_iterator_fast<Item_field> it(fields);
+  List_iterator_fast< Item_field > it(fields);
   Item *item;
-  while ((item= it++))
+  while ((item = it++))
   {
     if (item->walk(processor, walk, arg))
       return true;
@@ -7650,11 +6963,11 @@ Item *Item_equal::transform(Item_transformer transformer, uchar *arg)
 {
   assert(!current_thd->stmt_arena->is_stmt_prepare());
 
-  List_iterator<Item_field> it(fields);
+  List_iterator< Item_field > it(fields);
   Item *item;
-  while ((item= it++))
+  while ((item = it++))
   {
-    Item *new_item= item->transform(transformer, arg);
+    Item *new_item = item->transform(transformer, arg);
     if (!new_item)
       return 0;
 
@@ -7665,7 +6978,7 @@ Item *Item_equal::transform(Item_transformer transformer, uchar *arg)
       change records at each execution.
     */
     if (new_item != item)
-      current_thd->change_item_tree((Item **) it.ref(), new_item);
+      current_thd->change_item_tree((Item **)it.ref(), new_item);
   }
   return Item_func::transform(transformer, arg);
 }
@@ -7674,16 +6987,16 @@ void Item_equal::print(String *str, enum_query_type query_type)
 {
   str->append(func_name());
   str->append('(');
-  List_iterator_fast<Item_field> it(fields);
+  List_iterator_fast< Item_field > it(fields);
   Item *item;
   if (const_item)
     const_item->print(str, query_type);
   else
   {
-    item= it++;
+    item = it++;
     item->print(str, query_type);
   }
-  while ((item= it++))
+  while ((item = it++))
   {
     str->append(',');
     str->append(' ');
@@ -7692,23 +7005,22 @@ void Item_equal::print(String *str, enum_query_type query_type)
   str->append(')');
 }
 
-
 longlong Item_func_trig_cond::val_int()
 {
   if (trig_var == NULL)
   {
     assert(m_join != NULL && m_idx >= 0);
-    switch(trig_type)
+    switch (trig_type)
     {
-    case IS_NOT_NULL_COMPL:
-      trig_var= &m_join->qep_tab[m_idx].not_null_compl;
-      break;
-    case FOUND_MATCH:
-      trig_var= &m_join->qep_tab[m_idx].found;
-      break;
-    default:
-      assert(false); /* purecov: inspected */
-      return 0;
+      case IS_NOT_NULL_COMPL:
+        trig_var = &m_join->qep_tab[m_idx].not_null_compl;
+        break;
+      case FOUND_MATCH:
+        trig_var = &m_join->qep_tab[m_idx].found;
+        break;
+      default:
+        assert(false); /* purecov: inspected */
+        return 0;
     }
   }
   return *trig_var ? args[0]->val_int() : 1;
@@ -7725,19 +7037,19 @@ void Item_func_trig_cond::print(String *str, enum_query_type query_type)
   */
   str->append(func_name());
   str->append("(");
-  switch(trig_type)
+  switch (trig_type)
   {
-  case IS_NOT_NULL_COMPL:
-    str->append("is_not_null_compl");
-    break;
-  case FOUND_MATCH:
-    str->append("found_match");
-    break;
-  case OUTER_FIELD_IS_NOT_NULL:
-    str->append("outer_field_is_not_null");
-    break;
-  default:
-    assert(0);
+    case IS_NOT_NULL_COMPL:
+      str->append("is_not_null_compl");
+      break;
+    case FOUND_MATCH:
+      str->append("found_match");
+      break;
+    case OUTER_FIELD_IS_NOT_NULL:
+      str->append("outer_field_is_not_null");
+      break;
+    default:
+      assert(0);
   }
   if (m_join != NULL)
   {
@@ -7749,17 +7061,17 @@ void Item_func_trig_cond::print(String *str, enum_query_type query_type)
     plan_idx last_inner;
     if (m_join->qep_tab)
     {
-      QEP_TAB *qep_tab= &m_join->qep_tab[m_idx];
-      table= qep_tab->table();
-      last_inner= qep_tab->last_inner();
-      last_inner_table= m_join->qep_tab[last_inner].table();
+      QEP_TAB *qep_tab = &m_join->qep_tab[m_idx];
+      table = qep_tab->table();
+      last_inner = qep_tab->last_inner();
+      last_inner_table = m_join->qep_tab[last_inner].table();
     }
     else
     {
-      JOIN_TAB *join_tab= m_join->best_ref[m_idx];
-      table= join_tab->table();
-      last_inner= join_tab->last_inner();
-      last_inner_table= m_join->best_ref[last_inner]->table();
+      JOIN_TAB *join_tab = m_join->best_ref[m_idx];
+      table = join_tab->table();
+      last_inner = join_tab->last_inner();
+      last_inner_table = m_join->best_ref[last_inner]->table();
     }
     str->append("(");
     str->append(table->alias);
@@ -7775,7 +7087,6 @@ void Item_func_trig_cond::print(String *str, enum_query_type query_type)
   args[0]->print(str, query_type);
   str->append(", true)");
 }
-
 
 /**
   Get item that can be substituted for the supplied item.
@@ -7798,19 +7109,18 @@ void Item_func_trig_cond::print(String *str, enum_query_type query_type)
      the first field in the multiple equality is returned.
 */
 
-Item_field* Item_equal::get_subst_item(const Item_field *field)
+Item_field *Item_equal::get_subst_item(const Item_field *field)
 {
   assert(field != NULL);
 
-  const JOIN_TAB *field_tab= field->field->table->reginfo.join_tab;
+  const JOIN_TAB *field_tab = field->field->table->reginfo.join_tab;
 
   /*
     field_tab is NULL if this function was not called from
     JOIN::optimize() but from e.g. mysql_delete() or mysql_update().
     In these cases there is only one table and no semijoin
   */
-  if (field_tab &&
-      sj_is_materialize_strategy(field_tab->get_sj_strategy()))
+  if (field_tab && sj_is_materialize_strategy(field_tab->get_sj_strategy()))
   {
     /*
       It's a field from a materialized semijoin. We can substitute it only
@@ -7836,13 +7146,13 @@ Item_field* Item_equal::get_subst_item(const Item_field *field)
       constant (in which case there is no problem with choosing them below);
       @see check_simple_equality().
     */
-    List_iterator<Item_field> it(fields);
+    List_iterator< Item_field > it(fields);
     Item_field *item;
-    plan_idx first= field_tab->first_sj_inner(), last= field_tab->last_sj_inner();
+    plan_idx first = field_tab->first_sj_inner(), last = field_tab->last_sj_inner();
 
-    while ((item= it++))
+    while ((item = it++))
     {
-      plan_idx idx= item->field->table->reginfo.join_tab->idx();
+      plan_idx idx = item->field->table->reginfo.join_tab->idx();
       if (idx >= first && idx <= last)
         return item;
     }
@@ -7873,7 +7183,7 @@ Item_field* Item_equal::get_subst_item(const Item_field *field)
     */
     return fields.head();
   }
-  assert(FALSE);                          // Should never get here.
+  assert(FALSE);  // Should never get here.
   return NULL;
 }
 
@@ -7889,25 +7199,25 @@ Item_field* Item_equal::get_subst_item(const Item_field *field)
     @see JOIN::update_equalities_for_sjm() for the reason.
 */
 
-Item* Item_equal::equality_substitution_transformer(uchar *arg)
+Item *Item_equal::equality_substitution_transformer(uchar *arg)
 {
-  TABLE_LIST *sj_nest= reinterpret_cast<TABLE_LIST *>(arg);
-  List_iterator<Item_field> it(fields);
-  List<Item_field> added_fields;
+  TABLE_LIST *sj_nest = reinterpret_cast< TABLE_LIST * >(arg);
+  List_iterator< Item_field > it(fields);
+  List< Item_field > added_fields;
   Item_field *item;
   // Iterate over the fields in the multiple equality
-  while ((item= it++))
+  while ((item = it++))
   {
     // Skip fields that do not come from materialized subqueries
-    const JOIN_TAB *tab= item->field->table->reginfo.join_tab;
+    const JOIN_TAB *tab = item->field->table->reginfo.join_tab;
     if (!tab || !sj_is_materialize_strategy(tab->get_sj_strategy()))
       continue;
 
     // Iterate over the fields selected from the subquery
-    List_iterator<Item> mit(sj_nest->nested_join->sj_inner_exprs);
+    List_iterator< Item > mit(sj_nest->nested_join->sj_inner_exprs);
     Item *existing;
-    uint fieldno= 0;
-    while ((existing= mit++))
+    uint fieldno = 0;
+    while ((existing = mit++))
     {
       if (existing->real_item()->eq(item, false))
         added_fields.push_back(sj_nest->nested_join->sjm.mat_fields[fieldno]);
@@ -7930,53 +7240,45 @@ Item* Item_equal::equality_substitution_transformer(uchar *arg)
     arguments are not from the same semi-join nest.
     @see JOIN::update_equalities_for_sjm() for why this is needed.
 */
-Item* Item_func_eq::equality_substitution_transformer(uchar *arg)
+Item *Item_func_eq::equality_substitution_transformer(uchar *arg)
 {
-  TABLE_LIST *sj_nest= reinterpret_cast<TABLE_LIST *>(arg);
+  TABLE_LIST *sj_nest = reinterpret_cast< TABLE_LIST * >(arg);
 
   // Iterate over the fields selected from the subquery
-  List_iterator<Item> mit(sj_nest->nested_join->sj_inner_exprs);
+  List_iterator< Item > mit(sj_nest->nested_join->sj_inner_exprs);
   Item *existing;
-  uint fieldno= 0;
-  while ((existing= mit++))
+  uint fieldno = 0;
+  while ((existing = mit++))
   {
-    if (existing->real_item()->eq(args[1], false) &&
-        (args[0]->used_tables() & ~sj_nest->sj_inner_tables))
-      current_thd->change_item_tree(args+1,
-                                 sj_nest->nested_join->sjm.mat_fields[fieldno]);
+    if (existing->real_item()->eq(args[1], false) && (args[0]->used_tables() & ~sj_nest->sj_inner_tables))
+      current_thd->change_item_tree(args + 1, sj_nest->nested_join->sjm.mat_fields[fieldno]);
     fieldno++;
   }
   return this;
 }
 
-float Item_func_eq::get_filtering_effect(table_map filter_for_table,
-                                         table_map read_tables,
-                                         const MY_BITMAP *fields_to_ignore,
-                                         double rows_in_table)
+float Item_func_eq::get_filtering_effect(table_map filter_for_table, table_map read_tables,
+                                         const MY_BITMAP *fields_to_ignore, double rows_in_table)
 {
-  const Item_field* fld= 
-    contributes_to_filter(read_tables, filter_for_table, fields_to_ignore);
+  const Item_field *fld = contributes_to_filter(read_tables, filter_for_table, fields_to_ignore);
   if (!fld)
     return COND_FILTER_ALLPASS;
 
-  return fld->get_cond_filter_default_probability(rows_in_table,
-                                                  COND_FILTER_EQUALITY);
+  return fld->get_cond_filter_default_probability(rows_in_table, COND_FILTER_EQUALITY);
 }
-
 
 bool Item_func_any_value::aggregate_check_group(uchar *arg)
 {
-  Group_check *gc= reinterpret_cast<Group_check *>(arg);
+  Group_check *gc = reinterpret_cast< Group_check * >(arg);
   if (gc->is_stopped(this))
     return false;
   gc->stop_at(this);
   return false;
 }
 
-
 bool Item_func_any_value::aggregate_check_distinct(uchar *arg)
 {
-  Distinct_check *dc= reinterpret_cast<Distinct_check *>(arg);
+  Distinct_check *dc = reinterpret_cast< Distinct_check * >(arg);
   if (dc->is_stopped(this))
     return false;
   dc->stop_at(this);

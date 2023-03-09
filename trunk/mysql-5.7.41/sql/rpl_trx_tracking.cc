@@ -27,9 +27,7 @@
 
 #include "debug_sync.h"
 
-Logical_clock::Logical_clock()
-  : state(SEQ_UNINIT), offset(0)
-{}
+Logical_clock::Logical_clock() : state(SEQ_UNINIT), offset(0) {}
 
 /**
   Atomically fetch the current state.
@@ -37,9 +35,9 @@ Logical_clock::Logical_clock()
  */
 inline int64 Logical_clock::get_timestamp()
 {
-  int64 retval= 0;
+  int64 retval = 0;
   DBUG_ENTER("Logical_clock::get_timestamp");
-  retval= my_atomic_load64(&state);
+  retval = my_atomic_load64(&state);
   DBUG_RETURN(retval);
 }
 
@@ -72,7 +70,7 @@ inline int64 Logical_clock::step()
  */
 inline int64 Logical_clock::set_if_greater(int64 new_val)
 {
-  longlong old_val= new_val - 1;
+  longlong old_val = new_val - 1;
   bool cas_rc;
 
   DBUG_ENTER("Logical_clock::set_if_greater");
@@ -92,17 +90,16 @@ inline int64 Logical_clock::set_if_greater(int64 new_val)
 
   assert(new_val > 0);
 
-  while (!(cas_rc= my_atomic_cas64(&state, &old_val, new_val)) &&
-         old_val < new_val)
-  {}
+  while (!(cas_rc = my_atomic_cas64(&state, &old_val, new_val)) && old_val < new_val)
+  {
+  }
 
-  assert(state >= new_val); // setting can't be done to past
+  assert(state >= new_val);  // setting can't be done to past
 
   assert(cas_rc || old_val >= new_val);
 
   DBUG_RETURN(cas_rc ? new_val : old_val);
 }
-
 
 /**
   Get the sequence_number for a transaction, and get the last_commit based
@@ -114,15 +111,11 @@ inline int64 Logical_clock::set_if_greater(int64 new_val)
                                  pre-filled with the commit_parent calculated
                                  by the logical clock logic.
 */
-void
-Commit_order_trx_dependency_tracker::get_dependency(THD *thd,
-                                                    int64 &sequence_number,
-                                                    int64 &commit_parent)
+void Commit_order_trx_dependency_tracker::get_dependency(THD *thd, int64 &sequence_number, int64 &commit_parent)
 {
-  Transaction_ctx *trn_ctx= thd->get_transaction();
+  Transaction_ctx *trn_ctx = thd->get_transaction();
 
-  assert(trn_ctx->sequence_number
-         > m_max_committed_transaction.get_offset());
+  assert(trn_ctx->sequence_number > m_max_committed_transaction.get_offset());
   /*
     Prepare sequence_number and commit_parent relative to the current
     binlog.  This is done by subtracting the binlog's clock offset
@@ -134,33 +127,23 @@ Commit_order_trx_dependency_tracker::get_dependency(THD *thd,
     number. The commit parent dependency gets lost in such
     case. Therefore, we log the value SEQ_UNINIT in this case.
   */
-  sequence_number=
-    trn_ctx->sequence_number - m_max_committed_transaction.get_offset();
+  sequence_number = trn_ctx->sequence_number - m_max_committed_transaction.get_offset();
 
-  commit_parent=
-    trn_ctx->last_committed <= m_max_committed_transaction.get_offset()
-           ? SEQ_UNINIT
-           : trn_ctx->last_committed - m_max_committed_transaction.get_offset();
+  commit_parent = trn_ctx->last_committed <= m_max_committed_transaction.get_offset()
+                      ? SEQ_UNINIT
+                      : trn_ctx->last_committed - m_max_committed_transaction.get_offset();
 }
 
-int64
-Commit_order_trx_dependency_tracker::step()
+int64 Commit_order_trx_dependency_tracker::step() { return m_transaction_counter.step(); }
+
+void Commit_order_trx_dependency_tracker::rotate()
 {
-  return m_transaction_counter.step();
+  m_max_committed_transaction.update_offset(m_transaction_counter.get_timestamp());
+
+  m_transaction_counter.update_offset(m_transaction_counter.get_timestamp());
 }
 
-void
-Commit_order_trx_dependency_tracker::rotate()
-{
-  m_max_committed_transaction.
-    update_offset(m_transaction_counter.get_timestamp());
-
-  m_transaction_counter.
-    update_offset(m_transaction_counter.get_timestamp());
-}
-
-void
-Commit_order_trx_dependency_tracker::update_max_committed(int64 sequence_number)
+void Commit_order_trx_dependency_tracker::update_max_committed(int64 sequence_number)
 {
   mysql_mutex_assert_owner(&LOCK_slave_trans_dep_tracker);
   m_max_committed_transaction.set_if_greater(sequence_number);
@@ -181,14 +164,10 @@ Commit_order_trx_dependency_tracker::update_max_committed(int64 sequence_number)
                                  Commit_order_trx_dependency_tracker to use when
                                  the writeset commit_parent is not valid.
 */
-void
-Writeset_trx_dependency_tracker::get_dependency(THD *thd,
-                                                int64 &sequence_number,
-                                                int64 &commit_parent)
+void Writeset_trx_dependency_tracker::get_dependency(THD *thd, int64 &sequence_number, int64 &commit_parent)
 {
-  Rpl_transaction_write_set_ctx *write_set_ctx=
-    thd->get_transaction()->get_transaction_write_set_ctx();
-  std::set<uint64> *writeset= write_set_ctx->get_write_set();
+  Rpl_transaction_write_set_ctx *write_set_ctx = thd->get_transaction()->get_transaction_write_set_ctx();
+  std::set< uint64 > *writeset = write_set_ctx->get_write_set();
 
 #ifndef NDEBUG
   /* The writeset of an empty transaction must be empty. */
@@ -203,22 +182,21 @@ Writeset_trx_dependency_tracker::get_dependency(THD *thd,
     transaction cascade to other tables. If that happens revert to using the
     COMMIT_ORDER and clear the history to keep data consistent.
   */
-  bool can_use_writesets=
-    // empty writeset implies DDL or similar, except if there are missing keys
-    (writeset->size() != 0 || write_set_ctx->get_has_missing_keys() ||
-     /*
-       The empty transactions do not need to clear the writeset history, since
-       they can be executed in parallel.
-     */
-     is_empty_transaction_in_binlog_cache(thd)) &&
-    // hashing algorithm for the session must be the same as used by other rows in history
-    (global_system_variables.transaction_write_set_extraction ==
-     thd->variables.transaction_write_set_extraction) &&
-    // must not use foreign keys
-    !write_set_ctx->get_has_related_foreign_keys() &&
-    // it did not broke past the capacity already
-    !write_set_ctx->was_write_set_limit_reached();
-  bool exceeds_capacity= false;
+  bool can_use_writesets =
+      // empty writeset implies DDL or similar, except if there are missing keys
+      (writeset->size() != 0 || write_set_ctx->get_has_missing_keys() ||
+       /*
+         The empty transactions do not need to clear the writeset history, since
+         they can be executed in parallel.
+       */
+       is_empty_transaction_in_binlog_cache(thd)) &&
+      // hashing algorithm for the session must be the same as used by other rows in history
+      (global_system_variables.transaction_write_set_extraction == thd->variables.transaction_write_set_extraction) &&
+      // must not use foreign keys
+      !write_set_ctx->get_has_related_foreign_keys() &&
+      // it did not broke past the capacity already
+      !write_set_ctx->was_write_set_limit_reached();
+  bool exceeds_capacity = false;
 
   mysql_mutex_lock(&LOCK_slave_trans_dep_tracker);
   if (can_use_writesets)
@@ -228,30 +206,28 @@ Writeset_trx_dependency_tracker::get_dependency(THD *thd,
      history. If that happens, m_writeset_history will be cleared only after
      using its information for current transaction.
     */
-    exceeds_capacity=
-      m_writeset_history.size() + writeset->size() > get_opt_max_history_size();
+    exceeds_capacity = m_writeset_history.size() + writeset->size() > get_opt_max_history_size();
 
     /*
      Compute the greatest sequence_number among all conflicts and add the
      transaction's row hashes to the history.
     */
     DEBUG_SYNC(thd, "wait_in_get_dependency");
-    int64 last_parent= m_writeset_history_start;
-    for (std::set<uint64>::iterator it= writeset->begin();
-         it != writeset->end(); ++it)
+    int64 last_parent = m_writeset_history_start;
+    for (std::set< uint64 >::iterator it = writeset->begin(); it != writeset->end(); ++it)
     {
-      Writeset_history::iterator hst= m_writeset_history.find(*it);
+      Writeset_history::iterator hst = m_writeset_history.find(*it);
       if (hst != m_writeset_history.end())
       {
         if (hst->second > last_parent && hst->second < sequence_number)
-          last_parent= hst->second;
+          last_parent = hst->second;
 
-        hst->second= sequence_number;
+        hst->second = sequence_number;
       }
       else
       {
         if (!exceeds_capacity)
-          m_writeset_history.insert(std::pair<uint64, int64>(*it, sequence_number));
+          m_writeset_history.insert(std::pair< uint64, int64 >(*it, sequence_number));
       }
     }
 
@@ -267,22 +243,21 @@ Writeset_trx_dependency_tracker::get_dependency(THD *thd,
        found using the hashes of the row touched by the transaction and the
        commit parent calculated with COMMIT_ORDER.
       */
-      commit_parent= std::min(last_parent, commit_parent);
+      commit_parent = std::min(last_parent, commit_parent);
     }
   }
 
   if (exceeds_capacity || !can_use_writesets)
   {
-    m_writeset_history_start= sequence_number;
+    m_writeset_history_start = sequence_number;
     m_writeset_history.clear();
   }
   mysql_mutex_unlock(&LOCK_slave_trans_dep_tracker);
 }
 
-void
-Writeset_trx_dependency_tracker::rotate(int64 start)
+void Writeset_trx_dependency_tracker::rotate(int64 start)
 {
-  m_writeset_history_start= start;
+  m_writeset_history_start = start;
   m_writeset_history.clear();
 }
 
@@ -296,33 +271,25 @@ Writeset_trx_dependency_tracker::rotate(int64 start)
                                  by the Write_set_trx_dependency_tracker as a
                                  fall-back.
 */
-void
-Writeset_session_trx_dependency_tracker::get_dependency(THD *thd,
-                                                        int64 &sequence_number,
-                                                        int64 &commit_parent)
+void Writeset_session_trx_dependency_tracker::get_dependency(THD *thd, int64 &sequence_number, int64 &commit_parent)
 {
-  int64 session_parent= thd->rpl_thd_ctx.dependency_tracker_ctx().
-                        get_last_session_sequence_number();
+  int64 session_parent = thd->rpl_thd_ctx.dependency_tracker_ctx().get_last_session_sequence_number();
 
   if (session_parent != 0 && session_parent < sequence_number)
-    commit_parent= std::max(commit_parent, session_parent);
+    commit_parent = std::max(commit_parent, session_parent);
 
-  thd->rpl_thd_ctx.dependency_tracker_ctx().
-    set_last_session_sequence_number(sequence_number);
+  thd->rpl_thd_ctx.dependency_tracker_ctx().set_last_session_sequence_number(sequence_number);
 }
 
 /**
   Get the dependencies in a transaction, the main entry point for the
   dependency tracking work.
 */
-void
-Transaction_dependency_tracker::get_dependency(THD *thd,
-                                               int64 &sequence_number,
-                                               int64 &commit_parent)
+void Transaction_dependency_tracker::get_dependency(THD *thd, int64 &sequence_number, int64 &commit_parent)
 {
-  sequence_number= commit_parent= 0;
+  sequence_number = commit_parent = 0;
 
-  switch(my_atomic_load64(&m_opt_tracking_mode))
+  switch (my_atomic_load64(&m_opt_tracking_mode))
   {
     case DEPENDENCY_TRACKING_COMMIT_ORDER:
       m_commit_order.get_dependency(thd, sequence_number, commit_parent);
@@ -345,13 +312,10 @@ Transaction_dependency_tracker::get_dependency(THD *thd,
   }
 }
 
-void
-Transaction_dependency_tracker::tracking_mode_changed()
+void Transaction_dependency_tracker::tracking_mode_changed()
 {
-  Logical_clock max_committed_transaction=
-    m_commit_order.get_max_committed_transaction();
-  int64 timestamp= max_committed_transaction.get_timestamp()
-                   - max_committed_transaction.get_offset();
+  Logical_clock max_committed_transaction = m_commit_order.get_max_committed_transaction();
+  int64 timestamp = max_committed_transaction.get_timestamp() - max_committed_transaction.get_offset();
 
   m_writeset.rotate(timestamp);
 }
@@ -367,29 +331,22 @@ Transaction_dependency_tracker::tracking_mode_changed()
 
   @param thd a pointer to THD instance
 */
-void
-Transaction_dependency_tracker::update_max_committed(THD *thd)
+void Transaction_dependency_tracker::update_max_committed(THD *thd)
 {
-  Transaction_ctx *trn_ctx= thd->get_transaction();
+  Transaction_ctx *trn_ctx = thd->get_transaction();
   m_commit_order.update_max_committed(trn_ctx->sequence_number);
   /*
     sequence_number timestamp isn't needed anymore, so it's cleared off.
   */
-  trn_ctx->sequence_number= SEQ_UNINIT;
+  trn_ctx->sequence_number = SEQ_UNINIT;
 
-  assert(trn_ctx->last_committed == SEQ_UNINIT ||
-         thd->commit_error == THD::CE_FLUSH_ERROR ||
+  assert(trn_ctx->last_committed == SEQ_UNINIT || thd->commit_error == THD::CE_FLUSH_ERROR ||
          thd->commit_error == THD::CE_FLUSH_GNO_EXHAUSTED_ERROR);
 }
 
-int64
-Transaction_dependency_tracker::step()
-{
-  return m_commit_order.step();
-}
+int64 Transaction_dependency_tracker::step() { return m_commit_order.step(); }
 
-void
-Transaction_dependency_tracker::rotate()
+void Transaction_dependency_tracker::rotate()
 {
   m_commit_order.rotate();
   /*
@@ -398,12 +355,10 @@ Transaction_dependency_tracker::rotate()
   */
   m_writeset.rotate(1);
   if (current_thd)
-    current_thd->get_transaction()->sequence_number= 2;
+    current_thd->get_transaction()->sequence_number = 2;
 }
 
 int64 Transaction_dependency_tracker::get_max_committed_timestamp()
 {
   return m_commit_order.get_max_committed_transaction().get_timestamp();
 }
-
-

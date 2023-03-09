@@ -22,9 +22,9 @@
 
 #include "locking_service.h"
 
-#include "mysqld.h"        // current_thd
-#include "mdl.h"           // MDL_request_list
-#include "sql_class.h"     // THD
+#include "mysqld.h"     // current_thd
+#include "mdl.h"        // MDL_request_list
+#include "sql_class.h"  // THD
 
 /**
   We want to convert ER_LOCK_DEADLOCK error to ER_LOCK_SERVICE_DEADLOCK error.
@@ -37,14 +37,11 @@
   locks.
 */
 
-class Locking_service_deadlock_error_handler: public Internal_error_handler
+class Locking_service_deadlock_error_handler : public Internal_error_handler
 {
-public:
-  virtual bool handle_condition(THD *thd,
-                                uint sql_errno,
-                                const char *sqlstate,
-                                Sql_condition::enum_severity_level *level,
-                                const char *msg)
+ public:
+  virtual bool handle_condition(THD *thd, uint sql_errno, const char *sqlstate,
+                                Sql_condition::enum_severity_level *level, const char *msg)
   {
     if (sql_errno == ER_LOCK_DEADLOCK)
     {
@@ -61,8 +58,7 @@ public:
   }
 };
 
-
-static const size_t MAX_LOCKING_SERVICE_LOCK_NAME_LENGTH= 64;
+static const size_t MAX_LOCKING_SERVICE_LOCK_NAME_LENGTH = 64;
 
 /**
   Check if the given name has valid length.
@@ -74,8 +70,7 @@ static const size_t MAX_LOCKING_SERVICE_LOCK_NAME_LENGTH= 64;
 
 static inline bool check_lock_name(const char *name)
 {
-  if (!name || strlen(name) == 0 ||
-      strlen(name) > MAX_LOCKING_SERVICE_LOCK_NAME_LENGTH)
+  if (!name || strlen(name) == 0 || strlen(name) > MAX_LOCKING_SERVICE_LOCK_NAME_LENGTH)
   {
     my_error(ER_LOCKING_SERVICE_WRONG_NAME, MYF(0), name);
     return true;
@@ -83,27 +78,21 @@ static inline bool check_lock_name(const char *name)
   return false;
 }
 
-
 class Release_all_locking_service_locks : public MDL_release_locks_visitor
 {
-public:
-  Release_all_locking_service_locks() { }
+ public:
+  Release_all_locking_service_locks() {}
 
-  virtual bool release(MDL_ticket *ticket)
-  {
-    return ticket->get_key()->mdl_namespace() == MDL_key::LOCKING_SERVICE;
-  }
+  virtual bool release(MDL_ticket *ticket) { return ticket->get_key()->mdl_namespace() == MDL_key::LOCKING_SERVICE; }
 };
-
 
 class Release_locking_service_locks : public MDL_release_locks_visitor
 {
-private:
+ private:
   const char *m_lock_namespace;
 
-public:
-  explicit Release_locking_service_locks(const char *lock_namespace)
-    : m_lock_namespace(lock_namespace) { }
+ public:
+  explicit Release_locking_service_locks(const char *lock_namespace) : m_lock_namespace(lock_namespace) {}
 
   virtual bool release(MDL_ticket *ticket)
   {
@@ -112,13 +101,8 @@ public:
   }
 };
 
-
-int acquire_locking_service_locks(MYSQL_THD opaque_thd,
-                                  const char *lock_namespace,
-                                  const char **lock_names,
-                                  size_t lock_num,
-                                  enum_locking_service_lock_type lock_type,
-                                  ulong lock_timeout)
+int acquire_locking_service_locks(MYSQL_THD opaque_thd, const char *lock_namespace, const char **lock_names,
+                                  size_t lock_num, enum_locking_service_lock_type lock_type, ulong lock_timeout)
 {
   if (lock_num == 0)
     return 0;
@@ -129,31 +113,28 @@ int acquire_locking_service_locks(MYSQL_THD opaque_thd,
 
   THD *thd;
   if (opaque_thd)
-    thd= static_cast<THD*>(opaque_thd);
+    thd = static_cast< THD * >(opaque_thd);
   else
-    thd= current_thd;
+    thd = current_thd;
 
   // Initialize MDL_requests.
   MDL_request_list mdl_requests;
-  for (size_t i= 0; i < lock_num; i++)
+  for (size_t i = 0; i < lock_num; i++)
   {
     // Check that lock name length is acceptable
     if (check_lock_name(lock_names[i]))
       return 1;
 
-    MDL_request *new_request= new (thd->mem_root) MDL_request;
-    MDL_REQUEST_INIT(new_request, MDL_key::LOCKING_SERVICE,
-                     lock_namespace, lock_names[i],
-                     (lock_type == LOCKING_SERVICE_READ ?
-                      MDL_SHARED : MDL_EXCLUSIVE),
-                     MDL_EXPLICIT);
+    MDL_request *new_request = new (thd->mem_root) MDL_request;
+    MDL_REQUEST_INIT(new_request, MDL_key::LOCKING_SERVICE, lock_namespace, lock_names[i],
+                     (lock_type == LOCKING_SERVICE_READ ? MDL_SHARED : MDL_EXCLUSIVE), MDL_EXPLICIT);
     mdl_requests.push_front(new_request);
   }
 
   // Acquire locks
   Locking_service_deadlock_error_handler handler;
   thd->push_internal_handler(&handler);
-  bool res= thd->mdl_context.acquire_locks(&mdl_requests, lock_timeout);
+  bool res = thd->mdl_context.acquire_locks(&mdl_requests, lock_timeout);
   thd->pop_internal_handler();
   if (res)
     return 1;
@@ -161,9 +142,7 @@ int acquire_locking_service_locks(MYSQL_THD opaque_thd,
   return 0;
 }
 
-
-int release_locking_service_locks(MYSQL_THD opaque_thd,
-                                  const char *lock_namespace)
+int release_locking_service_locks(MYSQL_THD opaque_thd, const char *lock_namespace)
 {
   // Check that namespace length is acceptable
   if (check_lock_name(lock_namespace))
@@ -171,9 +150,9 @@ int release_locking_service_locks(MYSQL_THD opaque_thd,
 
   THD *thd;
   if (opaque_thd)
-    thd= static_cast<THD*>(opaque_thd);
+    thd = static_cast< THD * >(opaque_thd);
   else
-    thd= current_thd;
+    thd = current_thd;
 
   Release_locking_service_locks lock_visitor(lock_namespace);
   thd->mdl_context.release_locks(&lock_visitor);
@@ -181,13 +160,11 @@ int release_locking_service_locks(MYSQL_THD opaque_thd,
   return 0;
 }
 
-
 void release_all_locking_service_locks(THD *thd)
 {
   Release_all_locking_service_locks lock_visitor;
   thd->mdl_context.release_locks(&lock_visitor);
 }
-
 
 /*
   Wrapper functions for the plugin service API. The UDF implementation
@@ -196,22 +173,14 @@ void release_all_locking_service_locks(THD *thd)
   yet are not able to call service API functions.
 */
 C_MODE_START
-int mysql_acquire_locking_service_locks(MYSQL_THD opaque_thd,
-                                        const char *lock_namespace,
-                                        const char **lock_names,
-                                        size_t lock_num,
-                                        enum_locking_service_lock_type lock_type,
-                                        ulong lock_timeout)
+int mysql_acquire_locking_service_locks(MYSQL_THD opaque_thd, const char *lock_namespace, const char **lock_names,
+                                        size_t lock_num, enum_locking_service_lock_type lock_type, ulong lock_timeout)
 {
-  return acquire_locking_service_locks(opaque_thd, lock_namespace, lock_names,
-                                       lock_num, lock_type, lock_timeout);
+  return acquire_locking_service_locks(opaque_thd, lock_namespace, lock_names, lock_num, lock_type, lock_timeout);
 }
 
-
-int mysql_release_locking_service_locks(MYSQL_THD opaque_thd,
-                                        const char *lock_namespace)
+int mysql_release_locking_service_locks(MYSQL_THD opaque_thd, const char *lock_namespace)
 {
   return release_locking_service_locks(opaque_thd, lock_namespace);
 }
 C_MODE_END
-

@@ -23,23 +23,18 @@
 
 #include "rpl_gtid.h"
 
-#include "mysqld_error.h"    // ER_*
-
+#include "mysqld_error.h"  // ER_*
 
 PSI_memory_key key_memory_Sid_map_Node;
 
 Sid_map::Sid_map(Checkable_rwlock *_sid_lock)
-  : sid_lock(_sid_lock),
-    _sidno_to_sid(key_memory_Sid_map_Node), _sorted(key_memory_Sid_map_Node)
+    : sid_lock(_sid_lock), _sidno_to_sid(key_memory_Sid_map_Node), _sorted(key_memory_Sid_map_Node)
 {
   DBUG_ENTER("Sid_map::Sid_map");
-  my_hash_init(&_sid_to_sidno, &my_charset_bin, 20,
-               offsetof(Node, sid.bytes), binary_log::Uuid::BYTE_LENGTH, NULL,
-               my_free, 0,
-               key_memory_Sid_map_Node);
+  my_hash_init(&_sid_to_sidno, &my_charset_bin, 20, offsetof(Node, sid.bytes), binary_log::Uuid::BYTE_LENGTH, NULL,
+               my_free, 0, key_memory_Sid_map_Node);
   DBUG_VOID_RETURN;
 }
-
 
 Sid_map::~Sid_map()
 {
@@ -47,7 +42,6 @@ Sid_map::~Sid_map()
   my_hash_free(&_sid_to_sidno);
   DBUG_VOID_RETURN;
 }
-
 
 /*
   This code is not being used but we will keep it as it may be
@@ -60,8 +54,7 @@ enum_return_status Sid_map::clear()
 {
   DBUG_ENTER("Sid_map::clear");
   my_hash_free(&_sid_to_sidno);
-  my_hash_init(&_sid_to_sidno, &my_charset_bin, 20,
-               offsetof(Node, sid.bytes), binary_log::Uuid::BYTE_LENGTH, NULL,
+  my_hash_init(&_sid_to_sidno, &my_charset_bin, 20, offsetof(Node, sid.bytes), binary_log::Uuid::BYTE_LENGTH, NULL,
                my_free, 0);
   _sidno_to_sid.clear();
   _sorted.clear();
@@ -79,18 +72,17 @@ rpl_sidno Sid_map::add_sid(const rpl_sid &sid)
 #endif
   if (sid_lock)
     sid_lock->assert_some_lock();
-  Node *node= (Node *)my_hash_search(&_sid_to_sidno, sid.bytes,
-                                     binary_log::Uuid::BYTE_LENGTH);
+  Node *node = (Node *)my_hash_search(&_sid_to_sidno, sid.bytes, binary_log::Uuid::BYTE_LENGTH);
   if (node != NULL)
   {
     DBUG_PRINT("info", ("existed as sidno=%d", node->sidno));
     DBUG_RETURN(node->sidno);
   }
 
-  bool is_wrlock= false;
+  bool is_wrlock = false;
   if (sid_lock)
   {
-    is_wrlock= sid_lock->is_wrlock();
+    is_wrlock = sid_lock->is_wrlock();
     if (!is_wrlock)
     {
       sid_lock->unlock();
@@ -99,15 +91,14 @@ rpl_sidno Sid_map::add_sid(const rpl_sid &sid)
   }
   DBUG_PRINT("info", ("is_wrlock=%d sid_lock=%p", is_wrlock, sid_lock));
   rpl_sidno sidno;
-  node= (Node *)my_hash_search(&_sid_to_sidno, sid.bytes,
-                               binary_log::Uuid::BYTE_LENGTH);
+  node = (Node *)my_hash_search(&_sid_to_sidno, sid.bytes, binary_log::Uuid::BYTE_LENGTH);
   if (node != NULL)
-    sidno= node->sidno;
+    sidno = node->sidno;
   else
   {
-    sidno= get_max_sidno() + 1;
+    sidno = get_max_sidno() + 1;
     if (add_node(sidno, sid) != RETURN_STATUS_OK)
-      sidno= -1;
+      sidno = -1;
   }
 
   if (sid_lock)
@@ -126,13 +117,12 @@ enum_return_status Sid_map::add_node(rpl_sidno sidno, const rpl_sid &sid)
   DBUG_ENTER("Sid_map::add_node(rpl_sidno, const rpl_sid *)");
   if (sid_lock)
     sid_lock->assert_some_wrlock();
-  Node *node= (Node *)my_malloc(key_memory_Sid_map_Node,
-                                sizeof(Node), MYF(MY_WME));
+  Node *node = (Node *)my_malloc(key_memory_Sid_map_Node, sizeof(Node), MYF(MY_WME));
   if (node == NULL)
     RETURN_REPORTED_ERROR;
 
-  node->sidno= sidno;
-  node->sid= sid;
+  node->sidno = sidno;
+  node->sid = sid;
   if (!_sidno_to_sid.push_back(node))
   {
     if (!_sorted.push_back(sidno))
@@ -144,25 +134,23 @@ enum_return_status Sid_map::add_node(rpl_sidno sidno, const rpl_sid &sid)
           If this is the global_sid_map, we take the opportunity to
           resize all arrays in gtid_state while holding the wrlock.
         */
-        if (this != global_sid_map ||
-            gtid_state->ensure_sidno() == RETURN_STATUS_OK)
+        if (this != global_sid_map || gtid_state->ensure_sidno() == RETURN_STATUS_OK)
 #endif
         {
           // We have added one element to the end of _sorted.  Now we
           // bubble it down to the sorted position.
-          int sorted_i= sidno - 1;
-          rpl_sidno *prev_sorted_p= &_sorted[sorted_i];
+          int sorted_i = sidno - 1;
+          rpl_sidno *prev_sorted_p = &_sorted[sorted_i];
           sorted_i--;
           while (sorted_i >= 0)
           {
-            rpl_sidno *sorted_p= &_sorted[sorted_i];
-            const rpl_sid &other_sid= sidno_to_sid(*sorted_p);
-            if (memcmp(sid.bytes, other_sid.bytes,
-                       binary_log::Uuid::BYTE_LENGTH) >= 0)
+            rpl_sidno *sorted_p = &_sorted[sorted_i];
+            const rpl_sid &other_sid = sidno_to_sid(*sorted_p);
+            if (memcmp(sid.bytes, other_sid.bytes, binary_log::Uuid::BYTE_LENGTH) >= 0)
               break;
             memcpy(prev_sorted_p, sorted_p, sizeof(rpl_sidno));
             sorted_i--;
-            prev_sorted_p= sorted_p;
+            prev_sorted_p = sorted_p;
           }
           memcpy(prev_sorted_p, &sidno, sizeof(rpl_sidno));
           RETURN_OK;
@@ -178,20 +166,17 @@ enum_return_status Sid_map::add_node(rpl_sidno sidno, const rpl_sid &sid)
   RETURN_REPORTED_ERROR;
 }
 
-
 enum_return_status Sid_map::copy(Sid_map *dest)
 {
   DBUG_ENTER("Sid_map::copy(Sid_map)");
-  enum_return_status return_status= RETURN_STATUS_OK;
+  enum_return_status return_status = RETURN_STATUS_OK;
 
-  rpl_sidno max_sidno= get_max_sidno();
-  for (rpl_sidno sidno= 1;
-       sidno <= max_sidno && return_status == RETURN_STATUS_OK;
-       sidno++)
+  rpl_sidno max_sidno = get_max_sidno();
+  for (rpl_sidno sidno = 1; sidno <= max_sidno && return_status == RETURN_STATUS_OK; sidno++)
   {
     rpl_sid sid;
     sid.copy_from(sidno_to_sid(sidno));
-    return_status= dest->add_node(sidno, sid);
+    return_status = dest->add_node(sidno, sid);
   }
 
   DBUG_RETURN(return_status);

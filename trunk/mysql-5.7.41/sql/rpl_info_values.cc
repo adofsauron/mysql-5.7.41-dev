@@ -22,11 +22,9 @@
 
 #include "rpl_info_values.h"
 
-#include "sql_string.h"       // String
+#include "sql_string.h"  // String
 
-
-Rpl_info_values::Rpl_info_values(int param_ninfo): value(0),
-    ninfo(param_ninfo) { }
+Rpl_info_values::Rpl_info_values(int param_ninfo) : value(0), ninfo(param_ninfo) {}
 
 /**
   Initializes a sequence of values to be read from or stored into a repository.
@@ -41,13 +39,10 @@ bool Rpl_info_values::init()
 {
   DBUG_ENTER("Rpl_info_values::init");
 
-  if (!value && !(value= new String[ninfo]))
-      DBUG_RETURN(TRUE);
+  if (!value && !(value = new String[ninfo]))
+    DBUG_RETURN(TRUE);
 
   DBUG_RETURN(FALSE);
 }
 
-Rpl_info_values::~Rpl_info_values()
-{
-  delete [] value;
-}
+Rpl_info_values::~Rpl_info_values() { delete[] value; }
